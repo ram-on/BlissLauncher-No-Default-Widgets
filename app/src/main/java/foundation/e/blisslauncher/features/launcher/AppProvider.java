@@ -162,11 +162,12 @@ public class AppProvider {
             public void onPackagesAvailable(String[] packageNames, android.os.UserHandle user,
                                             boolean replacing) {
                 Log.d(TAG, "onPackagesAvailable() called with: packageNames = [" + packageNames + "], user = [" + user + "], replacing = [" + replacing + "]");
-                PackageAddedRemovedHandler.handleEvent(mContext,
-                        "android.intent.action.MEDIA_MOUNTED",
-                        null, new UserHandle(manager.getSerialNumberForUser(user), user), false
-                );
-
+                for (String packageName : packageNames) {
+                    PackageAddedRemovedHandler.handleEvent(mContext,
+                            "android.intent.action.MEDIA_MOUNTED",
+                            packageName, new UserHandle(manager.getSerialNumberForUser(user), user), false
+                    );
+                }
             }
 
             @Override
@@ -300,7 +301,7 @@ public class AppProvider {
                     UserHandle userHandle = new UserHandle();
                     if (isAppOnSdcard(databaseItem.packageName, userHandle) || !isSdCardReady) {
                         Log.d(TAG, "Missing package: " + databaseItem.packageName);
-                        Log.d(TAG, "Is App on Sdcard " + isAppOnSdcard(databaseItem.packageName, databaseItem.user));
+                        Log.d(TAG, "Is App on Sdcard " + isAppOnSdcard(databaseItem.packageName, userHandle));
                         Log.d(TAG, "Is Sdcard ready " + isSdCardReady);
 
                         pendingPackages.addToList(userHandle, databaseItem.packageName);
