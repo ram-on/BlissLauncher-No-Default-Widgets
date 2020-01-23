@@ -239,9 +239,9 @@ public class DeviceProfile {
 
         Log.i(TAG, "updateIconSize: " + (int) a + " " + (int) b);
 
-        iconSizePx = (int) (widthPx / widthCm);
+        iconSizePx = (int) (widthPx * 0.75 / widthCm);
         if (ratio >= 1) {
-            iconSizePx = iconSizePx * (int) ratio;
+            iconSizePx = (int) (iconSizePx * ratio);
         }
 
         iconTextSizePx = (int) (Utilities.pxFromSp(12, dm) * scale);
