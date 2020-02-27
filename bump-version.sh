@@ -34,7 +34,7 @@ usage() {
 	echo -e " "
 	echo -e " Used to increment the version of ${RED}BlissLauncher${NOCOLOR} safely by performing predefined actions: "
 	echo "  1. Checks the category of the revision (major,minor or patch) based on the argument (revision_type) passed into the script."
-	echo -e "  2. Overwrite the version name and version code in app module level build.gradle based on the following logic"
+	echo -e "  2. Overwrite the version name and version code in app module level build.gradle.kts based on the following logic"
 	echo -e "     * - If this upgrade is a major, new version name will be ${CYAN}{old_major + 1}.0.0${NOCOLOR}"
 	echo -e "     * - If upgrade type is minor, updated version name will be ${CYAN}old_major.{old_minor + 1}.0${NOCOLOR}"
 	echo -e "     * - If it is a patch (hotfix), updated version name will be ${CYAN}old_major.old_minor.{old_patch + 1}.0${NOCOLOR}"

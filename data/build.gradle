@@ -29,18 +29,33 @@ android {
             }
         }
     }
+
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation project(path: ':domain')
+    implementation project(path: ':common')
+
     implementation Libs.Kotlin.stdlib
     implementation Libs.AndroidX.appcompat
     implementation Libs.AndroidX.coreKtx
 
+    implementation Libs.RxJava.rxKotlin
+
     implementation Libs.AndroidX.Room.runtime
+    implementation Libs.AndroidX.Room.ktx
     kapt Libs.AndroidX.Room.compiler
 
+    implementation Libs.Dagger.dagger
     kapt Libs.Dagger.compiler
+
+    // Timber
+    implementation Libs.timber
 
     testImplementation Libs.junit
     testImplementation Libs.robolectric

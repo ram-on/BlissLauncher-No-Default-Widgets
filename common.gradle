@@ -1,0 +1,33 @@
+import foundation.e.blisslauncher.buildsrc.Libs
+import foundation.e.blisslauncher.buildsrc.Versions
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdkVersion Versions.compile_sdk
+
+    defaultConfig {
+        minSdkVersion Versions.min_sdk
+        targetSdkVersion Versions.target_sdk
+    }
+
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation Libs.Kotlin.stdlib
+
+    // Dagger
+    implementation Libs.Dagger.dagger
+    kapt Libs.Dagger.compiler
+}

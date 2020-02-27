@@ -11,10 +11,6 @@ object Versions {
     const val junit = "4.12"
     const val robolectric = "4.3"
     const val mockK = "1.9.3"
-    const val firebase_core = "17.1.0"
-    const val crashlytics = "2.10.1"
-    const val google_services = "4.3.0"
-    const val fabric = "1.31.0"
     const val okhttp = "4.1.0"
     const val retrofit = "2.6.1"
     const val dagger = "2.24"
@@ -33,13 +29,6 @@ object Libs {
     const val junit = "junit:junit:${Versions.junit}"
     const val robolectric = "org.robolectric:robolectric:${Versions.robolectric}"
     const val mockK = "io.mockk:mockk:${Versions.mockK}"
-
-    object Google {
-        const val firebaseCore = "com.google.firebase:firebase-core:${Versions.firebase_core}"
-        const val crashlytics = "com.crashlytics.sdk.android:crashlytics:${Versions.crashlytics}"
-        const val gmsGoogleServices = "com.google.gms:google-services:${Versions.google_services}"
-        const val fabricPlugin = "io.fabric.tools:gradle:${Versions.fabric}"
-    }
 
     object Kotlin {
         const val stdlib = "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${Versions.kotlin}"
@@ -94,7 +83,7 @@ object Libs {
         }
 
         object Room {
-            private const val version = "2.2.0-beta01"
+            private const val version = "2.2.3"
             const val common = "androidx.room:room-common:$version"
             const val runtime = "androidx.room:room-runtime:$version"
             const val compiler = "androidx.room:room-compiler:$version"
@@ -111,7 +100,7 @@ object Libs {
 
     object Dagger {
         const val dagger = "com.google.dagger:dagger:${Versions.dagger}"
-        const val androidSupport = "com.google.dagger:dagger-android-support:${Versions.dagger}"
+        const val android = "com.google.dagger:dagger-android:${Versions.dagger}"
         const val compiler = "com.google.dagger:dagger-compiler:${Versions.dagger}"
         const val androidProcessor = "com.google.dagger:dagger-android-processor:${Versions.dagger}"
     }
