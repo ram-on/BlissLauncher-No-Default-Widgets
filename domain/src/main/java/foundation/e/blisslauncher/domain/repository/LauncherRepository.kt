@@ -5,15 +5,15 @@ import foundation.e.blisslauncher.domain.entity.ApplicationItem
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 
 /**
- * Loads and update all the LauncherItems
+ * Repository to manage [LauncherItem]
  */
-interface LauncherRepository {
+interface LauncherRepository: Repository<LauncherItem, Long>
 
-    fun getAllActivities(user: UserHandle, quietMode: Boolean): List<ApplicationItem>
+/*fun getAllActivities(user: UserHandle, quietMode: Boolean): List<ApplicationItem>
 
-    /**
-     * Functions to fetch/add/update/remove AppsRepository
-     */
+    *//**
+ * Functions to fetch/add/update/remove AppsRepository
+ *//*
     fun add(packageName: String, user: UserHandle, quietMode: Boolean): List<ApplicationItem>
 
     fun remove(packageName: String, user: UserHandle)
@@ -32,5 +32,4 @@ interface LauncherRepository {
 
     fun makePackagesUnavailable(packages: Array<out String>, user: UserHandle): List<LauncherItem>
 
-    fun removePackages(packages: Array<out String>, user: UserHandle): List<LauncherItem>
-}
+    fun removePackages(packages: Array<out String>, user: UserHandle): List<LauncherItem>*/
