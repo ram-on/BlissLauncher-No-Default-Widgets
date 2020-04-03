@@ -14,7 +14,7 @@ class LauncherViewModel @Inject constructor(
     private val launcherStateInteractor: LauncherStateInteractor,
     private val observeAddedApps: ObserveAddedApps,
     private val loadLauncher: LoadLauncher
-) : BaseViewModel<LauncherState>(
+) : BaseViewModel<LauncherViewEvent, LauncherState>(
     LauncherState(
         itemsIdMap = LongArrayMap(),
         allItems = emptyList(),
@@ -32,32 +32,26 @@ class LauncherViewModel @Inject constructor(
         }
     }
 
-    fun loadLauncher() {
-        process(loadLauncherIntent())
-    }
-
-    private fun loadLauncherIntent(): BaseIntent<LauncherState> {
-        return intent {
-            loadLauncher(
-                onSuccess = { list ->
-                    process(intent {
-                        val mutableAllItems = allItems.toMutableList()
-                        mutableAllItems.addAll(list)
-                        copy(data = list, allItems = mutableAllItems)
-                    })
-                },
-                onError = {
-                    it.printStackTrace()
-                    process(intent { copy(data = emptyList()) })
-                }
-            )
-            copy()
-        }
-    }
-
     fun terminate() {
         launcherStateInteractor(LauncherStateInteractor.Command.TERMINATE)
         disposable.dispose()
         observeAddedApps.dispose()
+    }
+
+    override fun toIntent(event: LauncherViewEvent): BaseIntent<LauncherState> {
+        return when (event) {
+            is LauncherViewEvent.LoadLauncher -> intent {
+                loadLauncher(
+                    onSuccess = {
+                        newState { copy(data = emptyList()) }
+                    },
+                    onError = {
+                        it.printStackTrace()
+                        copy(data = emptyList())
+                    }
+                )
+                copy()
+            }
+        }
     }
 }

@@ -55,7 +55,8 @@ open class ApplicationItem : WorkspaceItem {
         }
 
         fun updateRuntimeFlagsForActivityTarget(
-            info: LauncherItemWithIcon, lai: LauncherActivityInfo
+            info: LauncherItemWithIcon,
+            lai: LauncherActivityInfo
         ) {
             val appInfo = lai.applicationInfo
             /*if (PackageManagerHelper.isAppSuspended(appInfo)) {
@@ -63,8 +64,8 @@ open class ApplicationItem : WorkspaceItem {
             }*/
             info.runtimeStatusFlags =
                 info.runtimeStatusFlags or if (appInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0) FLAG_SYSTEM_NO else FLAG_SYSTEM_YES
-            if (Utilities.ATLEAST_OREO
-                && appInfo.targetSdkVersion >= Build.VERSION_CODES.O && Process.myUserHandle() == lai.user
+            if (Utilities.ATLEAST_OREO &&
+                appInfo.targetSdkVersion >= Build.VERSION_CODES.O && Process.myUserHandle() == lai.user
             ) { // The icon for a non-primary user is badged, hence it's not exactly an adaptive icon.
                 info.runtimeStatusFlags = info.runtimeStatusFlags or FLAG_ADAPTIVE_ICON
             }

@@ -9,7 +9,7 @@ import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.domain.repository.UserManagerRepository
 import foundation.e.blisslauncher.common.executors.AppExecutors
 import foundation.e.blisslauncher.common.executors.MainThreadExecutor
-import foundation.e.blisslauncher.data.LauncherAppsChangedCallbackCompat
+import foundation.e.blisslauncher.data.launcher.LauncherAppsChangedCallbackCompat
 import foundation.e.blisslauncher.data.compat.LauncherAppsCompatVL
 import foundation.e.blisslauncher.data.compat.LauncherAppsCompatVO
 import foundation.e.blisslauncher.data.compat.UserManagerCompatVN

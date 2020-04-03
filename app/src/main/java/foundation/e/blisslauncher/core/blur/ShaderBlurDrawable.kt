@@ -51,7 +51,6 @@ class ShaderBlurDrawable internal constructor(private val blurWallpaperProvider:
         }
         blurBitmap =
             if (blurBitmap!!.height > (blurBounds.bottom.toInt() - blurBounds.top.toInt())) {
-
                 Bitmap.createBitmap(
                     blurBitmap!!,
                     blurBounds.left.toInt(), blurBounds.top.toInt(),

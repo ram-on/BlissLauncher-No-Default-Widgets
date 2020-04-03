@@ -12,6 +12,4 @@ abstract class ActivityBindsModule {
     @PerActivity
     @ContributesAndroidInjector(modules = [LauncherActivityModule::class])
     abstract fun contributesLauncherActivity(): LauncherActivity
-
-
 }

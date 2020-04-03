@@ -138,8 +138,8 @@ class IconCache @Inject constructor(
     ) {
         val forDeletion = HashSet<ComponentKey>()
         for (key in cache.keys) {
-            if (key.componentName.packageName == packageName
-                && key.user == user
+            if (key.componentName.packageName == packageName &&
+                key.user == user
             ) {
                 forDeletion.add(key)
             }
@@ -182,7 +182,7 @@ class IconCache @Inject constructor(
     ) {
         removeFromMemCacheLocked(packageName, user)
         val userSerial: Long = userManager.getSerialNumberForUser(user)
-        iconDao.delete("${packageName}/%", userSerial.toInt())
+        iconDao.delete("$packageName/%", userSerial.toInt())
     }
 
     fun updateDbIcons(ignorePackagesForMainUser: Set<String>) {

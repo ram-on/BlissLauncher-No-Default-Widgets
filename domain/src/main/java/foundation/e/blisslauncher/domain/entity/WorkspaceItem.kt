@@ -62,8 +62,8 @@ open class WorkspaceItem : LauncherItemWithIcon {
 
     override fun getTargetComponent(): ComponentName? {
         val cn = super.getTargetComponent()
-        if (cn == null && (itemType == LauncherConstants.ItemType.SHORTCUT
-                || hasStatusFlag(FLAG_SUPPORTS_WEB_UI))
+        if (cn == null && (itemType == LauncherConstants.ItemType.SHORTCUT ||
+                hasStatusFlag(FLAG_SUPPORTS_WEB_UI))
         ) {
             // Legacy shortcuts and promise icons with web UI may not have a componentName but just
             // a packageName. In that case create a dummy componentName instead of adding additional

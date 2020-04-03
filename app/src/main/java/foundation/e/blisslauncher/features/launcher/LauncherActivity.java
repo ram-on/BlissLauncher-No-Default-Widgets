@@ -475,7 +475,8 @@ public class LauncherActivity extends AppCompatActivity implements
         ManagedProfileBroadcastReceiver.unregister(this, managedProfileReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mWeatherReceiver);
         getCompositeDisposable().dispose();
-        events.unsubscribe();
+        if (events != null)
+            events.unsubscribe();
         BlissLauncher.getApplication(this).getAppProvider().clear();
     }
 

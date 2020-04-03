@@ -22,7 +22,7 @@ class DataRepoBindingModule {
     fun bindLauncherStateManager(launcherStateManagerImpl: LauncherStateManagerImpl): LauncherStateManager = launcherStateManagerImpl
 
     @Provides
-    fun bindAppsRepository(appsRepositoryImpl: AppsRepositoryImpl): AppsRepository =  appsRepositoryImpl
+    fun bindAppsRepository(appsRepositoryImpl: AppsRepositoryImpl): AppsRepository = appsRepositoryImpl
 
     @Provides
     fun bindShortcutRepository(shortcutRepositoryImpl: ShortcutsRepositoryImpl): ShortcutRepository = shortcutRepositoryImpl

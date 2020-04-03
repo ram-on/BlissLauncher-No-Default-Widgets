@@ -25,7 +25,7 @@ class AddPackages @Inject constructor(
             launcherRepository.add(it, params.user, userManager.isQuietModeEnabled(params.user))
             //TODO: Add SessionCommitReceiver for below O devices
         }
-    }/*.doOnComplete {
+    } /*.doOnComplete {
         observeAddedApps(Unit)
     }*/
 }

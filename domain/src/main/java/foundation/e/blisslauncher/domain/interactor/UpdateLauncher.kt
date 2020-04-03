@@ -11,16 +11,14 @@ import foundation.e.blisslauncher.domain.ItemInfoMatcher
 import foundation.e.blisslauncher.domain.Matcher
 import foundation.e.blisslauncher.domain.and
 import foundation.e.blisslauncher.domain.entity.ApplicationItem
-import foundation.e.blisslauncher.domain.entity.LauncherConstants
 import foundation.e.blisslauncher.domain.entity.WorkspaceItem
 import foundation.e.blisslauncher.domain.or
-import foundation.e.blisslauncher.domain.repository.AppsRepository
+import foundation.e.blisslauncher.domain.repository.LauncherRepository
 import io.reactivex.Completable
 import java.util.concurrent.Executor
 
 class UpdateLauncher(
     appExecutors: AppExecutors,
-    private val appsRepository: AppsRepository,
     private val launcherRepository: LauncherRepository,
     private val launcherAppsCompat: LauncherAppsCompat,
     private val deleteComponents: DeleteComponents
@@ -30,11 +28,11 @@ class UpdateLauncher(
 
     override fun doWork(params: Params): Completable = Completable.fromAction {
         val addedOrUpdated = ArrayList<ApplicationItem>()
-        addedOrUpdated.addAll(appsRepository.getModifiedApps())
-        addedOrUpdated.addAll(appsRepository.getAddedApps())
+        /* addedOrUpdated.addAll(appsRepository.getModifiedApps())
+         addedOrUpdated.addAll(appsRepository.getAddedApps())
 
-        val removedApps = ArrayList<ApplicationItem>(appsRepository.getRemovedApps())
-        appsRepository.clear()
+         val removedApps = ArrayList<ApplicationItem>(appsRepository.getRemovedApps())
+         appsRepository.clear()*/
 
         val addedOrUpdatedApps = ArrayMap<ComponentName, ApplicationItem>()
         if (addedOrUpdated.isNotEmpty()) {
@@ -49,8 +47,9 @@ class UpdateLauncher(
 
         val isNewApkAvailable = params.command == Command.ADD || params.command == Command.UPDATE
         val updatedItems = ArrayList<WorkspaceItem>()
-        val map = launcherRepository.allItemsMap()
-        map.forEach {
+        //TODO: Uncomment it after successful presentation test.
+        //val map = launcherRepository.allItemsMap()
+        /*map.forEach {
             if (it is WorkspaceItem && params.user == it.user) it.let { workspaceItem ->
                 var itemUpdated = false
                 var shortcutUpdated = false
@@ -101,7 +100,7 @@ class UpdateLauncher(
 
             }
             //TODO: Update launcher widgets here
-        }
+        }*/
 
         // TODO: Update Shortcut here
         if (!removedItems.isEmpty) {
@@ -121,11 +120,11 @@ class UpdateLauncher(
                     removedPackages.add(it)
                 }
             }
-
-            // Update removedComponents because some packages can get removed during package update
-            removedApps.forEach {
+            //TODO
+            //Update removedComponents because some packages can get removed during package update
+            /*removedApps.forEach {
                 removedComponents.add(it.componentName)
-            }
+            }*/
         }
 
         if (removedPackages.isNotEmpty() || removedComponents.isNotEmpty()) {

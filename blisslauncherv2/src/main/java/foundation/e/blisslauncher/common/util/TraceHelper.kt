@@ -35,7 +35,7 @@ class TraceHelper {
                 }
 
                 val now = SystemClock.uptimeMillis()
-                Log.d(sectionName, "${partition} : ${now - time}")
+                Log.d(sectionName, "$partition : ${now - time}")
                 time = now
             }
         }
@@ -52,7 +52,7 @@ class TraceHelper {
                 }
                 Log.d(
                     sectionName,
-                    "${msg} : ${(SystemClock.uptimeMillis() - time)}"
+                    "$msg : ${(SystemClock.uptimeMillis() - time)}"
                 )
             }
         }

@@ -5,10 +5,12 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 
-abstract class BaseViewModel<S : BaseViewState>(initialState: S) :
+abstract class BaseViewModel<E : BaseViewEvent, S : BaseViewState>(initialState: S) :
     Model<S> {
 
-    // State reducers
+    /**
+     * Used to process events and state reducers
+     */
     private val intents = PublishSubject.create<BaseIntent<S>>()
 
     private val store = intents
@@ -21,5 +23,11 @@ abstract class BaseViewModel<S : BaseViewState>(initialState: S) :
 
     override fun process(intent: BaseIntent<S>) = intents.onNext(intent)
 
+    fun newState(onStateUpdate: S.() -> S) {
+        process(intent(onStateUpdate))
+    }
+
     override fun states(): Observable<S> = store
+
+    abstract fun toIntent(event: E): BaseIntent<S>
 }

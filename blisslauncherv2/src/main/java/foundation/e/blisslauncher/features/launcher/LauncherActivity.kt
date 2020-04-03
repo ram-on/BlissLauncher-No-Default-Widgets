@@ -8,13 +8,16 @@ import android.os.StrictMode.VmPolicy
 import android.view.View
 import dagger.android.AndroidInjection
 import foundation.e.blisslauncher.base.BaseDraggingActivity
+import foundation.e.blisslauncher.base.presentation.BaseIntent
 import foundation.e.blisslauncher.common.subscribeToState
 import foundation.e.blisslauncher.common.util.TraceHelper
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 import foundation.e.blisslauncher.domain.interactor.LoadLauncher
 import foundation.e.blisslauncher.domain.keys.PackageUserKey
+import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.subjects.BehaviorSubject
 import javax.inject.Inject
 
 class LauncherActivity : BaseDraggingActivity(), LauncherView {
@@ -24,6 +27,8 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
     private lateinit var loadLauncher: LoadLauncher
 
     private val compositeDisposable: CompositeDisposable = CompositeDisposable()
+
+    private val loadLauncherIntentPublisher = BehaviorSubject.create<LauncherViewEvent.LoadLauncher>()
 
     @Inject
     lateinit var launcherViewModel: LauncherViewModel
@@ -56,9 +61,20 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
 
         oldConfig = Configuration(resources.configuration)
 
-        compositeDisposable += (launcherViewModel.states().subscribeToState { render(it) })
+        compositeDisposable += launcherViewModel.states().subscribeToState { render(it) }
         //TODO set model and state here
-        launcherViewModel.loadLauncher()
+
+        compositeDisposable += intents().subscribe { launcherViewModel::process }
+    }
+
+    override fun intents(): Observable<BaseIntent<LauncherState>> {
+        return Observable.merge(initialIntent(),
+            loadLauncherIntentPublisher.map { launcherViewModel.toIntent(it) }
+        )
+    }
+
+    private fun initialIntent(): Observable<BaseIntent<LauncherState>> {
+        return loadLauncherIntentPublisher.map { launcherViewModel.toIntent(it) }
     }
 
     override fun getRootView(): View {
@@ -111,6 +127,5 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
     }
 
     override fun render(state: LauncherState) {
-
     }
 }

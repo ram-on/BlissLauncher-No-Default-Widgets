@@ -234,14 +234,13 @@ data class LauncherState @Inject constructor(
             }
             LauncherConstants.ItemType.APPLICATION,
             LauncherConstants.ItemType.SHORTCUT -> {
-                if (item.container.toInt() == LauncherConstants.ContainerType.CONTAINER_DESKTOP
-                    || item.container.toInt() == LauncherConstants.ContainerType.CONTAINER_HOTSEAT
+                if (item.container.toInt() == LauncherConstants.ContainerType.CONTAINER_DESKTOP ||
+                    item.container.toInt() == LauncherConstants.ContainerType.CONTAINER_HOTSEAT
                 ) {
                     mutableAllItems.add(item)
                 } else {
                     if (newItem) {
                         if (!folders.containsKey(item.container)) {
-
                         }
                     } else {
                         findOrMakeFolder(item.container).add(item as WorkspaceItem, false)
@@ -291,7 +290,7 @@ data class LauncherState @Inject constructor(
         return null
     }
 
-    fun add(item: ApplicationItem, info: LauncherActivityInfo): LauncherState {
+    /*fun add(item: ApplicationItem, info: LauncherActivityInfo): LauncherState {
         if (findApplicationItem(item.componentName, item.user) != null) {
             return
         }
@@ -301,7 +300,7 @@ data class LauncherState @Inject constructor(
         return copy(data = mutableData)
         data.add(item)
         addItem(item, true)
-    }
+    }*/
 
     @Synchronized
     fun updateDisabledFlags(
@@ -387,9 +386,9 @@ data class LauncherState @Inject constructor(
         user: UserHandle
     ): ApplicationItem? {
         for (item in itemsIdMap) {
-            if (item is ApplicationItem
-                && componentName == item.componentName
-                && user == item.user
+            if (item is ApplicationItem &&
+                componentName == item.componentName &&
+                user == item.user
             ) {
                 return item
             }
@@ -397,7 +396,8 @@ data class LauncherState @Inject constructor(
         return null
     }
 
-    fun addItem(item: LauncherItem,
+    fun addItem(
+        item: LauncherItem,
         mutableData: MutableList<ApplicationItem>,
         mutableAllItems: MutableList<LauncherItem>,
         newItem: Boolean
@@ -411,8 +411,8 @@ data class LauncherState @Inject constructor(
             }
             LauncherConstants.ItemType.APPLICATION,
             LauncherConstants.ItemType.SHORTCUT -> {
-                if (item.container.toInt() == LauncherConstants.ContainerType.CONTAINER_DESKTOP
-                    || item.container.toInt() == LauncherConstants.ContainerType.CONTAINER_HOTSEAT
+                if (item.container.toInt() == LauncherConstants.ContainerType.CONTAINER_DESKTOP ||
+                    item.container.toInt() == LauncherConstants.ContainerType.CONTAINER_HOTSEAT
                 ) {
                     mutableAllItems.add(item)
                 } else {

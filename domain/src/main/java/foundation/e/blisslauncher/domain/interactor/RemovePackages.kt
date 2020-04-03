@@ -21,6 +21,6 @@ class RemovePackages @Inject constructor(
 
         launcherRepository.removePackages(params.packages, params.user)
     }.doOnComplete {
-        observeAddedApps(Unit)
+        //observeAddedApps(Unit)
     }
 }

@@ -59,6 +59,5 @@ class SystemUiController @Inject constructor(private val window: Window) {
         const val FLAG_DARK_NAV = 1 shl 1
         const val FLAG_LIGHT_STATUS = 1 shl 2
         const val FLAG_DARK_STATUS = 1 shl 3
-
     }
 }

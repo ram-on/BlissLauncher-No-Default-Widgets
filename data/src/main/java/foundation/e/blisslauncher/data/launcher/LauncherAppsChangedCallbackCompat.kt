@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.data
+package foundation.e.blisslauncher.data.launcher
 
 import android.os.UserHandle
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat

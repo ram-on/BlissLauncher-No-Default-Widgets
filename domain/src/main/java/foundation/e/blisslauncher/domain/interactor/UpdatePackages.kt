@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.UserHandle
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.common.executors.AppExecutors
-import foundation.e.blisslauncher.domain.repository.AppsRepository
 import io.reactivex.Completable
 import java.util.concurrent.Executor
 import javax.inject.Inject
@@ -12,7 +11,6 @@ import javax.inject.Inject
 class UpdatePackages @Inject constructor(
     appExecutors: AppExecutors,
     private val context: Context,
-    private val appsRepository: AppsRepository,
     private val observeAddedApps: ObserveAddedApps,
     private val launcherAppsCompat: LauncherAppsCompat
 ) : CompletableInteractor<UpdatePackages.Params>() {
@@ -24,10 +22,10 @@ class UpdatePackages @Inject constructor(
     override fun doWork(params: Params): Completable = Completable.fromAction {
         params.packages.forEach {
             // TODO: update icon cache
-            appsRepository.updateApp(context, it, params.user)
+            //appsRepository.updateApp(context, it, params.user)
             //TODO: Remove from widget cache
         }
     }.doOnComplete {
-        observeAddedApps(Unit)
+        //observeAddedApps(Unit)
     }
 }

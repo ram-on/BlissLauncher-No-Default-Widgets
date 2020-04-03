@@ -5,7 +5,7 @@ import foundation.e.blisslauncher.domain.ItemInfoMatcher
 import io.reactivex.Completable
 import java.util.concurrent.Executor
 
-class DeleteComponents(appExecutors: AppExecutors): CompletableInteractor<ItemInfoMatcher>() {
+class DeleteComponents(appExecutors: AppExecutors) : CompletableInteractor<ItemInfoMatcher>() {
     override val subscribeExecutor: Executor = appExecutors.io
 
     override fun doWork(params: ItemInfoMatcher): Completable {

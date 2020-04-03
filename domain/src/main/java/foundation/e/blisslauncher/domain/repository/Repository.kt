@@ -29,7 +29,7 @@ interface Repository<T, ID> {
      * @param entities to be saved.
      * @return [Flowable] emitting the saved entities.
      */
-    fun <S : T> saveAll(entities: Iterable<S>): Flowable<S>
+    fun <S : T> saveAll(entities: Iterable<S>): Flowable<Iterable<S>>
 
     /**
      * Retrieves an entity by its id.
@@ -44,7 +44,7 @@ interface Repository<T, ID> {
      *
      * @return [Flowable] emitting all entities.
      */
-    fun findAll(): Flowable<T>
+    fun findAll(): Flowable<Iterable<T>>
 
     /**
      * Deletes a given entity.

@@ -13,7 +13,7 @@ import javax.inject.Singleton
         DataRepoBindingModule::class
     ]
 )
-interface DataComponent: DomainComponent {
+interface DataComponent : DomainComponent {
 
     @Component.Factory
     interface Factory {
