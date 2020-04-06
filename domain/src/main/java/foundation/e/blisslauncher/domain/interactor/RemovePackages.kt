@@ -2,14 +2,14 @@ package foundation.e.blisslauncher.domain.interactor
 
 import android.os.UserHandle
 import foundation.e.blisslauncher.common.executors.AppExecutors
-import foundation.e.blisslauncher.domain.repository.LauncherRepository
+import foundation.e.blisslauncher.domain.repository.LauncherItemRepository
 import io.reactivex.Completable
 import java.util.concurrent.Executor
 import javax.inject.Inject
 
 class RemovePackages @Inject constructor(
     appExecutors: AppExecutors,
-    private val launcherRepository: LauncherRepository,
+    private val launcherItemRepository: LauncherItemRepository,
     private val observeAddedApps: ObserveAddedApps
 ) : CompletableInteractor<RemovePackages.Params>() {
 
@@ -19,7 +19,7 @@ class RemovePackages @Inject constructor(
 
     override fun doWork(params: Params): Completable = Completable.fromAction {
 
-        launcherRepository.removePackages(params.packages, params.user)
+        launcherItemRepository.removePackages(params.packages, params.user)
     }.doOnComplete {
         //observeAddedApps(Unit)
     }

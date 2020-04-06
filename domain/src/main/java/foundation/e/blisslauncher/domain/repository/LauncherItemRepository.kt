@@ -7,7 +7,7 @@ import foundation.e.blisslauncher.domain.entity.LauncherItem
 /**
  * Repository to manage [LauncherItem]
  */
-interface LauncherRepository: Repository<LauncherItem, Long>
+interface LauncherItemRepository: Repository<LauncherItem, Long>
 
 /*fun getAllActivities(user: UserHandle, quietMode: Boolean): List<ApplicationItem>
 

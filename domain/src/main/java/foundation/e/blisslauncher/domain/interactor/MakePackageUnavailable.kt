@@ -2,14 +2,14 @@ package foundation.e.blisslauncher.domain.interactor
 
 import android.os.UserHandle
 import foundation.e.blisslauncher.common.executors.AppExecutors
-import foundation.e.blisslauncher.domain.repository.LauncherRepository
+import foundation.e.blisslauncher.domain.repository.LauncherItemRepository
 import io.reactivex.Completable
 import java.util.concurrent.Executor
 import javax.inject.Inject
 
 class MakePackageUnavailable @Inject constructor(
     appExecutors: AppExecutors,
-    private val launcherRepository: LauncherRepository,
+    private val launcherItemRepository: LauncherItemRepository,
     private val observeUpdatedLauncherItems: ObserveUpdatedLauncherItems
 ) : CompletableInteractor<MakePackageUnavailable.Params>() {
 
@@ -19,7 +19,7 @@ class MakePackageUnavailable @Inject constructor(
 
     override fun doWork(params: Params): Completable = Completable.fromAction {
         observeUpdatedLauncherItems(
-            launcherRepository.makePackagesUnavailable(
+            launcherItemRepository.makePackagesUnavailable(
                 params.packages,
                 params.user
             )

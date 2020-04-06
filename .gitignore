@@ -45,6 +45,7 @@ build/
 .idea/assetWizardSettings.xml
 .idea/markdown*
 gradle.xml
+projectFilesBackup/
 
 .classpath
 .project

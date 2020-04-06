@@ -13,13 +13,13 @@ import foundation.e.blisslauncher.domain.and
 import foundation.e.blisslauncher.domain.entity.ApplicationItem
 import foundation.e.blisslauncher.domain.entity.WorkspaceItem
 import foundation.e.blisslauncher.domain.or
-import foundation.e.blisslauncher.domain.repository.LauncherRepository
+import foundation.e.blisslauncher.domain.repository.LauncherItemRepository
 import io.reactivex.Completable
 import java.util.concurrent.Executor
 
 class UpdateLauncher(
     appExecutors: AppExecutors,
-    private val launcherRepository: LauncherRepository,
+    private val launcherItemRepository: LauncherItemRepository,
     private val launcherAppsCompat: LauncherAppsCompat,
     private val deleteComponents: DeleteComponents
 ) : CompletableInteractor<UpdateLauncher.Params>() {

@@ -12,10 +12,12 @@ import java.util.ArrayList
 
 open class UserManagerCompatVN(context: Context) : UserManagerRepository {
 
-    protected val userManager: UserManager = context.getSystemService(Context.USER_SERVICE) as UserManager
+    protected val userManager: UserManager =
+        context.getSystemService(Context.USER_SERVICE) as UserManager
     private val pm: PackageManager = context.packageManager
 
     private lateinit var users: LongArrayMap<UserHandle>
+
     // Create a separate reverse map as LongArrayMap.indexOfValue checks if objects are same
     // and not {@link Object#equals}
     private lateinit var userToSerialMap: ArrayMap<UserHandle, Long>
@@ -24,8 +26,7 @@ open class UserManagerCompatVN(context: Context) : UserManagerRepository {
         synchronized(this) {
             users = LongArrayMap()
             userToSerialMap = ArrayMap()
-            val _users: List<UserHandle> = userManager.userProfiles
-            _users.forEach {
+            userManager.userProfiles.forEach {
                 val serial = userManager.getSerialNumberForUser(it)
                 users.put(serial, it)
                 userToSerialMap[it] = serial
@@ -37,7 +38,7 @@ open class UserManagerCompatVN(context: Context) : UserManagerRepository {
         get() {
             synchronized(this) {
                 if (::users.isInitialized) {
-                    return ArrayList<UserHandle>(userToSerialMap.keys)
+                    return ArrayList(userToSerialMap.keys)
                 }
             }
             return userManager.userProfiles

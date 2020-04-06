@@ -261,8 +261,7 @@ public class LauncherActivity extends AppCompatActivity implements
         mAppWidgetManager = BlissLauncher.getApplication(this).getAppWidgetManager();
         mAppWidgetHost = BlissLauncher.getApplication(this).getAppWidgetHost();
 
-        mLauncherView = LayoutInflater.from(this).inflate(
-                foundation.e.blisslauncher.R.layout.activity_main, null);
+        mLauncherView = LayoutInflater.from(this).inflate(R.layout.activity_main, null);
 
         setContentView(mLauncherView);
         setupViews();

@@ -10,7 +10,7 @@ import foundation.e.blisslauncher.data.widgets.WidgetsRepositoryImpl
 import foundation.e.blisslauncher.data.workspace.WorkspaceRepositoryImpl
 import foundation.e.blisslauncher.domain.manager.LauncherStateManager
 import foundation.e.blisslauncher.domain.repository.AppsRepository
-import foundation.e.blisslauncher.domain.repository.LauncherRepository
+import foundation.e.blisslauncher.domain.repository.LauncherItemRepository
 import foundation.e.blisslauncher.domain.repository.ShortcutRepository
 import foundation.e.blisslauncher.domain.repository.WidgetsRepository
 import foundation.e.blisslauncher.domain.repository.WorkspaceRepository
@@ -28,7 +28,7 @@ class DataRepoBindingModule {
     fun bindShortcutRepository(shortcutRepositoryImpl: ShortcutsRepositoryImpl): ShortcutRepository = shortcutRepositoryImpl
 
     @Provides
-    fun bindLauncherRepository(launcherRepositoryImpl: LauncherRepositoryImpl): LauncherRepository = launcherRepositoryImpl
+    fun bindLauncherRepository(launcherRepositoryImpl: LauncherRepositoryImpl): LauncherItemRepository = launcherRepositoryImpl
 
     @Provides
     fun bindWorkspaceRepository(workspaceRepositoryImpl: WorkspaceRepositoryImpl): WorkspaceRepository = workspaceRepositoryImpl

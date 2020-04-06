@@ -2,7 +2,7 @@ package foundation.e.blisslauncher.domain.interactor
 
 import android.os.UserHandle
 import foundation.e.blisslauncher.common.executors.AppExecutors
-import foundation.e.blisslauncher.domain.repository.LauncherRepository
+import foundation.e.blisslauncher.domain.repository.LauncherItemRepository
 import foundation.e.blisslauncher.domain.repository.UserManagerRepository
 import io.reactivex.Completable
 import java.util.concurrent.Executor
@@ -10,7 +10,7 @@ import javax.inject.Inject
 
 class ChangeUserAvailability @Inject constructor(
     appExecutors: AppExecutors,
-    private val launcherRepository: LauncherRepository,
+    private val launcherItemRepository: LauncherItemRepository,
     private val userManager: UserManagerRepository,
     private val observeUpdatedLauncherItems: ObserveUpdatedLauncherItems
 ) : CompletableInteractor<UserHandle>() {
@@ -19,7 +19,7 @@ class ChangeUserAvailability @Inject constructor(
 
     override fun doWork(params: UserHandle): Completable = Completable.fromAction {
         observeUpdatedLauncherItems(
-            launcherRepository.updateUserAvailability(
+            launcherItemRepository.updateUserAvailability(
                 params,
                 userManager.isQuietModeEnabled(params)
             )

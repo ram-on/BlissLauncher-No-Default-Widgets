@@ -2,7 +2,7 @@ package foundation.e.blisslauncher.domain.interactor
 
 import foundation.e.blisslauncher.common.executors.AppExecutors
 import foundation.e.blisslauncher.common.executors.MainThreadExecutor
-import foundation.e.blisslauncher.domain.repository.LauncherRepository
+import foundation.e.blisslauncher.domain.repository.LauncherItemRepository
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -18,7 +18,7 @@ import java.util.concurrent.Executors
 class LoadAllAppsInteractorTest {
 
     private lateinit var loadAllAppsInteractor: LoadAllAppsInteractor
-    lateinit var launcherRepository: LauncherRepository
+    lateinit var launcherItemRepository: LauncherItemRepository
     lateinit var appExecutors: AppExecutors
 
     @MockK
@@ -26,7 +26,7 @@ class LoadAllAppsInteractorTest {
 
     @Before
     fun setUp() {
-        launcherRepository = mockk {
+        launcherItemRepository = mockk {
             every {
                 getAllApps()
             } returns Single.just(listOf(
@@ -48,7 +48,7 @@ class LoadAllAppsInteractorTest {
             Executors.newSingleThreadExecutor(),
             mainThreadExecutor
         )
-        loadAllAppsInteractor = LoadAllAppsInteractor(launcherRepository, appExecutors)
+        loadAllAppsInteractor = LoadAllAppsInteractor(launcherItemRepository, appExecutors)
     }
 
     @After
@@ -57,7 +57,7 @@ class LoadAllAppsInteractorTest {
 
     @Test
     fun doWorkCallsRepository() {
-        launcherRepository = mockk {
+        launcherItemRepository = mockk {
             every {
                 getAllApps()
             } returns Single.just(listOf(
@@ -74,14 +74,14 @@ class LoadAllAppsInteractorTest {
             ))
         }
         loadAllAppsInteractor.doWork()
-        verify(exactly = 1) { launcherRepository.getAllApps() }
+        verify(exactly = 1) { launcherItemRepository.getAllApps() }
     }
 
     @Test
     fun invokeCallsRepositoryAndCompletes() {
 
         loadAllAppsInteractor()
-        verify(exactly = 1) { launcherRepository.getAllApps() }
+        verify(exactly = 1) { launcherItemRepository.getAllApps() }
 
         loadAllAppsInteractor(onSuccess = { Assert.assertEquals(2, it.size) })
     }
