@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.data
 
+import foundation.e.blisslauncher.data.database.WorkspaceLauncherItem
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 
 interface LauncherDatabaseGateway {
@@ -13,7 +14,7 @@ interface LauncherDatabaseGateway {
 
     fun loadDefaultWorkspace()
 
-    fun loadAllLauncherItems(): List<LauncherItem>
+    fun getAllWorkspaceItems(): List<WorkspaceLauncherItem>
 
     fun loadWorkspaceScreensInOrder(): List<Long>
 
