@@ -13,7 +13,8 @@ open class WorkspaceItem : LauncherItemWithIcon {
     /**
      * The intent used to start the application.
      */
-    var actionIntent: Intent? = null
+    @get:JvmName("_getIntent")
+    var intent: Intent? = null
 
     /**
      * If isShortcut=true and customIcon=false, this contains a reference to the
@@ -44,14 +45,14 @@ open class WorkspaceItem : LauncherItemWithIcon {
 
     constructor(item: WorkspaceItem) : super(item) {
         title = item.title
-        actionIntent = item.getIntent()
+        intent = item.getIntent()
         iconResource = item.iconResource
         status = item.status
         installProgress = item.installProgress
     }
 
     override fun getIntent(): Intent? {
-        return actionIntent
+        return intent
     }
 
     fun hasStatusFlag(flag: Int) = status and flag != 0
@@ -68,7 +69,7 @@ open class WorkspaceItem : LauncherItemWithIcon {
             // Legacy shortcuts and promise icons with web UI may not have a componentName but just
             // a packageName. In that case create a dummy componentName instead of adding additional
             // check everywhere.
-            val pkg: String? = actionIntent?.getPackage()
+            val pkg: String? = intent?.getPackage()
             return if (pkg == null) null else ComponentName(pkg, ".")
         }
         return cn

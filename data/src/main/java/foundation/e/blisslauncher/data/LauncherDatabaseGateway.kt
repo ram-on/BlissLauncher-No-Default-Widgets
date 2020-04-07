@@ -19,4 +19,6 @@ interface LauncherDatabaseGateway {
     fun loadWorkspaceScreensInOrder(): List<Long>
 
     fun markDeleted(id: Long)
+
+    fun markDeleted(item: WorkspaceLauncherItem)
 }

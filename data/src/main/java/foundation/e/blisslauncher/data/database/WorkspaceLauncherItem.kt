@@ -1,14 +1,15 @@
 package foundation.e.blisslauncher.data.database
 
+import android.content.ComponentName
 import android.content.Intent
 import android.os.UserHandle
-import android.text.TextUtils
-import android.util.LongSparseArray
 import androidx.annotation.NonNull
 import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.Ignore
 import androidx.room.PrimaryKey
+import foundation.e.blisslauncher.common.util.LongArrayMap
+import foundation.e.blisslauncher.domain.entity.LauncherItem
+import foundation.e.blisslauncher.domain.entity.LauncherItemWithIcon
 import timber.log.Timber
 import java.net.URISyntaxException
 
@@ -18,10 +19,10 @@ data class WorkspaceLauncherItem(
     val _id: Long,
     @ColumnInfo(typeAffinity = ColumnInfo.TEXT)
     val title: String,
-    @ColumnInfo(typeAffinity = ColumnInfo.TEXT)
-    val intent: String,
-    val container: Int,
-    val screen: Int,
+    @ColumnInfo(typeAffinity = ColumnInfo.TEXT, name = "intent")
+    val intentStr: String?,
+    val container: Long,
+    val screen: Long,
     val cellX: Int,
     val cellY: Int,
     val itemType: Int,
@@ -33,12 +34,35 @@ data class WorkspaceLauncherItem(
     val rank: Int,
     val profileId: Long
 ) {
-    fun getParsedIntent(): Intent? {
+    // Properties to initialise for proper validation
+    val targetPackage: String?
+    val intent: Intent?
+    val componentName: ComponentName?
+    var user: UserHandle? = null
+    var validTarget: Boolean = false
+
+    init {
+        intent = getParsedIntent()
+        componentName = intent?.component
+        targetPackage = componentName?.packageName ?: intent?.`package`
+    }
+
+    private fun getParsedIntent(): Intent? {
         try {
-            return if (intent.isNullOrEmpty()) null else Intent.parseUri(intent, 0)
+            return if (intentStr.isNullOrEmpty()) null else Intent.parseUri(intentStr, 0)
         } catch (e: URISyntaxException) {
             Timber.e(e)
             return null
         }
+    }
+
+    fun applyCommonProperties(
+        destItem: LauncherItem
+    ) {
+        destItem.id = _id
+        destItem.container = container
+        destItem.screenId = screen
+        destItem.cellX = cellX
+        destItem.cellY = cellY
     }
 }

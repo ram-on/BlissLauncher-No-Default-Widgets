@@ -28,7 +28,7 @@ open class ApplicationItem : WorkspaceItem {
         this.container = NO_ID.toLong()
         this.user = user
         this.title = info.label
-        actionIntent = makeLaunchIntent(componentName)
+        intent = makeLaunchIntent(componentName)
 
         if (quietModeEnabled) {
             runtimeStatusFlags = runtimeStatusFlags or FLAG_DISABLED_QUIET_USER
@@ -36,7 +36,7 @@ open class ApplicationItem : WorkspaceItem {
         updateRuntimeFlagsForActivityTarget(this, info)
     }
 
-    override fun getIntent(): Intent? = actionIntent
+    override fun getIntent(): Intent? = intent
 
     fun toComponentKey(): ComponentKey =
         ComponentKey(
