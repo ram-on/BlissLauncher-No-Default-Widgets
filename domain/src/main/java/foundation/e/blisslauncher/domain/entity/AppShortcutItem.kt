@@ -5,10 +5,11 @@ import android.content.Intent
 import android.content.Intent.ShortcutIconResource
 
 /**
- * Represents an item in workspace and inside folder
+ * Represents an item in workspace and inside folder.
+ * It can be an Application, Shortcut or Deep Shortcut.
  * Also used for pinned and dynamic shortcuts of the apps.
  */
-open class WorkspaceItem : LauncherItemWithIcon {
+open class AppShortcutItem : LauncherItemWithIcon {
 
     /**
      * The intent used to start the application.
@@ -43,7 +44,7 @@ open class WorkspaceItem : LauncherItemWithIcon {
         itemType = LauncherConstants.ItemType.SHORTCUT
     }
 
-    constructor(item: WorkspaceItem) : super(item) {
+    constructor(item: AppShortcutItem) : super(item) {
         title = item.title
         intent = item.getIntent()
         iconResource = item.iconResource
@@ -82,7 +83,7 @@ open class WorkspaceItem : LauncherItemWithIcon {
          * The shortcut was restored from a backup and it not ready to be used. This is automatically
          * set during backup/restore
          */
-        const val FLAG_RESTORED_ICON = 1
+        const val   FLAG_RESTORED_ICON = 1
 
         /**
          * The icon was added as an auto-install app, and is not ready to be used. This flag can't

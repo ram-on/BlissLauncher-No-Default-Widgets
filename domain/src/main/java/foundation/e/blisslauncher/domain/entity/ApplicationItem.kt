@@ -11,9 +11,10 @@ import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.domain.keys.ComponentKey
 
 /**
- * Represents an app in AllAppsStore
+ * Represents an app in Launcher Workspace
  */
-open class ApplicationItem : WorkspaceItem {
+open class ApplicationItem : AppShortcutItem {
+
     /**
      * The intent used to start the application.
      */

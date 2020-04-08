@@ -15,7 +15,7 @@ import foundation.e.blisslauncher.domain.entity.FolderItem
 import foundation.e.blisslauncher.domain.entity.LauncherConstants
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 import foundation.e.blisslauncher.domain.entity.LauncherItemWithIcon
-import foundation.e.blisslauncher.domain.entity.WorkspaceItem
+import foundation.e.blisslauncher.domain.entity.AppShortcutItem
 import foundation.e.blisslauncher.domain.removeFlag
 import javax.inject.Inject
 
@@ -243,7 +243,7 @@ data class LauncherState @Inject constructor(
                         if (!folders.containsKey(item.container)) {
                         }
                     } else {
-                        findOrMakeFolder(item.container).add(item as WorkspaceItem, false)
+                        findOrMakeFolder(item.container).add(item as AppShortcutItem, false)
                     }
                 }
             }
@@ -421,7 +421,7 @@ data class LauncherState @Inject constructor(
                         }
                     } else {
                         findOrMakeFolder(item.container).add(
-                            item as WorkspaceItem,
+                            item as AppShortcutItem,
                             false
                         )
                     }

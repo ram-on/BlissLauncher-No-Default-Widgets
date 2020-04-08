@@ -1,6 +1,7 @@
 package foundation.e.blisslauncher.data
 
 import android.content.Context
+import android.content.Intent
 import android.os.Process
 import android.os.UserHandle
 import android.util.LongSparseArray
@@ -8,15 +9,15 @@ import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.common.util.MultiHashMap
 import foundation.e.blisslauncher.data.database.WorkspaceLauncherItem
+import foundation.e.blisslauncher.domain.entity.AppShortcutItem
+import foundation.e.blisslauncher.domain.entity.ApplicationItem
 import foundation.e.blisslauncher.domain.entity.FolderItem
 import foundation.e.blisslauncher.domain.entity.LauncherConstants
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 import foundation.e.blisslauncher.domain.entity.LauncherItemWithIcon
-import foundation.e.blisslauncher.domain.entity.WorkspaceItem
 import foundation.e.blisslauncher.domain.repository.LauncherItemRepository
 import foundation.e.blisslauncher.domain.repository.UserManagerRepository
 import timber.log.Timber
-import java.lang.RuntimeException
 import javax.inject.Inject
 
 class LauncherItemRepositoryImpl
@@ -27,8 +28,6 @@ class LauncherItemRepositoryImpl
     private val userManager: UserManagerRepository,
     private val packageManagerHelper: PackageManagerHelper
 ) : LauncherItemRepository {
-
-    private val TAG = "LauncherRepositoryImpl"
 
     override fun <S : LauncherItem> save(entity: S): S {
         TODO("Not yet implemented")
@@ -75,7 +74,15 @@ class LauncherItemRepositoryImpl
                 }
             }
             .filter { checkAndValidate(it, unlockedUsers, isSdCardReady) }
-            .map { convertToLauncherItem(it, quietMode, isSdCardReady) }
+            .mapNotNull {
+                convertToLauncherItem(
+                    it,
+                    quietMode,
+                    isSdCardReady,
+                    isSafeMode,
+                    pendingPackages
+                )
+            }
             .toCollection(launcherItems)
 
         return launcherItems
@@ -156,10 +163,6 @@ class LauncherItemRepositoryImpl
         var allowMissingTarget = false
         // Load necessary properties.
         val itemType = item.itemType
-        val container = item.container
-        val id = item._id
-        val serialNumber = item.profileId
-
         var disabledState =
             if (quietMode[item.profileId]) LauncherItemWithIcon.FLAG_DISABLED_QUIET_USER else 0
         //val restoreFlag = getInt(restoredIndex)
@@ -180,19 +183,35 @@ class LauncherItemRepositoryImpl
                     }
                 }
 
-                var launcherItem: WorkspaceItem? = null
+                var launcherItem: AppShortcutItem? = null
                 if (item.itemType == LauncherConstants.ItemType.APPLICATION) {
-
+                    launcherItem = getApplicationItem(
+                        item.user!!,
+                        quietMode[item.profileId],
+                        item.intent!!,
+                        allowMissingTarget
+                    )
                 } else if (item.itemType == LauncherConstants.ItemType.DEEP_SHORTCUT) {
 
                 } else {
-                    launcherItem = WorkspaceItem()
+                    launcherItem = AppShortcutItem()
                         .apply {
                             this.user = item.user!!
                             this.itemType = item.itemType
                             this.title = if (item.title.isEmpty()) "" else item.title
                             // TODO: Set Icon here
                         }
+                    val intent = item.intent!!
+                    if (intent.action != null &&
+                        intent.categories != null &&
+                        intent.action == Intent.ACTION_MAIN &&
+                        intent.categories.contains(Intent.CATEGORY_LAUNCHER)
+                    ) {
+                        item.intent.addFlags(
+                            Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+                        )
+                    }
                 }
                 if (launcherItem != null) {
                     launcherItem.apply {
@@ -206,8 +225,8 @@ class LauncherItemRepositoryImpl
                         launcherItem.runtimeStatusFlags =
                             launcherItem.runtimeStatusFlags or LauncherItemWithIcon.FLAG_DISABLED_SAFEMODE
                     }
-                    launcherItem
-                } else throw RuntimeException("Unexpected null LauncherItem")
+                }
+                launcherItem
             }
             LauncherConstants.ItemType.FOLDER -> {
                 val folderItem = FolderItem()
@@ -217,8 +236,33 @@ class LauncherItemRepositoryImpl
                     }
                 folderItem
             }
-            else -> null
+            else -> throw RuntimeException("Unexpected type of LauncherItem encountered")
         }
+    }
+
+    private fun getApplicationItem(
+        user: UserHandle,
+        quietMode: Boolean,
+        intent: Intent,
+        allowMissingTarget: Boolean
+    ): AppShortcutItem? {
+        val componentName = intent.component
+        if (componentName == null) {
+            Timber.d("Missing component found in getApplicationItem")
+            return null
+        }
+        val newIntent = Intent(Intent.ACTION_MAIN, null)
+            .apply {
+                component = componentName
+            }
+        newIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+        val lai = launcherApps.resolveActivity(newIntent, user)
+        if ((lai == null) && !allowMissingTarget) {
+            Timber.d("Missing activity found in getApplicationItem")
+            return null
+        }
+
+        return ApplicationItem(lai!!, user, quietMode)
     }
 
     override fun delete(entity: LauncherItem) {
