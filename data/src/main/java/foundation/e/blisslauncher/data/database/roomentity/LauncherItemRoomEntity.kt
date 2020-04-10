@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.data.database
+package foundation.e.blisslauncher.data.database.roomentity
 
 import android.content.ComponentName
 import android.content.Intent
@@ -7,14 +7,12 @@ import androidx.annotation.NonNull
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import foundation.e.blisslauncher.common.util.LongArrayMap
 import foundation.e.blisslauncher.domain.entity.LauncherItem
-import foundation.e.blisslauncher.domain.entity.LauncherItemWithIcon
 import timber.log.Timber
 import java.net.URISyntaxException
 
 @Entity(tableName = "launcherItems")
-data class WorkspaceLauncherItem(
+data class LauncherItemRoomEntity(
     @PrimaryKey
     val _id: Long,
     @ColumnInfo(typeAffinity = ColumnInfo.TEXT)

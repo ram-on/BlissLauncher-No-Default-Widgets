@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.data.database
+package foundation.e.blisslauncher.data.database.roomentity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

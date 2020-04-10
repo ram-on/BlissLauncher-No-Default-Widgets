@@ -8,13 +8,14 @@ import android.util.LongSparseArray
 import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.common.util.MultiHashMap
-import foundation.e.blisslauncher.data.database.WorkspaceLauncherItem
+import foundation.e.blisslauncher.data.database.roomentity.LauncherItemRoomEntity
 import foundation.e.blisslauncher.domain.entity.AppShortcutItem
 import foundation.e.blisslauncher.domain.entity.ApplicationItem
 import foundation.e.blisslauncher.domain.entity.FolderItem
 import foundation.e.blisslauncher.domain.entity.LauncherConstants
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 import foundation.e.blisslauncher.domain.entity.LauncherItemWithIcon
+import foundation.e.blisslauncher.domain.keys.ShortcutKey
 import foundation.e.blisslauncher.domain.repository.LauncherItemRepository
 import foundation.e.blisslauncher.domain.repository.UserManagerRepository
 import timber.log.Timber
@@ -62,7 +63,8 @@ class LauncherItemRepositoryImpl
 
         //Populate item from database and fill necessary details based on users.
         val launcherItems = ArrayList<LauncherItem>()
-        launcherDatabase.getAllWorkspaceItems().asSequence()
+        launcherDatabase.getAllWorkspaceItems()
+            .filter { checkAndValidate(it, unlockedUsers, isSdCardReady) }
             .onEach {
                 it.apply {
                     user = allUsers[profileId]
@@ -73,7 +75,6 @@ class LauncherItemRepositoryImpl
                         )
                 }
             }
-            .filter { checkAndValidate(it, unlockedUsers, isSdCardReady) }
             .mapNotNull {
                 convertToLauncherItem(
                     it,
@@ -89,7 +90,7 @@ class LauncherItemRepositoryImpl
     }
 
     private fun checkAndValidate(
-        item: WorkspaceLauncherItem,
+        item: LauncherItemRoomEntity,
         unlockedUsers: LongSparseArray<Boolean>,
         isSdcardReady: Boolean
     ): Boolean {
@@ -154,7 +155,7 @@ class LauncherItemRepositoryImpl
     }
 
     private fun convertToLauncherItem(
-        item: WorkspaceLauncherItem,
+        item: LauncherItemRoomEntity,
         quietMode: LongSparseArray<Boolean>,
         isSdcardReady: Boolean,
         isSafeMode: Boolean,
@@ -192,7 +193,7 @@ class LauncherItemRepositoryImpl
                         allowMissingTarget
                     )
                 } else if (item.itemType == LauncherConstants.ItemType.DEEP_SHORTCUT) {
-
+                    val shortcutKey = ShortcutKey.fromIntent(item.intent!!, item.user!!)
                 } else {
                     launcherItem = AppShortcutItem()
                         .apply {
@@ -263,6 +264,7 @@ class LauncherItemRepositoryImpl
         }
 
         return ApplicationItem(lai!!, user, quietMode)
+            .apply { itemType = LauncherConstants.ItemType.APPLICATION }
     }
 
     override fun delete(entity: LauncherItem) {

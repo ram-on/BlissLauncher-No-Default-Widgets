@@ -46,9 +46,9 @@ class ShortcutInfoCompat(private val shortcutInfo: ShortcutInfo) {
 
     fun getLastChangedTimestamp(): Long = shortcutInfo.getLastChangedTimestamp()
 
-    fun getActivity(): ComponentName? = shortcutInfo.getActivity()
+    fun getActivity(): ComponentName = shortcutInfo.getActivity()
 
-    fun getUserHandle(): UserHandle? = shortcutInfo.getUserHandle()
+    fun getUserHandle(): UserHandle = shortcutInfo.getUserHandle()
 
     fun hasKeyFieldsOnly(): Boolean = shortcutInfo.hasKeyFieldsOnly()
 

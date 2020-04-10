@@ -1,7 +1,6 @@
 package foundation.e.blisslauncher.data
 
-import foundation.e.blisslauncher.data.database.WorkspaceLauncherItem
-import foundation.e.blisslauncher.domain.entity.LauncherItem
+import foundation.e.blisslauncher.data.database.roomentity.LauncherItemRoomEntity
 
 interface LauncherDatabaseGateway {
     fun createEmptyDatabase()
@@ -14,11 +13,11 @@ interface LauncherDatabaseGateway {
 
     fun loadDefaultWorkspace()
 
-    fun getAllWorkspaceItems(): List<WorkspaceLauncherItem>
+    fun getAllWorkspaceItems(): List<LauncherItemRoomEntity>
 
     fun loadWorkspaceScreensInOrder(): List<Long>
 
     fun markDeleted(id: Long)
 
-    fun markDeleted(item: WorkspaceLauncherItem)
+    fun markDeleted(item: LauncherItemRoomEntity)
 }
