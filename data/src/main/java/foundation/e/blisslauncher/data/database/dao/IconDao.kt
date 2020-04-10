@@ -11,7 +11,7 @@ interface IconDao {
     @Query("DELETE FROM icons WHERE componentName LIKE :componentName AND profileId = :userSerial")
     fun delete(componentName: String, userSerial: Int)
 
-    @Query("DROP TABLE IF EXISTS icons")
+    @Query("DELETE FROM icons")
     fun clear()
 
     @Query("SELECT * FROM icons WHERE profileId = :userSerial")

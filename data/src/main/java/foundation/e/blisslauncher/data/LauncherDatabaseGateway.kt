@@ -1,23 +1,26 @@
 package foundation.e.blisslauncher.data
 
 import foundation.e.blisslauncher.data.database.roomentity.LauncherItemRoomEntity
+import javax.inject.Inject
 
-interface LauncherDatabaseGateway {
-    fun createEmptyDatabase()
+class LauncherDatabaseGateway @Inject constructor() {
+    fun createEmptyDatabase() {}
 
-    fun generateNewItemId()
+    fun generateNewItemId() {}
 
-    fun generateNewScreenId()
+    fun generateNewScreenId() {}
 
-    fun deleteEmptyFolders()
+    fun deleteEmptyFolders() {}
 
-    fun loadDefaultWorkspace()
+    fun loadDefaultWorkspace() {}
 
-    fun getAllWorkspaceItems(): List<LauncherItemRoomEntity>
+    fun getAllWorkspaceItems(): List<LauncherItemRoomEntity> = emptyList()
 
-    fun loadWorkspaceScreensInOrder(): List<Long>
+    fun loadWorkspaceScreensInOrder(): List<Long> = emptyList()
 
-    fun markDeleted(id: Long)
+    fun markDeleted(id: Long) {}
 
-    fun markDeleted(item: LauncherItemRoomEntity)
+    fun markDeleted(item: LauncherItemRoomEntity) {
+        markDeleted(item._id)
+    }
 }

@@ -6,6 +6,7 @@ import android.os.UserHandle
 import androidx.annotation.NonNull
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 import timber.log.Timber
@@ -33,10 +34,16 @@ data class LauncherItemRoomEntity(
     val profileId: Long
 ) {
     // Properties to initialise for proper validation
+
+    @Ignore
     val targetPackage: String?
+    @Ignore
     val intent: Intent?
+    @Ignore
     val componentName: ComponentName?
+    @Ignore
     var user: UserHandle? = null
+    @Ignore
     var validTarget: Boolean = false
 
     init {

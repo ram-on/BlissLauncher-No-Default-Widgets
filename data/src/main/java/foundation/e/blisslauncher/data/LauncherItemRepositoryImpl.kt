@@ -254,8 +254,12 @@ class LauncherItemRepositoryImpl
                                     this.disabledMessage = pinnedShortcut.getDisabledMessage()
                                 }
                             //TODO: Set Icon here
-                            if(packageManagerHelper.isAppSuspended(pinnedShortcut.getPackage(), launcherItem.user)) {
-                               launcherItem.runtimeStatusFlags =
+                            if (packageManagerHelper.isAppSuspended(
+                                    pinnedShortcut.getPackage(),
+                                    launcherItem.user
+                                )
+                            ) {
+                                launcherItem.runtimeStatusFlags =
                                     launcherItem.runtimeStatusFlags or LauncherItemWithIcon.FLAG_DISABLED_SUSPENDED
                             }
                         }
@@ -340,7 +344,6 @@ class LauncherItemRepositoryImpl
             Timber.d("Missing activity found in getApplicationItem")
             return null
         }
-
 
         return if (lai != null) {
             val applicationItem = ApplicationItem(lai, user, quietMode)

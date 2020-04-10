@@ -4,8 +4,9 @@ import foundation.e.blisslauncher.common.executors.AppExecutors
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 import io.reactivex.Flowable
 import java.util.concurrent.Executor
+import javax.inject.Inject
 
-class ObserveUpdatedLauncherItems(appExecutors: AppExecutors) :
+class ObserveUpdatedLauncherItems @Inject constructor(appExecutors: AppExecutors) :
     PublishSubjectInteractor<List<LauncherItem>, List<LauncherItem>>() {
     override val subscribeExecutor: Executor = appExecutors.io
     override val observeExecutor: Executor = appExecutors.main

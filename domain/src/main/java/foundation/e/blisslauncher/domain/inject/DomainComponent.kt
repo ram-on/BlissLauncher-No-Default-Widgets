@@ -11,10 +11,6 @@ import foundation.e.blisslauncher.domain.repository.LauncherItemRepository
  */
 interface DomainComponent {
 
-    fun launcherStateManager(): LauncherStateManager
-
-    fun launcherRepository(): LauncherItemRepository
-
     fun appExecutors(): AppExecutors
 
     fun launcherAppsCompat(): LauncherAppsCompat

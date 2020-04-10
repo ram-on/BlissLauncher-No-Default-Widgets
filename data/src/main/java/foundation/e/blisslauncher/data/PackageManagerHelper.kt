@@ -9,7 +9,6 @@ import android.content.pm.ResolveInfo
 import android.os.Build
 import android.os.UserHandle
 import android.text.TextUtils
-import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.domain.entity.ApplicationItem
 
