@@ -34,6 +34,7 @@ open class ApplicationItem : AppShortcutItem {
         if (quietModeEnabled) {
             runtimeStatusFlags = runtimeStatusFlags or FLAG_DISABLED_QUIET_USER
         }
+
         updateRuntimeFlagsForActivityTarget(this, info)
     }
 
@@ -60,9 +61,7 @@ open class ApplicationItem : AppShortcutItem {
             lai: LauncherActivityInfo
         ) {
             val appInfo = lai.applicationInfo
-            /*if (PackageManagerHelper.isAppSuspended(appInfo)) {
-                info.runtimeStatusFlags = info.runtimeStatusFlags or FLAG_DISABLED_SUSPENDED
-            }*/
+
             info.runtimeStatusFlags =
                 info.runtimeStatusFlags or if (appInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0) FLAG_SYSTEM_NO else FLAG_SYSTEM_YES
             if (Utilities.ATLEAST_OREO &&

@@ -7,8 +7,10 @@ import android.os.UserHandle
 import android.util.LongSparseArray
 import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
+import foundation.e.blisslauncher.common.compat.ShortcutInfoCompat
 import foundation.e.blisslauncher.common.util.MultiHashMap
 import foundation.e.blisslauncher.data.database.roomentity.LauncherItemRoomEntity
+import foundation.e.blisslauncher.data.shortcuts.PinnedShortcutManager
 import foundation.e.blisslauncher.domain.entity.AppShortcutItem
 import foundation.e.blisslauncher.domain.entity.ApplicationItem
 import foundation.e.blisslauncher.domain.entity.FolderItem
@@ -27,7 +29,8 @@ class LauncherItemRepositoryImpl
     private val launcherApps: LauncherAppsCompat,
     private val launcherDatabase: LauncherDatabaseGateway,
     private val userManager: UserManagerRepository,
-    private val packageManagerHelper: PackageManagerHelper
+    private val packageManagerHelper: PackageManagerHelper,
+    private val shortcutManager: PinnedShortcutManager
 ) : LauncherItemRepository {
 
     override fun <S : LauncherItem> save(entity: S): S {
@@ -47,24 +50,37 @@ class LauncherItemRepositoryImpl
         val isSafeMode = pmHelper.isSafeMode
         val isSdCardReady = Utilities.isBootCompleted()
         val pendingPackages = MultiHashMap<UserHandle, String>()
-
+        val shortcutKeyToPinnedShortcuts = HashMap<ShortcutKey, ShortcutInfoCompat>()
         val allUsers: LongSparseArray<UserHandle> = LongSparseArray()
         val quietMode: LongSparseArray<Boolean> = LongSparseArray()
         val unlockedUsers: LongSparseArray<Boolean> = LongSparseArray()
 
-        userManager.userProfiles.forEach {
-            val serialNo = userManager.getSerialNumberForUser(it)
-            allUsers.put(serialNo, it)
-            quietMode.put(serialNo, userManager.isQuietModeEnabled(it))
+        userManager.userProfiles.forEach { user ->
+            val serialNo = userManager.getSerialNumberForUser(user)
+            allUsers.put(serialNo, user)
+            quietMode.put(serialNo, userManager.isQuietModeEnabled(user))
 
-            val userUnlocked = userManager.isUserUnlocked(it)
+            var userUnlocked = userManager.isUserUnlocked(user)
+
+            // Query for pinned shortcuts only when user is unlocked.
+            if (userUnlocked) {
+                val pinnedShortcuts =
+                    shortcutManager.queryForPinnedShortcuts(null, user)
+                if (shortcutManager.wasLastCallSuccess()) {
+                    pinnedShortcuts.map { shortcut -> ShortcutKey.fromShortcutInfoCompat(shortcut) to shortcut }
+                        .toMap(shortcutKeyToPinnedShortcuts)
+                } else {
+                    // Shortcut Manager can fail due to various reasons.
+                    // Consider this condition as user locked.
+                    userUnlocked = false
+                }
+            }
             unlockedUsers.put(serialNo, userUnlocked)
         }
 
         //Populate item from database and fill necessary details based on users.
         val launcherItems = ArrayList<LauncherItem>()
         launcherDatabase.getAllWorkspaceItems()
-            .filter { checkAndValidate(it, unlockedUsers, isSdCardReady) }
             .onEach {
                 it.apply {
                     user = allUsers[profileId]
@@ -75,13 +91,23 @@ class LauncherItemRepositoryImpl
                         )
                 }
             }
+            .filter {
+                checkAndValidate(
+                    it,
+                    unlockedUsers,
+                    shortcutKeyToPinnedShortcuts,
+                    isSdCardReady
+                )
+            }
             .mapNotNull {
                 convertToLauncherItem(
                     it,
                     quietMode,
                     isSdCardReady,
                     isSafeMode,
-                    pendingPackages
+                    unlockedUsers,
+                    pendingPackages,
+                    shortcutKeyToPinnedShortcuts
                 )
             }
             .toCollection(launcherItems)
@@ -92,6 +118,7 @@ class LauncherItemRepositoryImpl
     private fun checkAndValidate(
         item: LauncherItemRoomEntity,
         unlockedUsers: LongSparseArray<Boolean>,
+        shortcutKeyToPinnedShortcuts: HashMap<ShortcutKey, ShortcutInfoCompat>,
         isSdcardReady: Boolean
     ): Boolean {
 
@@ -149,6 +176,19 @@ class LauncherItemRepositoryImpl
                         return false
                     }
                 }
+
+                if (item.itemType == LauncherConstants.ItemType.DEEP_SHORTCUT) {
+                    val shortcutKey = ShortcutKey.fromIntent(item.intent, item.user!!)
+                    if (unlockedUsers.get(item.profileId)) {
+                        val pinnedShortcut: ShortcutInfoCompat? =
+                            shortcutKeyToPinnedShortcuts.get(shortcutKey)
+                        if (pinnedShortcut == null) {
+                            // The shortcut is no longer valid.
+                            launcherDatabase.markDeleted(item)
+                            return false
+                        }
+                    }
+                }
             }
         }
         return true
@@ -159,7 +199,9 @@ class LauncherItemRepositoryImpl
         quietMode: LongSparseArray<Boolean>,
         isSdcardReady: Boolean,
         isSafeMode: Boolean,
-        pendingPackages: MultiHashMap<UserHandle, String>
+        unlockedUsers: LongSparseArray<Boolean>,
+        pendingPackages: MultiHashMap<UserHandle, String>,
+        shortcutKeyToPinnedShortcuts: HashMap<ShortcutKey, ShortcutInfoCompat>
     ): LauncherItem? {
         var allowMissingTarget = false
         // Load necessary properties.
@@ -190,10 +232,44 @@ class LauncherItemRepositoryImpl
                         item.user!!,
                         quietMode[item.profileId],
                         item.intent!!,
-                        allowMissingTarget
+                        allowMissingTarget,
+                        item.title
                     )
                 } else if (item.itemType == LauncherConstants.ItemType.DEEP_SHORTCUT) {
                     val shortcutKey = ShortcutKey.fromIntent(item.intent!!, item.user!!)
+                    if (unlockedUsers.get(item.profileId)) {
+                        val pinnedShortcut = shortcutKeyToPinnedShortcuts[shortcutKey]
+                        if (pinnedShortcut != null) {
+                            launcherItem = AppShortcutItem()
+                                .apply {
+                                    this.user = item.user!!
+                                    this.itemType = LauncherConstants.ItemType.DEEP_SHORTCUT
+                                    this.intent = pinnedShortcut.makeIntent()
+                                    this.title = pinnedShortcut.getShortLabel()
+                                    this.runtimeStatusFlags = if (pinnedShortcut.isEnabled()) {
+                                        this.runtimeStatusFlags and LauncherItemWithIcon.FLAG_DISABLED_BY_PUBLISHER.inv()
+                                    } else {
+                                        this.runtimeStatusFlags or LauncherItemWithIcon.FLAG_DISABLED_BY_PUBLISHER
+                                    }
+                                    this.disabledMessage = pinnedShortcut.getDisabledMessage()
+                                }
+                            //TODO: Set Icon here
+                            if(packageManagerHelper.isAppSuspended(pinnedShortcut.getPackage(), launcherItem.user)) {
+                               launcherItem.runtimeStatusFlags =
+                                    launcherItem.runtimeStatusFlags or LauncherItemWithIcon.FLAG_DISABLED_SUSPENDED
+                            }
+                        }
+                    } else {
+                        launcherItem = AppShortcutItem()
+                            .apply {
+                                this.user = item.user!!
+                                this.itemType = item.itemType
+                                this.title = if (item.title.isEmpty()) "" else item.title
+                                // TODO: Set Icon here
+                            }
+                        launcherItem.runtimeStatusFlags =
+                            launcherItem.runtimeStatusFlags or LauncherItemWithIcon.FLAG_DISABLED_LOCKED_USER
+                    }
                 } else {
                     launcherItem = AppShortcutItem()
                         .apply {
@@ -202,6 +278,7 @@ class LauncherItemRepositoryImpl
                             this.title = if (item.title.isEmpty()) "" else item.title
                             // TODO: Set Icon here
                         }
+
                     val intent = item.intent!!
                     if (intent.action != null &&
                         intent.categories != null &&
@@ -245,7 +322,8 @@ class LauncherItemRepositoryImpl
         user: UserHandle,
         quietMode: Boolean,
         intent: Intent,
-        allowMissingTarget: Boolean
+        allowMissingTarget: Boolean,
+        title: String?
     ): AppShortcutItem? {
         val componentName = intent.component
         if (componentName == null) {
@@ -263,8 +341,30 @@ class LauncherItemRepositoryImpl
             return null
         }
 
-        return ApplicationItem(lai!!, user, quietMode)
-            .apply { itemType = LauncherConstants.ItemType.APPLICATION }
+
+        return if (lai != null) {
+            val applicationItem = ApplicationItem(lai, user, quietMode)
+                .apply { itemType = LauncherConstants.ItemType.APPLICATION }
+            val isSuspended = packageManagerHelper.isAppSuspended(lai.applicationInfo)
+            if (isSuspended) {
+                applicationItem.runtimeStatusFlags =
+                    applicationItem.runtimeStatusFlags or LauncherItemWithIcon.FLAG_DISABLED_SUSPENDED
+            }
+            applicationItem
+        } else {
+            val applicationItem = ApplicationItem()
+                .apply {
+                    this.user = user
+                    this.intent = newIntent
+                    this.componentName = componentName
+                    this.title = title
+                }
+
+            if (applicationItem.title == null) {
+                applicationItem.title = componentName.className
+            }
+            applicationItem
+        }
     }
 
     override fun delete(entity: LauncherItem) {

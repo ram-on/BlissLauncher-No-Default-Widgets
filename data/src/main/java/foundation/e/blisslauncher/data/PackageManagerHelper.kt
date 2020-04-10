@@ -9,9 +9,9 @@ import android.content.pm.ResolveInfo
 import android.os.Build
 import android.os.UserHandle
 import android.text.TextUtils
+import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.domain.entity.ApplicationItem
-import javax.inject.Inject
 
 class PackageManagerHelper(
     context: Context,
@@ -47,6 +47,9 @@ class PackageManagerHelper(
         val info = launcherApps.getApplicationInfo(packageName, 0, user)
         return info != null && info.flags and ApplicationInfo.FLAG_SUSPENDED != 0
     }
+
+    fun isAppSuspended(info: ApplicationInfo): Boolean =
+        info.flags and ApplicationInfo.FLAG_SUSPENDED != 0
 
     fun getAppLaunchIntent(pkg: String, user: UserHandle): Intent? {
         val activities = launcherApps.getActivityList(pkg, user)
