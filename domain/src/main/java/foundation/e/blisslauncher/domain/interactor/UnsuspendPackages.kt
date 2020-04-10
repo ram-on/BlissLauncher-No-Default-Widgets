@@ -18,11 +18,11 @@ class UnsuspendPackages @Inject constructor(
     override val subscribeExecutor: Executor = appExecutors.io
 
     override fun doWork(params: Params): Completable = Completable.fromAction {
-        observeUpdatedLauncherItems(
+        /*observeUpdatedLauncherItems(
             launcherItemRepository.unsuspendPackages(
                 params.packages,
                 params.user
             )
-        )
+        )*/
     }
 }

@@ -22,7 +22,7 @@ class AddPackages @Inject constructor(
     override fun doWork(params: Params): Completable = Completable.fromAction {
         params.packages.forEach {
             //TODO: Update icons cache
-            launcherItemRepository.add(it, params.user, userManager.isQuietModeEnabled(params.user))
+            //launcherItemRepository.add(it, params.user, userManager.isQuietModeEnabled(params.user))
             //TODO: Add SessionCommitReceiver for below O devices
         }
     } /*.doOnComplete {

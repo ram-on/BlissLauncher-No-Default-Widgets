@@ -18,11 +18,11 @@ class MakePackageUnavailable @Inject constructor(
     override val subscribeExecutor: Executor = appExecutors.io
 
     override fun doWork(params: Params): Completable = Completable.fromAction {
-        observeUpdatedLauncherItems(
+        /*observeUpdatedLauncherItems(
             launcherItemRepository.makePackagesUnavailable(
                 params.packages,
                 params.user
             )
-        )
+        )*/
     }
 }

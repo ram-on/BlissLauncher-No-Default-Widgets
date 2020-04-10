@@ -18,11 +18,11 @@ class ChangeUserAvailability @Inject constructor(
     override val subscribeExecutor: Executor = appExecutors.io
 
     override fun doWork(params: UserHandle): Completable = Completable.fromAction {
-        observeUpdatedLauncherItems(
+        /*observeUpdatedLauncherItems(
             launcherItemRepository.updateUserAvailability(
                 params,
                 userManager.isQuietModeEnabled(params)
             )
-        )
+        )*/
     }
 }

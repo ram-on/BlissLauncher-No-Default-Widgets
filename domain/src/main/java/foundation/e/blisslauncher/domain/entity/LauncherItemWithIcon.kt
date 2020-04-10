@@ -1,6 +1,5 @@
 package foundation.e.blisslauncher.domain.entity
 
-import android.content.Intent
 import android.graphics.Bitmap
 
 /**

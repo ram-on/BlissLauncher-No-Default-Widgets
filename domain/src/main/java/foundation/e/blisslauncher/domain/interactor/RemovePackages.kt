@@ -19,7 +19,7 @@ class RemovePackages @Inject constructor(
 
     override fun doWork(params: Params): Completable = Completable.fromAction {
 
-        launcherItemRepository.removePackages(params.packages, params.user)
+        //launcherItemRepository.removePackages(params.packages, params.user)
     }.doOnComplete {
         //observeAddedApps(Unit)
     }

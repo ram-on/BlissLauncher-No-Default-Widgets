@@ -1,13 +1,11 @@
 package foundation.e.blisslauncher.domain.repository
 
-import android.os.UserHandle
-import foundation.e.blisslauncher.domain.entity.ApplicationItem
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 
 /**
  * Repository to manage [LauncherItem]
  */
-interface LauncherItemRepository: Repository<LauncherItem, Long>
+interface LauncherItemRepository : Repository<LauncherItem, Long>
 
 /*fun getAllActivities(user: UserHandle, quietMode: Boolean): List<ApplicationItem>
 

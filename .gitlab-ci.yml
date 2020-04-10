@@ -1,7 +1,7 @@
 image: "registry.gitlab.e.foundation:5000/e/apps/docker-android-apps-cicd:latest"
 
 stages:
-- build
+- build-domain
 
 before_script:
 - export GRADLE_USER_HOME=$(pwd)/.gradle
@@ -12,10 +12,7 @@ cache:
   paths:
   - .gradle/
 
-build:
-  stage: build
+build-domain:
+  stage: build-domain
   script:
-  - ./gradlew build
-  artifacts:
-    paths:
-    - app/build/outputs/apk
+  - ./gradlew :domain:build

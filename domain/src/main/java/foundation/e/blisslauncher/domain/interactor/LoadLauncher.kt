@@ -4,7 +4,6 @@ import foundation.e.blisslauncher.common.executors.AppExecutors
 import foundation.e.blisslauncher.domain.dto.WorkspaceModel
 import foundation.e.blisslauncher.domain.entity.LauncherConstants.ContainerType.CONTAINER_DESKTOP
 import foundation.e.blisslauncher.domain.repository.LauncherItemRepository
-import foundation.e.blisslauncher.domain.repository.UserManagerRepository
 import foundation.e.blisslauncher.domain.repository.WorkspaceScreenRepository
 import io.reactivex.Single
 import timber.log.Timber
