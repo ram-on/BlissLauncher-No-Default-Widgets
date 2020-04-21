@@ -165,7 +165,7 @@ public class BlissFrameLayout extends FrameLayout {
                 (int) Utilities.pxFromDp(4, mContext),
                 (int) Utilities.pxFromDp(0, mContext));
         squareImageView.setImageDrawable(folderItem.icon);
-        label.setText(folderItem.title.toString());
+        label.setText(getContext().getString(R.string.untitled));
         label.setTextSize(12);
         List<Object> tags = new ArrayList<>();
         tags.add(squareImageView);
