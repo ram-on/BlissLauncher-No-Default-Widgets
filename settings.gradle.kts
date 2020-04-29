@@ -1,1 +1,1 @@
-include(":app", ":common", ":blisslauncherv2", ":data-bridge", ":data", ":domain")
+include(":app", ":common", ":blisslauncherv2", ":data-bridge", ":data", ":domain", ":mvicore")

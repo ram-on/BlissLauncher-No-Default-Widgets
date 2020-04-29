@@ -1,0 +1,14 @@
+import foundation.e.blisslauncher.buildsrc.Libs
+
+apply plugin: 'java'
+apply plugin: 'kotlin'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation Libs.Kotlin.stdlib
+
+    implementation Libs.RxJava.rxKotlin
+}
+
+sourceCompatibility = "8"
+targetCompatibility = "8"
