@@ -6,7 +6,7 @@ import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
 import android.util.ArrayMap
-import foundation.e.blisslauncher.common.util.LongArrayMap
+import foundation.e.blisslauncher.utils.LongArrayMap
 import foundation.e.blisslauncher.domain.repository.UserManagerRepository
 import java.util.ArrayList
 

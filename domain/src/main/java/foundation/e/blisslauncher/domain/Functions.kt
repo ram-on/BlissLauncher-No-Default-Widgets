@@ -2,7 +2,7 @@ package foundation.e.blisslauncher.domain
 
 import android.content.ComponentName
 import android.os.UserHandle
-import foundation.e.blisslauncher.common.util.LongArrayMap
+import foundation.e.blisslauncher.utils.LongArrayMap
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 
 typealias ItemInfoMatcher = (item: LauncherItem, cn: ComponentName) -> Boolean

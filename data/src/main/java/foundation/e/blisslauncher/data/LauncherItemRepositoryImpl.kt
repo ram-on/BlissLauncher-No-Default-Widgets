@@ -8,7 +8,7 @@ import android.util.LongSparseArray
 import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.common.compat.ShortcutInfoCompat
-import foundation.e.blisslauncher.common.util.MultiHashMap
+import foundation.e.blisslauncher.utils.MultiHashMap
 import foundation.e.blisslauncher.data.database.roomentity.LauncherItemRoomEntity
 import foundation.e.blisslauncher.data.shortcuts.PinnedShortcutManager
 import foundation.e.blisslauncher.domain.entity.AppShortcutItem

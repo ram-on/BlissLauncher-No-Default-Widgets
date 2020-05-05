@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package foundation.e.blisslauncher.common.util;
+package foundation.e.blisslauncher.utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;

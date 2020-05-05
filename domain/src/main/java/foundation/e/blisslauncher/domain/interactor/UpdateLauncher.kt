@@ -6,7 +6,7 @@ import android.util.ArrayMap
 import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.common.executors.AppExecutors
-import foundation.e.blisslauncher.common.util.LongArrayMap
+import foundation.e.blisslauncher.utils.LongArrayMap
 import foundation.e.blisslauncher.domain.ItemInfoMatcher
 import foundation.e.blisslauncher.domain.Matcher
 import foundation.e.blisslauncher.domain.and

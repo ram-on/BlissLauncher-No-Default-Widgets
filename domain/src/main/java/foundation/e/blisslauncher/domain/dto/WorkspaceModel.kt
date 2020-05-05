@@ -1,6 +1,6 @@
 package foundation.e.blisslauncher.domain.dto
 
-import foundation.e.blisslauncher.common.util.LongArrayMap
+import foundation.e.blisslauncher.utils.LongArrayMap
 import foundation.e.blisslauncher.domain.entity.FolderItem
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 

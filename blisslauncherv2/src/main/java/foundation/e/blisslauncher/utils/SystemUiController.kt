@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.common.util
+package foundation.e.blisslauncher.utils
 
 import android.view.View
 import android.view.Window

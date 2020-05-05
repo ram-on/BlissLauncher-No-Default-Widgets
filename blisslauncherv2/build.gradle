@@ -43,6 +43,7 @@ dependencies {
     implementation project(path: ':common')
     implementation project(path: ':data-bridge')
     implementation project(path: ':domain')
+    implementation project(path: ':mvicore')
     implementation Libs.Kotlin.stdlib
     implementation Libs.AndroidX.appcompat
     implementation Libs.AndroidX.recyclerview

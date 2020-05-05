@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.annotation.IntDef
-import foundation.e.blisslauncher.common.util.SystemUiController
+import foundation.e.blisslauncher.utils.SystemUiController
 import javax.inject.Inject
 
 open class BaseActivity : Activity() {

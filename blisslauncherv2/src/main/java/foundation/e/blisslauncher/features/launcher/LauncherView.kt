@@ -1,10 +1,11 @@
 package foundation.e.blisslauncher.features.launcher
 
-import foundation.e.blisslauncher.base.presentation.BaseView
-import foundation.e.blisslauncher.domain.keys.PackageUserKey
+import foundation.e.blisslauncher.mvicore.component.MviView
 
-interface LauncherView :
-    BaseView<LauncherState> {
+interface LauncherView : MviView<LauncherView.LauncherViewModel, LauncherView.LauncherViewEvent> {
+    data class LauncherViewModel(private val name: String)
 
-    fun updateIconBadges(updatedBadges: Set<PackageUserKey>)
+    sealed class LauncherViewEvent {
+
+    }
 }

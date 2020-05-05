@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.features.launcher;
+package foundation.e.blisslauncher.features.launcher.views;
 
 /*
  * Copyright (C) 2012 The Android Open Source Project
@@ -44,7 +44,7 @@ import java.util.ArrayList;
 
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.common.Utilities;
-import foundation.e.blisslauncher.features.launcher.pageindicators.PageIndicator;
+import foundation.e.blisslauncher.features.launcher.views.pageindicators.PageIndicator;
 import foundation.e.blisslauncher.touch.OverScroll;
 
 /**

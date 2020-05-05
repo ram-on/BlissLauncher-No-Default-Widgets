@@ -10,7 +10,7 @@ import dagger.android.AndroidInjection
 import foundation.e.blisslauncher.base.BaseDraggingActivity
 import foundation.e.blisslauncher.base.presentation.BaseIntent
 import foundation.e.blisslauncher.common.subscribeToState
-import foundation.e.blisslauncher.common.util.TraceHelper
+import foundation.e.blisslauncher.utils.TraceHelper
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 import foundation.e.blisslauncher.domain.interactor.LoadLauncher
 import foundation.e.blisslauncher.domain.keys.PackageUserKey

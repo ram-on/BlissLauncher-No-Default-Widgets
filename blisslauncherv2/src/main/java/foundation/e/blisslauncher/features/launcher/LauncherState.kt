@@ -5,8 +5,7 @@ import android.content.Context
 import android.content.pm.LauncherActivityInfo
 import android.os.UserHandle
 import androidx.core.util.set
-import foundation.e.blisslauncher.base.presentation.BaseViewState
-import foundation.e.blisslauncher.common.util.LongArrayMap
+import foundation.e.blisslauncher.utils.LongArrayMap
 import foundation.e.blisslauncher.domain.ItemInfoMatcher
 import foundation.e.blisslauncher.domain.Matcher
 import foundation.e.blisslauncher.domain.addFlag
@@ -48,7 +47,7 @@ data class LauncherState @Inject constructor(
 
     /** The list of all apps. */
     val data: List<ApplicationItem>
-) : BaseViewState {
+)  {
 
     @Synchronized
     fun clear() {
