@@ -12,9 +12,11 @@ import android.graphics.Paint
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.runOnMainThread
+import foundation.e.blisslauncher.core.safeForEach
 import foundation.e.blisslauncher.core.utils.SingletonHolder
 import foundation.e.blisslauncher.core.utils.ensureOnMainThread
 import foundation.e.blisslauncher.core.utils.useApplicationContext
@@ -88,57 +90,51 @@ class BlurWallpaperProvider(val context: Context) {
             return
         }
 
-        wallpaper = null
-        runOnMainThread {
-            notifyWallpaperChanged()
+        val enabled = getEnabledStatus()
+        if (enabled != isEnabled) {
+            isEnabled = enabled
+            runOnMainThread {
+                listeners.safeForEach(Listener::onEnabledChanged)
+            }
         }
-        return
 
-        /* val enabled = getEnabledStatus()
-         if (enabled != isEnabled) {
-             isEnabled = enabled
-             runOnMainThread {
-                 listeners.safeForEach(Listener::onEnabledChanged)
-             }
-         }
+        if (!isEnabled) {
+            wallpaper = null
+            return
+        }
 
-         if (!isEnabled) {
-             wallpaper = null
-             return
-         }
-
-         var wallpaper = try {
-             Utilities.drawableToBitmap(wallpaperManager.drawable, true) as Bitmap
-         } catch (e: Exception) {
-             runOnMainThread {
-                 val msg = "Failed: ${e.message}"
-                 Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                 notifyWallpaperChanged()
-             }
-             return
-         }
-         wallpaper = scaleAndCropToScreenSize(wallpaper)
-         wallpaper = applyVibrancy(wallpaper)
-         applyTask = wallpaperFilter.apply(wallpaper).setCallback { result, error ->
-             if (error == null) {
-                 this@BlurWallpaperProvider.wallpaper = result
-                 runOnMainThread(::notifyWallpaperChanged)
-                 wallpaper.recycle()
-             } else {
-                 if (error is OutOfMemoryError) {
-                     runOnMainThread {
-                         Toast.makeText(context, "Failed", Toast.LENGTH_LONG).show()
-                         notifyWallpaperChanged()
-                     }
-                 }
-                 wallpaper.recycle()
-             }
-         }
-         applyTask = null
-         if (updatePending) {
-             updatePending = false
-             updateWallpaper()
-         }*/
+        var wallpaper = try {
+            Utilities.drawableToBitmap(wallpaperManager.drawable, true) as Bitmap
+        } catch (e: Exception) {
+            runOnMainThread {
+                val msg = "Failed: ${e.message}"
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                notifyWallpaperChanged()
+            }
+            return
+        }
+        wallpaper = scaleAndCropToScreenSize(wallpaper)
+        wallpaper = applyVibrancy(wallpaper)
+        /*applyTask = wallpaperFilter.apply(wallpaper).setCallback { result, error ->
+            if (error == null) {
+                this@BlurWallpaperProvider.wallpaper = result
+                runOnMainThread(::notifyWallpaperChanged)
+                wallpaper.recycle()
+            } else {
+                if (error is OutOfMemoryError) {
+                    runOnMainThread {
+                        Toast.makeText(context, "Failed", Toast.LENGTH_LONG).show()
+                        notifyWallpaperChanged()
+                    }
+                }
+                wallpaper.recycle()
+            }
+        }*/
+        applyTask = null
+        if (updatePending) {
+            updatePending = false
+            updateWallpaper()
+        }
     }
 
     private fun notifyWallpaperChanged() {
