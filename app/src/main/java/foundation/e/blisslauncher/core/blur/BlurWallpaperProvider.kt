@@ -115,7 +115,7 @@ class BlurWallpaperProvider(val context: Context) {
         }
         wallpaper = scaleAndCropToScreenSize(wallpaper)
         wallpaper = applyVibrancy(wallpaper)
-        /*applyTask = wallpaperFilter.apply(wallpaper).setCallback { result, error ->
+        applyTask = wallpaperFilter.apply(wallpaper).setCallback { result, error ->
             if (error == null) {
                 this@BlurWallpaperProvider.wallpaper = result
                 runOnMainThread(::notifyWallpaperChanged)
@@ -129,7 +129,7 @@ class BlurWallpaperProvider(val context: Context) {
                 }
                 wallpaper.recycle()
             }
-        }*/
+        }
         applyTask = null
         if (updatePending) {
             updatePending = false
