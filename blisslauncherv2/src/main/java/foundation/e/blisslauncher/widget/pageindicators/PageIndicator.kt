@@ -1,7 +1,7 @@
-package foundation.e.blisslauncher.features.launcher.views.pageindicators
+package foundation.e.blisslauncher.widget.pageindicators
 
 /**
- * Base class for a page indicator.
+ * Interface for a page indicator.
  */
 interface PageIndicator {
     fun setScroll(currentScroll: Int, totalScroll: Int)

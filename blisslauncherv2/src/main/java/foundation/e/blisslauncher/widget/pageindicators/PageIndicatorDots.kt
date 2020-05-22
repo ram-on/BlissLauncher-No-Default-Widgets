@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.features.launcher.views.pageindicators
+package foundation.e.blisslauncher.widget.pageindicators
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
@@ -23,15 +23,21 @@ import kotlin.math.abs
  * [PageIndicator] which shows dots per page. The active page is shown with the current
  * accent color.
  */
-class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) :
-    View(context, attrs, defStyleAttr), PageIndicator {
-    private val mCirclePaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val mDotRadius: Float
-    private val mActiveColor: Int
-    private val mInActiveColor: Int
-    private val mIsRtl: Boolean = false
-    private var mNumPages = 0
-    private var mActivePage = 0
+class PageIndicatorDots @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr), PageIndicator {
+    private val circlePaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val dotRadius: Float
+    private val activeColor: Int
+    private val inActiveColor: Int
+    private val isRtl: Boolean = false
+    private val sTempRect: RectF = RectF()
+
+    private var numPages = 0
+    private var activePage = 0
+
     /**
      * The current position of the active dot including the animation progress.
      * For ex:
@@ -46,17 +52,23 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
     private var mAnimator: ObjectAnimator? = null
     private var mEntryAnimationRadiusFactors: FloatArray? = null
 
-    constructor(context: Context?) : this(context, null)
-    constructor(context: Context?, attrs: AttributeSet?) : this(context, attrs, 0)
+    init {
+        circlePaint.style = Paint.Style.FILL
+        dotRadius = resources.getDimension(R.dimen.dotSize) / 2
+        outlineProvider = MyOutlineProver()
+        activeColor = resources.getColor(R.color.dot_on_color)
+        inActiveColor = resources.getColor(R.color.dot_on_color)
+        //mIsRtl = Utilities.isRtl(getResources())
+    }
 
     override fun setScroll(currentScroll: Int, totalScroll: Int) {
         var currentScroll = currentScroll
-        if (mNumPages > 1) {
+        if (numPages > 1) {
             // Ignore this as of now.
-            if (mIsRtl) {
+            if (isRtl) {
                 currentScroll = totalScroll - currentScroll
             }
-            val scrollPerPage = totalScroll / (mNumPages - 1)
+            val scrollPerPage = totalScroll / (numPages - 1)
             val pageToLeft = currentScroll / scrollPerPage
             val pageToLeftScroll = pageToLeft * scrollPerPage
             val pageToRightScroll = pageToLeftScroll + scrollPerPage
@@ -83,12 +95,9 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
         }
         if (mAnimator == null && mCurrentPosition.compareTo(mFinalPosition) != 0) {
             val positionForThisAnim =
-                if (mCurrentPosition > mFinalPosition) mCurrentPosition - SHIFT_PER_ANIMATION else mCurrentPosition + SHIFT_PER_ANIMATION
-            mAnimator = ObjectAnimator.ofFloat(
-                this,
-                CURRENT_POSITION,
-                positionForThisAnim
-            ).apply {
+                if (mCurrentPosition > mFinalPosition) mCurrentPosition - SHIFT_PER_ANIMATION
+                else mCurrentPosition + SHIFT_PER_ANIMATION
+            mAnimator = ObjectAnimator.ofFloat(this, CURRENT_POSITION, positionForThisAnim).apply {
                 addListener(AnimationCycleListener())
                 duration = ANIMATION_DURATION
             }
@@ -101,7 +110,7 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
             mAnimator!!.cancel()
             mAnimator = null
         }
-        mFinalPosition = mActivePage.toFloat()
+        mFinalPosition = activePage.toFloat()
         CURRENT_POSITION.set(this, mFinalPosition)
     }
 
@@ -110,7 +119,7 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
      * [.playEntryAnimation] must be called after this.
      */
     fun prepareEntryAnimation() {
-        mEntryAnimationRadiusFactors = FloatArray(mNumPages)
+        mEntryAnimationRadiusFactors = FloatArray(numPages)
         invalidate()
     }
 
@@ -148,59 +157,62 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
     }
 
     override fun setActiveMarker(activePage: Int) {
-        if (mActivePage != activePage) {
-            mActivePage = activePage
+        if (this.activePage != activePage) {
+            this.activePage = activePage
         }
     }
 
     override fun setMarkersCount(numMarkers: Int) {
-        mNumPages = numMarkers
+        numPages = numMarkers
         requestLayout()
     }
 
     override fun onMeasure(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int
-    ) { // Add extra spacing of mDotRadius on all sides so that entry animation could be run.
+    ) {
+        // Add extra spacing of mDotRadius on all sides so that entry animation could be run.
         val width =
             if (MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY) MeasureSpec.getSize(
                 widthMeasureSpec
-            ) else ((mNumPages * 3 + 2) * mDotRadius).toInt()
+            ) else ((numPages * 3 + 2) * dotRadius).toInt()
         val height =
             if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY) MeasureSpec.getSize(
                 heightMeasureSpec
-            ) else (4 * mDotRadius).toInt()
+            ) else (4 * dotRadius).toInt()
         setMeasuredDimension(width, height)
     }
 
-    override fun onDraw(canvas: Canvas) { // Draw all page indicators;
-        var circleGap = 3 * mDotRadius
-        val startX = (width - mNumPages * circleGap + mDotRadius) / 2
-        var x = startX + mDotRadius
+    override fun onDraw(canvas: Canvas) {
+        // Draw all page indicators;
+        var circleGap = 3 * dotRadius
+        val startX = (width - numPages * circleGap + dotRadius) / 2
+        var x = startX + dotRadius
         val y = height / 2.toFloat()
-        if (mEntryAnimationRadiusFactors != null) { // During entry animation, only draw the circles
-            if (mIsRtl) {
+        if (mEntryAnimationRadiusFactors != null) {
+            // During entry animation, only draw the circles
+            if (isRtl) {
                 x = getWidth() - x
                 circleGap = -circleGap
             }
             for (i in mEntryAnimationRadiusFactors!!.indices) {
-                mCirclePaint.setColor(if (i == mActivePage) mActiveColor else mInActiveColor)
+                circlePaint.setColor(if (i == activePage) activeColor else inActiveColor)
                 canvas.drawCircle(
                     x,
                     y,
-                    mDotRadius * mEntryAnimationRadiusFactors!![i],
-                    mCirclePaint
+                    dotRadius * mEntryAnimationRadiusFactors!![i],
+                    circlePaint
                 )
                 x += circleGap
             }
         } else {
-            mCirclePaint.color = mInActiveColor
-            for (i in 0 until mNumPages) {
-                canvas.drawCircle(x, y, mDotRadius, mCirclePaint)
+            circlePaint.color = inActiveColor
+            for (i in 0 until numPages) {
+                canvas.drawCircle(x, y, dotRadius, circlePaint)
                 x += circleGap
             }
-            mCirclePaint.setColor(mActiveColor)
-            canvas.drawRoundRect(activeRect, mDotRadius, mDotRadius, mCirclePaint)
+            circlePaint.color = activeColor
+            canvas.drawRoundRect(activeRect, dotRadius, dotRadius, circlePaint)
         }
     } // Dot is leaving the left circle.
 
@@ -209,11 +221,11 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
         get() {
             val startCircle: Float = mCurrentPosition
             var delta = mCurrentPosition - startCircle
-            val diameter = 2 * mDotRadius
-            val circleGap = 3 * mDotRadius
-            val startX = (width - mNumPages * circleGap + mDotRadius) / 2
-            sTempRect!!.top = height * 0.5f - mDotRadius
-            sTempRect.bottom = height * 0.5f + mDotRadius
+            val diameter = 2 * dotRadius
+            val circleGap = 3 * dotRadius
+            val startX = (width - numPages * circleGap + dotRadius) / 2
+            sTempRect!!.top = height * 0.5f - dotRadius
+            sTempRect.bottom = height * 0.5f + dotRadius
             sTempRect.left = startX + startCircle * circleGap
             sTempRect.right =
                 sTempRect.left + diameter
@@ -224,7 +236,7 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
                 delta -= SHIFT_PER_ANIMATION
                 sTempRect.left += delta * circleGap * 2
             }
-            if (mIsRtl) {
+            if (isRtl) {
                 val rectWidth = sTempRect.width()
                 sTempRect.right =
                     width - sTempRect.left
@@ -243,7 +255,7 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
                     activeRect.top.toInt(),
                     activeRect.right.toInt(),
                     activeRect.bottom.toInt(),
-                    mDotRadius
+                    dotRadius
                 )
             }
         }
@@ -273,9 +285,9 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
         private const val ENTER_ANIMATION_START_DELAY = 300
         private const val ENTER_ANIMATION_STAGGERED_DELAY = 150
         private const val ENTER_ANIMATION_DURATION = 400
+
         // This value approximately overshoots to 1.5 times the original size.
         private const val ENTER_ANIMATION_OVERSHOOT_TENSION = 4.9f
-        private val sTempRect: RectF? = RectF()
         private val CURRENT_POSITION: Property<PageIndicatorDots, Float> =
             object : Property<PageIndicatorDots, Float>(
                 Float::class.java, "current_position"
@@ -290,14 +302,5 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
                     obj.invalidateOutline()
                 }
             }
-    }
-
-    init {
-        mCirclePaint.style = Paint.Style.FILL
-        mDotRadius = resources.getDimension(R.dimen.dotSize) / 2
-        outlineProvider = MyOutlineProver()
-        mActiveColor = resources.getColor(R.color.dot_on_color)
-        mInActiveColor = resources.getColor(R.color.dot_on_color)
-        //mIsRtl = Utilities.isRtl(getResources())
     }
 }

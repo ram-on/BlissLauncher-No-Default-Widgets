@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.base.presentation
+package foundation.e.blisslauncher.features.base.presentation
 
 import foundation.e.blisslauncher.common.subscribeToState
 import io.mockk.mockk

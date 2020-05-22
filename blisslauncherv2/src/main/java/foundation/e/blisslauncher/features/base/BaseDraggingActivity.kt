@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.base
+package foundation.e.blisslauncher.features.base
 
 import android.app.ActivityOptions
 import android.content.ActivityNotFoundException
