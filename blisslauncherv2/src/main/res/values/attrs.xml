@@ -6,4 +6,7 @@
         <!-- The page indicator for this workspace -->
         <attr name="pageIndicator" format="reference" />
     </declare-styleable>
+    <declare-styleable name="InsettableFrameLayout_Layout">
+        <attr name="layout_ignoreInsets" format="boolean" />
+    </declare-styleable>
 </resources>

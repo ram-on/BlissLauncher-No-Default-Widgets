@@ -64,14 +64,9 @@ abstract class ResultInteractor<in P, T> : ObservableInteractor<P>() {
     abstract fun doWork(params: P? = null): Single<T>
 
     operator fun invoke(
-        params: P? = null,
-        onSuccess: (result: T) -> Unit = {},
-        onError: (e: Throwable) -> Unit = {}
-    ) {
-        disposables += this.doWork(params)
-            .subscribeOn(Schedulers.from(subscribeExecutor))
-            .observeOn(Schedulers.from(observeExecutor))
-            .subscribe(onSuccess, onError)
+        params: P? = null
+    ): Single<T> {
+        return this.doWork(params)
     }
 }
 

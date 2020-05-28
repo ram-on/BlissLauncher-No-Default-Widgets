@@ -1,40 +1,56 @@
 package foundation.e.blisslauncher.features.launcher
 
 import android.app.ActivityOptions
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
 import android.view.View
+import android.widget.GridLayout
+import android.widget.ImageView
 import dagger.android.AndroidInjection
-import foundation.e.blisslauncher.features.base.BaseDraggingActivity
-import foundation.e.blisslauncher.features.base.presentation.BaseIntent
-import foundation.e.blisslauncher.common.subscribeToState
-import foundation.e.blisslauncher.utils.TraceHelper
+import foundation.e.blisslauncher.R
+import foundation.e.blisslauncher.common.DeviceProfile
+import foundation.e.blisslauncher.common.InvariantDeviceProfile
+import foundation.e.blisslauncher.common.util.TraceHelper
+import foundation.e.blisslauncher.domain.dto.WorkspaceModel
 import foundation.e.blisslauncher.domain.entity.LauncherItem
-import foundation.e.blisslauncher.domain.interactor.LoadLauncher
-import foundation.e.blisslauncher.domain.keys.PackageUserKey
+import foundation.e.blisslauncher.domain.entity.LauncherItemWithIcon
+import foundation.e.blisslauncher.features.LauncherStore
+import foundation.e.blisslauncher.features.base.BaseDraggingActivity
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
+import kotlinx.android.synthetic.main.activity_launcher.*
+import timber.log.Timber
+import java.util.ArrayList
 import javax.inject.Inject
 
 class LauncherActivity : BaseDraggingActivity(), LauncherView {
 
     private lateinit var oldConfig: Configuration
 
-    private lateinit var loadLauncher: LoadLauncher
-
     private val compositeDisposable: CompositeDisposable = CompositeDisposable()
 
-    private val loadLauncherIntentPublisher = BehaviorSubject.create<LauncherViewEvent.LoadLauncher>()
+    private val intentSubject = PublishSubject.create<LauncherStore.LauncherIntent>()
+
+    override val events: Observable<LauncherStore.LauncherIntent>
+        get() = intentSubject
 
     @Inject
-    lateinit var launcherViewModel: LauncherViewModel
+    lateinit var launcherStore: LauncherStore
+
+    @Inject
+    lateinit var idp: InvariantDeviceProfile
+
+    lateinit var deviceProfile: DeviceProfile
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
+        deviceProfile = idp.getDeviceProfile(this)
         if (DEBUG_STRICT_MODE) {
             StrictMode.setThreadPolicy(
                 StrictMode.ThreadPolicy.Builder()
@@ -54,6 +70,8 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
             )
         }
 
+        setContentView(R.layout.activity_launcher)
+
         TraceHelper.beginSection("Launcher-onCreate")
 
         super.onCreate(savedInstanceState)
@@ -61,20 +79,11 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
 
         oldConfig = Configuration(resources.configuration)
 
-        compositeDisposable += launcherViewModel.states().subscribeToState { render(it) }
+        compositeDisposable += Observable.wrap(launcherStore).subscribe { render(it) }
         //TODO set model and state here
+        compositeDisposable += events.subscribe(launcherStore)
 
-        compositeDisposable += intents().subscribe { launcherViewModel::process }
-    }
-
-    override fun intents(): Observable<BaseIntent<LauncherState>> {
-        return Observable.merge(initialIntent(),
-            loadLauncherIntentPublisher.map { launcherViewModel.toIntent(it) }
-        )
-    }
-
-    private fun initialIntent(): Observable<BaseIntent<LauncherState>> {
-        return loadLauncherIntentPublisher.map { launcherViewModel.toIntent(it) }
+        intentSubject.onNext(LauncherStore.LauncherIntent.InitialIntent)
     }
 
     override fun getRootView(): View {
@@ -91,7 +100,6 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
 
     override fun onDestroy() {
         super.onDestroy()
-        launcherViewModel.terminate()
     }
 
     companion object {
@@ -112,20 +120,68 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
 
         // Type: int
         private const val RUNTIME_STATE_CURRENT_SCREEN = "launcher.current_screen"
+
         // Type: int
         private const val RUNTIME_STATE = "launcher.state"
+
         // Type: PendingRequestArgs
         private const val RUNTIME_STATE_PENDING_REQUEST_ARGS = "launcher.request_args"
+
         // Type: ActivityResultInfo
         private const val RUNTIME_STATE_PENDING_ACTIVITY_RESULT =
             "launcher.activity_result"
+
         // Type: SparseArray<Parcelable>
         private const val RUNTIME_STATE_WIDGET_PANEL = "launcher.widget_panel"
-    }
 
-    override fun updateIconBadges(updatedBadges: Set<PackageUserKey>) {
+        fun getLauncher(context: Context): LauncherActivity {
+            return if (context is LauncherActivity) {
+                context
+            } else (context as ContextWrapper).baseContext as LauncherActivity
+        }
     }
 
     override fun render(state: LauncherState) {
+        Timber.d("Current state is $state")
+        if (state is LauncherState.Loaded) {
+            val model = state.workspaceModel
+            bindScreens(model)
+
+            bindWorkspaceItems(model.workspaceItems)
+        }
+    }
+
+    private fun bindScreens(model: WorkspaceModel) {
+        workspace.addExtraEmptyScreen()
+        model.workspaceScreens.forEach {
+            workspace.insertNewWorkspaceScreenBeforeEmptyScreen(it)
+        }
+
+        Timber.d("Total child in workspace is: ${workspace.childCount}")
+    }
+
+    private fun bindWorkspaceItems(workspaceItems: ArrayList<LauncherItem>) {
+        workspaceItems.forEach {
+            if (it is LauncherItemWithIcon) {
+                val view = ImageView(this)
+                view.setImageBitmap(it.iconBitmap)
+                val lp = GridLayout.LayoutParams()
+                lp.width = deviceProfile.iconSizePx
+                lp.height = deviceProfile.iconSizePx
+                if (it.screenId >= 0) {
+                    workspace.addInScreenFromBind(view, it)
+                } else {
+                    var currentScreen = workspace.getChildAt(workspace.childCount - 1) as GridLayout
+                    if (currentScreen.childCount < deviceProfile.inv.numRows * deviceProfile.inv.numColumns) {
+                        currentScreen.addView(view)
+                    } else {
+                        workspace.insertNewWorkspaceScreen(workspace.childCount.toLong())
+                        currentScreen =
+                            workspace.getChildAt(workspace.childCount - 1) as GridLayout
+                        currentScreen.addView(view)
+                    }
+                }
+            }
+        }
     }
 }

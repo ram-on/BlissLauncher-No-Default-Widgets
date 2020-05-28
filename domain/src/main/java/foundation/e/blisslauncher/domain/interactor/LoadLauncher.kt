@@ -2,20 +2,17 @@ package foundation.e.blisslauncher.domain.interactor
 
 import foundation.e.blisslauncher.common.executors.AppExecutors
 import foundation.e.blisslauncher.domain.dto.WorkspaceModel
-import foundation.e.blisslauncher.domain.entity.LauncherConstants.ContainerType.CONTAINER_DESKTOP
-import foundation.e.blisslauncher.domain.repository.LauncherItemRepository
-import foundation.e.blisslauncher.domain.repository.WorkspaceScreenRepository
+import foundation.e.blisslauncher.domain.repository.WorkspaceRepository
 import io.reactivex.Single
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
-import java.util.ArrayList
 import java.util.concurrent.Executor
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class LoadLauncher @Inject constructor(
-    private val launcherItemRepository: LauncherItemRepository,
-    private val workspaceScreenRepository: WorkspaceScreenRepository,
+    private val workspaceRepository: WorkspaceRepository,
     appExecutors: AppExecutors
 ) : ResultInteractor<Unit, WorkspaceModel>() {
 
@@ -23,35 +20,27 @@ class LoadLauncher @Inject constructor(
     override val observeExecutor: Executor = appExecutors.main
 
     override fun doWork(params: Unit?): Single<WorkspaceModel> {
+        Timber.d("This is invoked")
+
         return Single.just(WorkspaceModel())
             .map { workspaceModel ->
-                var clearDb = false
 
-                //TODO: GridSize Migration Task
-                /*if (!clearDb && GridSizeMigrationTask.ENABLED &&
-                    !GridSizeMigrationTask.migrateGridIfNeeded(context)
-                ) {
-                    // Migration failed. Clear workspace.
-                    clearDb = true
-                }*/
+                Timber.d("Current working thread is ${Thread.currentThread().name}")
 
-                if (clearDb) {
-                    Timber.d("loadLauncher: resetting launcher database")
-                    clearAllDbs()
-                }
-
-                workspaceModel.workspaceScreens.addAll(
+                /*workspaceModel.workspaceScreens.addAll(
                     workspaceScreenRepository.findAllOrderedByScreenRank()
-                        .map { it.id })
+                )
 
                 val launcherItems = launcherItemRepository.findAll()
+                var count = 0
+                launcherItems.forEach { count++ }
 
                 // Remove any empty screens
                 val unusedScreens: ArrayList<Long> =
                     ArrayList<Long>(workspaceModel.workspaceScreens)
                 for (item in workspaceModel.itemsIdMap) {
                     val screenId: Long = item.screenId
-                    if (item.container == CONTAINER_DESKTOP.toLong() &&
+                    if (item.container == CONTAINER_DESKTOP &&
                         unusedScreens.contains(screenId)
                     ) {
                         unusedScreens.remove(screenId)
@@ -63,12 +52,9 @@ class LoadLauncher @Inject constructor(
                     workspaceModel.workspaceScreens.removeAll(unusedScreens)
                     //TODO: update workspace screen order in database.
                 }
-                workspaceModel
+                val sortedList = sortWorkspaceItems(launcherItems)*/
+                workspaceRepository.loadWorkspace()
             }
-    }
-
-    private fun clearAllDbs() {
-        workspaceScreenRepository.deleteAll()
-        launcherItemRepository.deleteAll()
+            .subscribeOn(Schedulers.from(subscribeExecutor))
     }
 }

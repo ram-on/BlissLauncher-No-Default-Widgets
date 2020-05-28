@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<profiles xmlns:launcher="http://schemas.android.com/apk/res-auto" >
-
+<profiles xmlns:launcher="http://schemas.android.com/apk/res-auto">
     <profile
         launcher:name="Super Short Stubby"
         launcher:minWidthDps="255"
@@ -12,7 +11,7 @@
         launcher:iconSize="48"
         launcher:iconTextSize="13.0"
         launcher:numHotseatIcons="3"
-        launcher:defaultLayoutId="@xml/default_workspace_3x3"
+        launcher:defaultLayoutId="@xml/dw_hotseat_3"
         />
 
     <profile
@@ -26,7 +25,7 @@
         launcher:iconSize="48"
         launcher:iconTextSize="13.0"
         launcher:numHotseatIcons="3"
-        launcher:defaultLayoutId="@xml/default_workspace_3x3"
+        launcher:defaultLayoutId="@xml/dw_hotseat_3"
         />
 
     <profile
@@ -39,8 +38,8 @@
         launcher:numFolderColumns="4"
         launcher:iconSize="48"
         launcher:iconTextSize="13.0"
-        launcher:numHotseatIcons="5"
-        launcher:defaultLayoutId="@xml/default_workspace_4x4"
+        launcher:numHotseatIcons="4"
+        launcher:defaultLayoutId="@xml/dw_hotseat_4"
         />
 
     <profile
@@ -53,8 +52,8 @@
         launcher:numFolderColumns="4"
         launcher:iconSize="48"
         launcher:iconTextSize="13.0"
-        launcher:numHotseatIcons="5"
-        launcher:defaultLayoutId="@xml/default_workspace_4x4"
+        launcher:numHotseatIcons="4"
+        launcher:defaultLayoutId="@xml/dw_hotseat_4"
         />
 
     <profile
@@ -67,8 +66,8 @@
         launcher:numFolderColumns="4"
         launcher:iconSize="48"
         launcher:iconTextSize="13.0"
-        launcher:numHotseatIcons="5"
-        launcher:defaultLayoutId="@xml/default_workspace_4x4"
+        launcher:numHotseatIcons="4"
+        launcher:defaultLayoutId="@xml/dw_hotseat_4"
         />
 
     <profile
@@ -81,8 +80,8 @@
         launcher:numFolderColumns="4"
         launcher:iconSize="54"
         launcher:iconTextSize="13.0"
-        launcher:numHotseatIcons="5"
-        launcher:defaultLayoutId="@xml/default_workspace_4x4"
+        launcher:numHotseatIcons="4"
+        launcher:defaultLayoutId="@xml/dw_hotseat_4"
         />
 
     <profile
@@ -95,8 +94,8 @@
         launcher:numFolderColumns="4"
         launcher:iconSize="54"
         launcher:iconTextSize="13.0"
-        launcher:numHotseatIcons="5"
-        launcher:defaultLayoutId="@xml/default_workspace_4x4"
+        launcher:numHotseatIcons="4"
+        launcher:defaultLayoutId="@xml/dw_hotseat_4"
         />
 
     <profile
@@ -110,7 +109,7 @@
         launcher:iconSize="56"
         launcher:iconTextSize="14.4"
         launcher:numHotseatIcons="5"
-        launcher:defaultLayoutId="@xml/default_workspace_5x5"
+        launcher:defaultLayoutId="@xml/dw_hotseat_5"
         />
 
     <profile
@@ -119,12 +118,12 @@
         launcher:minHeightDps="904"
         launcher:numRows="5"
         launcher:numColumns="6"
-        launcher:numFolderRows="4"
-        launcher:numFolderColumns="5"
+        launcher:numFolderRows="3"
+        launcher:numFolderColumns="3"
         launcher:iconSize="64"
         launcher:iconTextSize="14.4"
-        launcher:numHotseatIcons="7"
-        launcher:defaultLayoutId="@xml/default_workspace_5x6"
+        launcher:numHotseatIcons="6"
+        launcher:defaultLayoutId="@xml/dw_hotseat_6"
         />
 
     <profile
@@ -133,12 +132,12 @@
         launcher:minHeightDps="1207"
         launcher:numRows="5"
         launcher:numColumns="6"
-        launcher:numFolderRows="4"
-        launcher:numFolderColumns="5"
+        launcher:numFolderRows="3"
+        launcher:numFolderColumns="3"
         launcher:iconSize="76"
         launcher:iconTextSize="14.4"
-        launcher:numHotseatIcons="7"
-        launcher:defaultLayoutId="@xml/default_workspace_5x6"
+        launcher:numHotseatIcons="6"
+        launcher:defaultLayoutId="@xml/dw_hotseat_6"
         />
 
     <profile
@@ -152,7 +151,7 @@
         launcher:iconSize="100"
         launcher:iconTextSize="20.0"
         launcher:numHotseatIcons="7"
-        launcher:defaultLayoutId="@xml/default_workspace_5x6"
+        launcher:defaultLayoutId="@xml/dw_hotseat_6"
         />
 
 </profiles>

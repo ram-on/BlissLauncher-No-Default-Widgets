@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<foundation.e.blisslauncher.widget.InsettableFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent">
+
+    <foundation.e.blisslauncher.features.launcher.Workspace
+        android:id="@+id/workspace"
+        android:layout_gravity="center"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent" />
+
+    <foundation.e.blisslauncher.features.launcher.Hotseat
+        android:background="#f00"
+        android:id="@+id/hotseat"
+        android:layout_gravity="center"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent" />
+</foundation.e.blisslauncher.widget.InsettableFrameLayout>

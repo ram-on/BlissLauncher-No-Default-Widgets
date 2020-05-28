@@ -7,7 +7,7 @@ class FolderItem : LauncherItem() {
 
     var options: Int = 0
 
-    val contents = mutableListOf<AppShortcutItem>()
+    val contents = mutableListOf<ShortcutItem>()
 
     val listeners = ArrayList<FolderListener>()
 
@@ -21,14 +21,14 @@ class FolderItem : LauncherItem() {
      *
      * @param item
      */
-    fun add(item: AppShortcutItem, animate: Boolean) {
+    fun add(item: ShortcutItem, animate: Boolean) {
         add(item, contents.size, animate)
     }
 
     /**
      * Add an app or shortcut for a specified rank.
      */
-    fun add(item: AppShortcutItem, rank: Int, animate: Boolean) {
+    fun add(item: ShortcutItem, rank: Int, animate: Boolean) {
         var rank = rank
         rank = Utilities.boundToRange(rank, 0, contents.size)
         contents.add(rank, item)
@@ -43,7 +43,7 @@ class FolderItem : LauncherItem() {
      *
      * @param item
      */
-    fun remove(item: AppShortcutItem, animate: Boolean) {
+    fun remove(item: ShortcutItem, animate: Boolean) {
         contents.remove(item)
         /*for (i in listeners.indices) {
             listeners.get(i).onRemove(item)
@@ -72,8 +72,8 @@ class FolderItem : LauncherItem() {
     }
 
     interface FolderListener {
-        fun onAdd(item: AppShortcutItem, rank: Int)
-        fun onRemove(item: AppShortcutItem)
+        fun onAdd(item: ShortcutItem, rank: Int)
+        fun onRemove(item: ShortcutItem)
         fun onTitleChanged(title: CharSequence)
         fun onItemsChanged(animate: Boolean)
         fun prepareAutoUpdate()

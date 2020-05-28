@@ -13,7 +13,7 @@ import foundation.e.blisslauncher.domain.keys.ComponentKey
 /**
  * Represents an app in Launcher Workspace
  */
-open class ApplicationItem : AppShortcutItem {
+open class ApplicationItem : ShortcutItem {
 
     /**
      * The intent used to start the application.

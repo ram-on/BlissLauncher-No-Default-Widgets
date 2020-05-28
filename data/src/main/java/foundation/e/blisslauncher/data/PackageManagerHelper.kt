@@ -11,8 +11,9 @@ import android.os.UserHandle
 import android.text.TextUtils
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.domain.entity.ApplicationItem
+import javax.inject.Inject
 
-class PackageManagerHelper(
+class PackageManagerHelper @Inject constructor(
     context: Context,
     private val launcherApps: LauncherAppsCompat
 ) {

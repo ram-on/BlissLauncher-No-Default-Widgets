@@ -24,7 +24,7 @@ import kotlin.math.sin
 
 typealias ComputePageScrollsLogic = (View) -> Boolean
 
-abstract class PagedView @JvmOverloads constructor(
+open class PagedView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
@@ -39,7 +39,7 @@ abstract class PagedView @JvmOverloads constructor(
 
     protected var firstLayout = true
 
-    private var currentPage = 0
+     var currentPage = 0
         set(value) {
             if (!scroller.isFinished) {
                 abortScrollerAnimation(true)
@@ -56,7 +56,7 @@ abstract class PagedView @JvmOverloads constructor(
             invalidate()
         }
 
-    protected var nextPage: Int = INVALID_PAGE
+    var nextPage: Int = INVALID_PAGE
         get() {
             return if (field != INVALID_PAGE) field else currentPage
         }
@@ -95,7 +95,7 @@ abstract class PagedView @JvmOverloads constructor(
     protected var overScrollX = 0
 
     protected var unboundedScrollX = 0
-    
+
     protected var pageIndicator: PageIndicatorDots? = null
 
     // Convenience/caching
@@ -108,7 +108,7 @@ abstract class PagedView @JvmOverloads constructor(
 
     // Similar to the platform implementation of isLayoutValid();
     protected var mIsLayoutValid = false
-    
+
     init {
         isHapticFeedbackEnabled = false
         currentPage = 0
@@ -303,8 +303,8 @@ abstract class PagedView @JvmOverloads constructor(
     }
 
     fun getNormalChildHeight(): Int {
-        return (getExpectedHeight() - paddingTop - paddingBottom
-            - insets.top - insets.bottom)
+        return (getExpectedHeight() - paddingTop - paddingBottom -
+            insets.top - insets.bottom)
     }
 
     fun getExpectedWidth(): Int {
@@ -312,8 +312,8 @@ abstract class PagedView @JvmOverloads constructor(
     }
 
     fun getNormalChildWidth(): Int {
-        return (getExpectedWidth() - paddingLeft - paddingRight
-            - insets.left - insets.right)
+        return (getExpectedWidth() - paddingLeft - paddingRight -
+            insets.left - insets.right)
     }
 
     override fun requestLayout() {
@@ -398,14 +398,18 @@ abstract class PagedView @JvmOverloads constructor(
         if (transition != null && transition.isRunning) {
             transition.addTransitionListener(object : LayoutTransition.TransitionListener {
                 override fun startTransition(
-                    transition: LayoutTransition, container: ViewGroup,
-                    view: View, transitionType: Int
+                    transition: LayoutTransition,
+                    container: ViewGroup,
+                    view: View,
+                    transitionType: Int
                 ) {
                 }
 
                 override fun endTransition(
-                    transition: LayoutTransition, container: ViewGroup,
-                    view: View, transitionType: Int
+                    transition: LayoutTransition,
+                    container: ViewGroup,
+                    view: View,
+                    transitionType: Int
                 ) {
                     // Wait until all transitions are complete.
                     if (!transition.isRunning) {
@@ -434,7 +438,8 @@ abstract class PagedView @JvmOverloads constructor(
      *
      */
     protected fun getPageScrolls(
-        outPageScrolls: IntArray, layoutChildren: Boolean,
+        outPageScrolls: IntArray,
+        layoutChildren: Boolean,
         scrollLogic: ComputePageScrollsLogic
     ): Boolean {
         val childCount = childCount
@@ -735,7 +740,7 @@ abstract class PagedView @JvmOverloads constructor(
         return touchState != TOUCH_STATE_REST
     }
 
-    protected fun determineScrollingStart(ev: MotionEvent) {
+    fun determineScrollingStart(ev: MotionEvent) {
         determineScrollingStart(ev, 1.0f)
     }
 
@@ -997,8 +1002,8 @@ abstract class PagedView @JvmOverloads constructor(
                             scroller.setFinalX((finalX * getScaleX()).toInt())
                             // Ensure the scroll/snap doesn't happen too fast;
                             val extraScrollDuration: Int =
-                                (OVERSCROLL_PAGE_SNAP_ANIMATION_DURATION
-                                    - scroller.getDuration())
+                                (OVERSCROLL_PAGE_SNAP_ANIMATION_DURATION -
+                                    scroller.getDuration())
                             if (extraScrollDuration > 0) {
                                 scroller.extendDuration(extraScrollDuration)
                             }
@@ -1249,7 +1254,9 @@ abstract class PagedView @JvmOverloads constructor(
     }
 
     protected fun snapToPage(
-        whichPage: Int, duration: Int, immediate: Boolean,
+        whichPage: Int,
+        duration: Int,
+        immediate: Boolean,
         interpolator: TimeInterpolator?
     ): Boolean {
         var whichPage = whichPage
@@ -1264,7 +1271,10 @@ abstract class PagedView @JvmOverloads constructor(
     }
 
     protected fun snapToPage(
-        whichPage: Int, delta: Int, duration: Int, immediate: Boolean,
+        whichPage: Int,
+        delta: Int,
+        duration: Int,
+        immediate: Boolean,
         interpolator: TimeInterpolator?
     ): Boolean {
         var whichPage = whichPage
@@ -1335,9 +1345,9 @@ abstract class PagedView @JvmOverloads constructor(
         private const val MIN_SNAP_VELOCITY = 1500
         private const val MIN_FLING_VELOCITY = 250
 
-        private const val TOUCH_STATE_REST = 0
-        private const val TOUCH_STATE_SCROLLING = 1
-        private const val TOUCH_STATE_PREV_PAGE = 2
-        private const val TOUCH_STATE_NEXT_PAGE = 3
+        const val TOUCH_STATE_REST = 0
+        const val TOUCH_STATE_SCROLLING = 1
+        const val TOUCH_STATE_PREV_PAGE = 2
+        const val TOUCH_STATE_NEXT_PAGE = 3
     }
 }

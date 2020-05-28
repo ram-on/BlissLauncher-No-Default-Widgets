@@ -6,6 +6,7 @@ dependencies {
     implementation project(path: ":common")
     implementation Libs.RxJava.rxJava
     implementation Libs.RxJava.rxKotlin
+    implementation "androidx.room:room-rxjava2:2.2.3"
 
     implementation Libs.timber
 

@@ -17,7 +17,7 @@ import android.util.Log
 import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.domain.repository.UserManagerRepository
-import foundation.e.blisslauncher.data.InvariantDeviceProfile
+import foundation.e.blisslauncher.common.InvariantDeviceProfile
 import foundation.e.blisslauncher.data.database.dao.IconDao
 import foundation.e.blisslauncher.data.graphics.BitmapInfo
 import foundation.e.blisslauncher.data.graphics.BitmapRenderer

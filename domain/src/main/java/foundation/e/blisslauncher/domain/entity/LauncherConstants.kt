@@ -24,10 +24,10 @@ class LauncherConstants {
 
     object ContainerType {
 
-        const val CONTAINER_DESKTOP = -100
-        const val CONTAINER_HOTSEAT = -101
+        const val CONTAINER_DESKTOP: Long = -100
+        const val CONTAINER_HOTSEAT: Long = -101
 
-        fun containerToString(container: Int): String = when (container) {
+        fun containerToString(container: Long): String = when (container) {
             CONTAINER_DESKTOP -> "desktop"
             CONTAINER_HOTSEAT -> "hotseat"
             else -> container.toString()

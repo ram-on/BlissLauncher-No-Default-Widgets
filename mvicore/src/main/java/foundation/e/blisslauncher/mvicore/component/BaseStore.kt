@@ -5,11 +5,9 @@ import io.reactivex.ObservableSource
 import io.reactivex.Observer
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
-import io.reactivex.functions.Consumer
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
-import io.reactivex.subjects.Subject
 
 open class BaseStore<Intent : Any, Action : Any, Effect : Any, State : Any, News : Any>(
     initialState: State,
@@ -57,7 +55,7 @@ open class BaseStore<Intent : Any, Action : Any, Effect : Any, State : Any, News
     }
 
     private fun invokeReducer(state: State, action: Action, effect: Effect) {
-        if(isDisposed) return
+        if (isDisposed) return
 
         threadVerifier.verify()
 

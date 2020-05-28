@@ -125,7 +125,7 @@ open class LauncherItem : Entity {
     protected open fun dumpProperties(): String? {
         return ("id=" + id +
             " type=" + LauncherConstants.ItemType.itemTypeToString(itemType) +
-            " container=" + LauncherConstants.ContainerType.containerToString(container.toInt()) +
+            " container=" + LauncherConstants.ContainerType.containerToString(container) +
             " screen=" + screenId +
             " cell(" + cellX + "," + cellY + ")" +
             " span(" + spanX + "," + spanY + ")" +

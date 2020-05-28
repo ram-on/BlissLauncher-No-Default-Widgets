@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
     <declare-styleable name="InvariantDeviceProfile">
         <attr name="name" format="string" />
         <attr name="minWidthDps" format="float" />

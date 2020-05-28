@@ -22,9 +22,9 @@ interface Repository<T, ID> {
      * Saves all given entities.
      *
      * @param entities to be saved.
-     * @return [Iterable] with the saved entities.
+     * @return [List] with the saved entities.
      */
-    fun <S : T> saveAll(entities: Iterable<S>): Iterable<S>
+    fun <S : T> saveAll(entities: List<S>): List<S>
 
     /**
      * Retrieves an entity by its id.
@@ -37,9 +37,9 @@ interface Repository<T, ID> {
     /**
      * Return all entities of this type.
      *
-     * @return [Iterable] with all entities.
+     * @return [List] with all entities.
      */
-    fun findAll(): Iterable<T>
+    fun findAll(): List<T>
 
     /**
      * Deletes a given entity.
@@ -59,5 +59,5 @@ interface Repository<T, ID> {
     /**
      * Deletes the given entities.
      */
-    fun deleteAll(entities: Iterable<T>)
+    fun deleteAll(entities: List<T>)
 }
