@@ -20,14 +20,14 @@ data class WorkspaceItem(
     val title: String,
     @ColumnInfo(typeAffinity = ColumnInfo.TEXT, name = "intent")
     val intentStr: String?,
-    val container: Long,
-    val screen: Long,
-    val cellX: Int,
-    val cellY: Int,
+    var container: Long,
+    var screen: Long,
+    var cellX: Int,
+    var cellY: Int,
     val itemType: Int,
     @ColumnInfo(defaultValue = "0", typeAffinity = ColumnInfo.INTEGER)
     @NonNull
-    val rank: Int,
+    var rank: Int,
     @ColumnInfo
     val profileId: Long
 ) {

@@ -10,6 +10,8 @@ import android.os.StrictMode.VmPolicy
 import android.view.View
 import android.widget.GridLayout
 import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.graphics.drawable.toDrawable
 import dagger.android.AndroidInjection
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.common.DeviceProfile
@@ -146,7 +148,6 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
         if (state is LauncherState.Loaded) {
             val model = state.workspaceModel
             bindScreens(model)
-
             bindWorkspaceItems(model.workspaceItems)
         }
     }
@@ -154,33 +155,19 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
     private fun bindScreens(model: WorkspaceModel) {
         workspace.addExtraEmptyScreen()
         model.workspaceScreens.forEach {
-            workspace.insertNewWorkspaceScreenBeforeEmptyScreen(it)
+            workspace.insertNewWorkspaceScreen(it)
         }
 
         Timber.d("Total child in workspace is: ${workspace.childCount}")
     }
 
     private fun bindWorkspaceItems(workspaceItems: ArrayList<LauncherItem>) {
+        Timber.d("Total workspace items: ${workspaceItems.size}")
         workspaceItems.forEach {
             if (it is LauncherItemWithIcon) {
-                val view = ImageView(this)
-                view.setImageBitmap(it.iconBitmap)
-                val lp = GridLayout.LayoutParams()
-                lp.width = deviceProfile.iconSizePx
-                lp.height = deviceProfile.iconSizePx
-                if (it.screenId >= 0) {
-                    workspace.addInScreenFromBind(view, it)
-                } else {
-                    var currentScreen = workspace.getChildAt(workspace.childCount - 1) as GridLayout
-                    if (currentScreen.childCount < deviceProfile.inv.numRows * deviceProfile.inv.numColumns) {
-                        currentScreen.addView(view)
-                    } else {
-                        workspace.insertNewWorkspaceScreen(workspace.childCount.toLong())
-                        currentScreen =
-                            workspace.getChildAt(workspace.childCount - 1) as GridLayout
-                        currentScreen.addView(view)
-                    }
-                }
+                val view = TextView(this)
+                view.setText(it.title)
+                workspace.addInScreenFromBind(view, it)
             }
         }
     }

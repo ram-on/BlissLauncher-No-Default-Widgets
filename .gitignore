@@ -37,6 +37,7 @@ build/
 # IntelliJ
 *iml
 .idea/workspace.xml
+.idea/jarRepositories.xml
 .idea/libraries
 .idea/caches
 .idea/navEditor.xml

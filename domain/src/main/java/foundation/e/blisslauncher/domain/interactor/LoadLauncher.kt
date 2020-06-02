@@ -19,42 +19,7 @@ class LoadLauncher @Inject constructor(
     override val subscribeExecutor: Executor = appExecutors.io
     override val observeExecutor: Executor = appExecutors.main
 
-    override fun doWork(params: Unit?): Single<WorkspaceModel> {
-        Timber.d("This is invoked")
-
-        return Single.just(WorkspaceModel())
-            .map { workspaceModel ->
-
-                Timber.d("Current working thread is ${Thread.currentThread().name}")
-
-                /*workspaceModel.workspaceScreens.addAll(
-                    workspaceScreenRepository.findAllOrderedByScreenRank()
-                )
-
-                val launcherItems = launcherItemRepository.findAll()
-                var count = 0
-                launcherItems.forEach { count++ }
-
-                // Remove any empty screens
-                val unusedScreens: ArrayList<Long> =
-                    ArrayList<Long>(workspaceModel.workspaceScreens)
-                for (item in workspaceModel.itemsIdMap) {
-                    val screenId: Long = item.screenId
-                    if (item.container == CONTAINER_DESKTOP &&
-                        unusedScreens.contains(screenId)
-                    ) {
-                        unusedScreens.remove(screenId)
-                    }
-                }
-
-                // If there are any empty screens remove them, and update.
-                if (unusedScreens.size != 0) {
-                    workspaceModel.workspaceScreens.removeAll(unusedScreens)
-                    //TODO: update workspace screen order in database.
-                }
-                val sortedList = sortWorkspaceItems(launcherItems)*/
-                workspaceRepository.loadWorkspace()
-            }
+    override fun doWork(params: Unit?): Single<WorkspaceModel> =
+        Single.fromCallable { workspaceRepository.loadWorkspace() }
             .subscribeOn(Schedulers.from(subscribeExecutor))
-    }
 }

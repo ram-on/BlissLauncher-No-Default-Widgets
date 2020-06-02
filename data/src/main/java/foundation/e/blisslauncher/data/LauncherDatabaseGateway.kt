@@ -9,45 +9,21 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import foundation.e.blisslauncher.data.database.BlissLauncherDatabase
 import foundation.e.blisslauncher.data.database.BlissLauncherFiles
 import foundation.e.blisslauncher.data.database.roomentity.WorkspaceItem
+import foundation.e.blisslauncher.data.database.roomentity.WorkspaceScreen
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
-import java.util.ArrayList
 import javax.inject.Inject
 
 class LauncherDatabaseGateway @Inject constructor(
-    context: Context,
+    private val context: Context,
     private val sharedPrefs: SharedPreferences
 ) {
 
-    private val db: BlissLauncherDatabase
+    private lateinit var db: BlissLauncherDatabase
 
     private var maxItemId: Long = -1
     private var maxScreenId: Long = -1
-
-    init {
-        db = Room.databaseBuilder(
-            context,
-            BlissLauncherDatabase::class.java,
-            BlissLauncherFiles.LAUNCHER_DB
-        ).addCallback(
-            object : Callback() {
-                override fun onCreate(db: SupportSQLiteDatabase) {
-                    super.onCreate(db)
-                    Timber.d("Room database created")
-                    maxItemId = 0
-                    maxScreenId = 0
-                    sharedPrefs.edit().putBoolean(EMPTY_DATABASE_CREATED, true).commit()
-                }
-
-                override fun onOpen(db: SupportSQLiteDatabase) {
-                    super.onOpen(db)
-                    Timber.d("Room database opened")
-                    initIds()
-                }
-            }
-        ).build()
-    }
 
     private fun initIds() {
         if (maxItemId == -1L) {
@@ -121,7 +97,8 @@ class LauncherDatabaseGateway @Inject constructor(
 
     fun getAllWorkspaceItems(): List<WorkspaceItem> = db.launcherDao().getAllWorkspaceItems()
 
-    fun loadWorkspaceScreensInOrder(): List<Long> = emptyList()
+    fun loadWorkspaceScreensInOrder(): List<Long> =
+        db.launcherDao().getAllWorkspaceScreens().map { it._id }
 
     fun markDeleted(id: Long) {}
 
@@ -135,7 +112,39 @@ class LauncherDatabaseGateway @Inject constructor(
 
     // Helper function to initialise the database
     fun createDbIfNotExist() {
+        db = Room.databaseBuilder(
+            context,
+            BlissLauncherDatabase::class.java,
+            BlissLauncherFiles.LAUNCHER_DB
+        ).addCallback(
+            object : Callback() {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    super.onCreate(db)
+                    Timber.d("Room database created")
+                    maxItemId = 0
+                    maxScreenId = 0
+                    sharedPrefs.edit().putBoolean(EMPTY_DATABASE_CREATED, true).commit()
+                }
+
+                override fun onOpen(db: SupportSQLiteDatabase) {
+                    super.onOpen(db)
+                    Timber.d("Room database opened")
+                    initIds()
+                }
+            }
+        ).build()
         db.openHelper.readableDatabase
+    }
+
+    fun updateWorkspaceScreenOrder(screenIds: ArrayList<Long>) {
+        val list = ArrayList<WorkspaceScreen>()
+        for(i in screenIds.indices) {
+            val id = screenIds[i]
+            if(id >= 0) {
+                list.add(WorkspaceScreen(id, i))
+            }
+        }
+        db.launcherDao().insertAllWorkspaceScreens(list)
     }
 
     companion object {

@@ -8,23 +8,24 @@ import android.content.pm.LauncherActivityInfo
 import android.os.Process
 import android.os.UserHandle
 import android.util.LongSparseArray
-import androidx.core.graphics.drawable.toBitmap
 import foundation.e.blisslauncher.common.InvariantDeviceProfile
 import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.common.compat.ShortcutInfoCompat
+import foundation.e.blisslauncher.common.util.LabelComparator
 import foundation.e.blisslauncher.common.util.MultiHashMap
 import foundation.e.blisslauncher.data.database.roomentity.WorkspaceItem
 import foundation.e.blisslauncher.data.parser.DefaultHotseatParser
 import foundation.e.blisslauncher.data.shortcuts.PinnedShortcutManager
 import foundation.e.blisslauncher.data.util.LauncherItemComparator
 import foundation.e.blisslauncher.domain.dto.WorkspaceModel
-import foundation.e.blisslauncher.domain.entity.ShortcutItem
 import foundation.e.blisslauncher.domain.entity.ApplicationItem
 import foundation.e.blisslauncher.domain.entity.FolderItem
 import foundation.e.blisslauncher.domain.entity.LauncherConstants
+import foundation.e.blisslauncher.domain.entity.LauncherConstants.ContainerType.CONTAINER_DESKTOP
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 import foundation.e.blisslauncher.domain.entity.LauncherItemWithIcon
+import foundation.e.blisslauncher.domain.entity.ShortcutItem
 import foundation.e.blisslauncher.domain.keys.ShortcutKey
 import foundation.e.blisslauncher.domain.repository.UserManagerRepository
 import foundation.e.blisslauncher.domain.repository.WorkspaceRepository
@@ -101,9 +102,12 @@ class WorkspaceRepositoryImpl
 
         loadDefaultWorkspaceIfNecessary(allAppsMap)
 
+        workspaceModel.workspaceScreens.addAll(launcherDatabase.loadWorkspaceScreensInOrder())
+
         //Populate item from database and fill necessary details based on users.
         val launcherDatabaseItems = launcherDatabase.getAllWorkspaceItems()
         Timber.d("LauncherDatabase size is ${launcherDatabaseItems.size}")
+        Timber.d("Workspace screen  size is ${workspaceModel.workspaceScreens.size}")
         launcherDatabaseItems
             .forEach {
                 it.apply {
@@ -147,26 +151,128 @@ class WorkspaceRepositoryImpl
             "Size of launcherItems before processing remaining app items: " +
                 "${workspaceModel.workspaceItems.size}"
         )
-        allAppsMap.values.forEach { info ->
-            val applicationItem = ApplicationItem(
-                info,
-                info.user,
-                quietMode[userManager.getSerialNumberForUser(info.user)]
-            )
-            applicationItem.iconBitmap = info.getBadgedIcon(0).toBitmap()
-            checkAndAddItem(applicationItem, workspaceModel)
-        }
 
         sortWorkspaceItems(workspaceModel.workspaceItems)
 
+        // Processing newly added apps.
+        // These apps are added when launcher was not running
+        val apps = ArrayList<WorkspaceItem>()
+        allAppsMap.values.map {
+            val intent = Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setComponent(it.componentName)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+
+            WorkspaceItem(
+                launcherDatabase.generateNewItemId(),
+                it.label.toString(),
+                intent.toUri(0),
+                CONTAINER_DESKTOP,
+                -1,
+                -1,
+                -1,
+                LauncherConstants.ItemType.APPLICATION,
+                -1,
+                userManager.getSerialNumberForUser(it.user)
+            )
+        }
+
+        var (cellX, cellY, rank) = lastItemPositionAndRank(workspaceModel.workspaceItems)
+
+        val labelComparator = LabelComparator()
+        apps.sortWith(Comparator { item1, item2 ->
+            labelComparator.compare(item1.title, item2.title)
+        })
+
+        var currentScreenId =
+            workspaceModel.workspaceScreens[workspaceModel.workspaceScreens.size - 1]
+
+        apps.forEach {
+            if (rank == idp.numRows * idp.numColumns) {
+                currentScreenId = launcherDatabase.generateNewScreenId()
+                workspaceModel.workspaceScreens.add(currentScreenId)
+                cellX = 0
+                cellY = 0
+                rank = calculateRank(cellX, cellY, idp.numRows)
+            }
+            it.screen = currentScreenId
+            it.cellX = cellX
+            it.cellY = cellY
+            it.rank = rank
+            val (cX, cY) = generateNewCell(cellX, cellY, idp.numColumns)
+            cellX = cX
+            cellY = cY
+        }
+        launcherDatabase.saveAll(apps)
+        launcherDatabase.updateWorkspaceScreenOrder(workspaceModel.workspaceScreens)
+
+        apps.forEach {
+            val item = convertToLauncherItem(
+                it,
+                quietMode,
+                isSdCardReady,
+                isSafeMode,
+                unlockedUsers,
+                pendingPackages,
+                shortcutKeyToPinnedShortcuts
+            )
+            if (item != null) {
+                checkAndAddItem(item, workspaceModel)
+            }
+        }
+
+        // Remove any empty screens
+        val unusedScreens: ArrayList<Long> =
+            ArrayList(workspaceModel.workspaceScreens)
+        for (item in workspaceModel.itemsIdMap) {
+            val screenId: Long = item.screenId
+            if (item.container == CONTAINER_DESKTOP && unusedScreens.contains(screenId)) {
+                unusedScreens.remove(screenId)
+            }
+        }
+
+        // If there are any empty screens remove them, and update.
+        if (unusedScreens.size != 0) {
+            workspaceModel.workspaceScreens.removeAll(unusedScreens)
+            launcherDatabase.updateWorkspaceScreenOrder(workspaceModel.workspaceScreens)
+        }
         return workspaceModel
     }
 
+    private fun lastItemPositionAndRank(workspaceItems: ArrayList<LauncherItem>): Triple<Int, Int, Int> {
+        val size = workspaceItems.size
+        val lastItem = workspaceItems[size - 1]
+        var screenId = lastItem.screenId
+        val x = lastItem.cellX
+        val y = lastItem.cellY
+        val rank = calculateRank(x, y, idp.numColumns)
+        Timber.d("${rank + 1} items on last screens having id $screenId")
+        return Triple(x, y, rank)
+    }
+
     private fun checkAndAddItem(
-        launcherItem: LauncherItem,
+        item: LauncherItem,
         workspaceModel: WorkspaceModel
     ): Boolean {
-        workspaceModel.addItem(context, launcherItem, false)
+        if (checkItemPlacement(item, workspaceModel)) {
+            workspaceModel.addItem(context, item, false)
+            return true
+        } else {
+            launcherDatabase.markDeleted(item.id)
+            return false
+        }
+    }
+
+    private fun checkItemPlacement(
+        item: LauncherItem,
+        workspaceModel: WorkspaceModel
+    ): Boolean {
+        if (item.container == CONTAINER_DESKTOP) {
+            if (!workspaceModel.workspaceScreens.contains(item.screenId)) {
+                launcherDatabase.markDeleted(item.id)
+                return false
+            }
+        }
         return true
     }
 
@@ -179,7 +285,7 @@ class WorkspaceRepositoryImpl
             Timber.d("Hotseat count is $count")
             val existingWorkspaceItems = launcherDatabase.getAllWorkspaceItems()
             val apps = ArrayList<WorkspaceItem>()
-
+            val screenIds = ArrayList<Long>()
             allAppsMap.values.forEach {
                 if (!isApplicationAlreadyAdded(existingWorkspaceItems, it.componentName)) {
                     val intent = Intent(Intent.ACTION_MAIN)
@@ -192,17 +298,79 @@ class WorkspaceRepositoryImpl
                             launcherDatabase.generateNewItemId(),
                             it.label.toString(),
                             intent.toUri(0),
-                            LauncherConstants.ContainerType.CONTAINER_DESKTOP,
-                            -1, -1, -1, LauncherConstants.ItemType.APPLICATION
-                            , 0, userManager.getSerialNumberForUser(Process.myUserHandle())
+                            CONTAINER_DESKTOP,
+                            -1,
+                            -1,
+                            -1,
+                            LauncherConstants.ItemType.APPLICATION,
+                            -1,
+                            userManager.getSerialNumberForUser(it.user)
                         )
                     )
                 }
             }
 
+            val labelComparator = LabelComparator()
+            apps.sortWith(Comparator { item1, item2 ->
+                labelComparator.compare(item1.title, item2.title)
+            })
+
+            populateScreensAndCells(apps, screenIds)
+
             launcherDatabase.saveAll(apps)
+            launcherDatabase.updateWorkspaceScreenOrder(screenIds)
+            clearFlagEmptyDbCreated()
         }
     }
+
+    private fun populateScreensAndCells(
+        apps: ArrayList<WorkspaceItem>,
+        screenIds: ArrayList<Long>
+    ) {
+        var currentScreenId = launcherDatabase.generateNewScreenId()
+        screenIds.add(currentScreenId)
+        var cellX = 0
+        var cellY = 0
+        val cols = idp.numColumns
+        val rows = idp.numRows
+        apps.forEach {
+            var rank = calculateRank(cellX, cellY, cols)
+            Timber.d("Cellx, celly, rank of ${it.title} is $cellX, $cellY, $rank")
+            if (rank >= rows * cols) {
+                currentScreenId = launcherDatabase.generateNewScreenId()
+                screenIds.add(currentScreenId)
+                cellX = 0
+                cellY = 0
+                rank = calculateRank(cellX, cellY, cols)
+                Timber.d("Cellx, celly, rank of ${it.title} is $cellX, $cellY, $rank")
+            }
+            it.screen = currentScreenId
+            it.cellX = cellX
+            it.cellY = cellY
+            it.rank = rank
+            val (cX, cY) = generateNewCell(cellX, cellY, cols)
+            cellX = cX
+            cellY = cY
+        }
+    }
+
+    private fun generateNewCell(cellX: Int, cellY: Int, cols: Int): Pair<Int, Int> {
+        var tempX = cellX + 1
+        var tempY = cellY
+        if (tempX >= cols) {
+            tempX = 0
+            tempY += 1
+        }
+        return Pair(tempX, tempY)
+    }
+
+    private fun calculateRank(cellX: Int, cellY: Int, cols: Int): Int = cellY * cols + cellX
+
+    private fun clearFlagEmptyDbCreated() {
+        sharedPrefs.edit().putBoolean(LauncherDatabaseGateway.EMPTY_DATABASE_CREATED, false)
+            .commit()
+    }
+
 
     private fun isApplicationAlreadyAdded(
         existingWorkspaceItems: List<WorkspaceItem>,
@@ -300,10 +468,10 @@ class WorkspaceRepositoryImpl
         val screenCols = idp.numColumns
         val screenRows = idp.numRows
         val screenCellCount = screenCols * screenRows
-        Collections.sort(launcherItems, { lhs, rhs ->
+        Collections.sort(launcherItems) { lhs, rhs ->
             if (lhs.container == rhs.container) {
                 when (lhs.container) {
-                    LauncherConstants.ContainerType.CONTAINER_DESKTOP -> {
+                    CONTAINER_DESKTOP -> {
                         val lr = lhs.screenId * screenCellCount + lhs.cellY * screenCols + lhs.cellX
                         val rr = rhs.screenId * screenCellCount + rhs.cellY * screenCols + rhs.cellX
                         val result = lr.compareTo(rr)
@@ -318,7 +486,7 @@ class WorkspaceRepositoryImpl
             } else {
                 lhs.container.compareTo(rhs.container)
             }
-        })
+        }
     }
 
     private fun convertToLauncherItem(
@@ -422,17 +590,15 @@ class WorkspaceRepositoryImpl
                         )
                     }
                 }
-                if (launcherItem != null) {
-                    launcherItem.apply {
-                        item.applyCommonProperties(this)
-                    }
-                    launcherItem.intent = item.intent
-                    launcherItem.rank = item.rank
-                    launcherItem.runtimeStatusFlags =
-                        launcherItem.runtimeStatusFlags or disabledState
+                launcherItem?.apply {
+                    item.applyCommonProperties(this)
+                    this.intent = item.intent
+                    this.rank = item.rank
+                    this.runtimeStatusFlags =
+                        this.runtimeStatusFlags or disabledState
                     if (!isSafeMode && !Utilities.isSystemApp(context, item.intent)) {
-                        launcherItem.runtimeStatusFlags =
-                            launcherItem.runtimeStatusFlags or LauncherItemWithIcon.FLAG_DISABLED_SAFEMODE
+                        this.runtimeStatusFlags =
+                            this.runtimeStatusFlags or LauncherItemWithIcon.FLAG_DISABLED_SAFEMODE
                     }
                 }
                 launcherItem

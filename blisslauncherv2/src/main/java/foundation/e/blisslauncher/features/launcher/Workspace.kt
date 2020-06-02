@@ -74,13 +74,11 @@ class Workspace @JvmOverloads constructor(
 
         setLayoutTransition(layoutTransition)
 
-
         // Set the wallpaper dimensions when Launcher starts up
         setWallpaperDimension()
         isMotionEventSplittingEnabled = true
 
         //TODO: Set touch listener if required
-
     }
 
     private fun setupLayoutTransition() {
@@ -311,6 +309,8 @@ class Workspace @JvmOverloads constructor(
     fun addInScreenFromBind(child: View, item: LauncherItem) {
         val x = item.cellX
         val y = item.cellY
+        Timber.d("Child title is: ${item.title}")
+        Timber.d("Child screen is: ${item.screenId}")
         addInScreen(child, item.container, item.screenId, x, y)
     }
 
@@ -332,12 +332,24 @@ class Workspace @JvmOverloads constructor(
             throw RuntimeException("Screen id should not be EXTRA_EMPTY_SCREEN_ID")
         }
 
+        var layout: GridLayout
         if (container == LauncherConstants.ContainerType.CONTAINER_HOTSEAT) {
             //TODO: Hide folder title in hotseat
+            layout = LauncherActivity.getLauncher(context).findViewById(R.id.hotseat)
         } else {
+            layout = getScreenWithId(screenId)
         }
-        // TODO: Add view to gridlayout here
 
+        val rowSpec =
+            GridLayout.spec(GridLayout.UNDEFINED)
+        val colSpec =
+            GridLayout.spec(GridLayout.UNDEFINED)
+        val lp = GridLayout.LayoutParams(rowSpec, colSpec)
+        lp.width = deviceProfile.iconSizePx
+        lp.height = deviceProfile.iconSizePx
+        child.layoutParams = lp
+        layout.addView(child, lp)
+        child.visibility = View.VISIBLE
         child.isHapticFeedbackEnabled = false
         child.setOnLongClickListener(null)
     }
