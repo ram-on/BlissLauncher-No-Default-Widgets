@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.widget
+package foundation.e.blisslauncher.views
 
 import android.animation.LayoutTransition
 import android.animation.TimeInterpolator
@@ -18,7 +18,7 @@ import android.view.ViewGroup
 import android.widget.Scroller
 import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.touch.OverScroll
-import foundation.e.blisslauncher.widget.pageindicators.PageIndicatorDots
+import foundation.e.blisslauncher.views.pageindicators.PageIndicatorDots
 import java.util.ArrayList
 import kotlin.math.sin
 

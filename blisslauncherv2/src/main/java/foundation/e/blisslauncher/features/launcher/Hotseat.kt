@@ -6,16 +6,18 @@ import android.util.AttributeSet
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.GridLayout
-import foundation.e.blisslauncher.widget.Insettable
+import foundation.e.blisslauncher.common.LauncherConstants
+import foundation.e.blisslauncher.views.CellLayout
 
 class Hotseat @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : GridLayout(context, attrs, defStyleAttr), Insettable {
+) : CellLayout(context) {
 
     private val launcher: LauncherActivity = LauncherActivity.getLauncher(context)
+
+    override var containerType = LauncherConstants.ContainerType.CONTAINER_DESKTOP
 
     override fun setInsets(insets: Rect) {
         val lp = getLayoutParams() as FrameLayout.LayoutParams

@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.widget.pageindicators
+package foundation.e.blisslauncher.views.pageindicators
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter

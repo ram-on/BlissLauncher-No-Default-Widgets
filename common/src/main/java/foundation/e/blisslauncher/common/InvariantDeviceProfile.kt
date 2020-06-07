@@ -122,11 +122,11 @@ open class InvariantDeviceProfile {
         val largeSide = Math.max(realSize.x, realSize.y)
         landscapeProfile = DeviceProfile(
             context, this, smallestSize, largestSize,
-            largeSide, smallSide, true, false
+            largeSide, smallSide
         )
         portraitProfile = DeviceProfile(
             context, this, smallestSize, largestSize,
-            smallSide, largeSide, false, false
+            smallSide, largeSide
         )
         // We need to ensure that there is enough extra space in the wallpaper
         // for the intended parallax effects

@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -12,17 +13,20 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
+import android.os.Build
+import android.os.Process
 import android.os.UserHandle
 import android.util.Log
+import foundation.e.blisslauncher.common.BitmapRenderer
+import foundation.e.blisslauncher.common.InvariantDeviceProfile
 import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
-import foundation.e.blisslauncher.domain.repository.UserManagerRepository
-import foundation.e.blisslauncher.common.InvariantDeviceProfile
 import foundation.e.blisslauncher.data.database.dao.IconDao
-import foundation.e.blisslauncher.data.graphics.BitmapInfo
-import foundation.e.blisslauncher.data.graphics.BitmapRenderer
+import foundation.e.blisslauncher.data.database.roomentity.IconEntity
 import foundation.e.blisslauncher.domain.keys.ComponentKey
+import foundation.e.blisslauncher.domain.repository.UserManagerRepository
 import java.util.HashSet
+import java.util.Stack
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -33,16 +37,17 @@ class IconCache @Inject constructor(
     private val iconProvider: IconProvider,
     private val launcherApps: LauncherAppsCompat,
     private val userManager: UserManagerRepository,
-    private val iconDao: IconDao
+    private val iconDao: IconDao,
+    private val launcherIcons: LauncherIcons
 ) {
 
-    inner class CacheEntry : BitmapInfo() {
-        var title: CharSequence = ""
+    data class CacheEntry(
+        var bitmap: Bitmap,
+        var title: CharSequence? = "",
         var contentDescription: CharSequence = ""
-        var isLowResIcon = false
-    }
+    )
 
-    private val mDefaultIcons: HashMap<UserHandle, BitmapInfo> = HashMap()
+    private val mDefaultIcons: HashMap<UserHandle, Bitmap> = HashMap()
     private val packageManager: PackageManager = context.packageManager
     private val cache = HashMap<ComponentKey, CacheEntry>()
     private val iconDpi: Int = inv.fillResIconDpi
@@ -87,7 +92,7 @@ class IconCache @Inject constructor(
         }
     }
 
-    fun getFullResIcon(info: ActivityInfo): Drawable? {
+    fun getFullResIcon(info: ActivityInfo): Drawable {
         return try {
             packageManager.getResourcesForApplication(
                 info.applicationInfo
@@ -112,14 +117,11 @@ class IconCache @Inject constructor(
         return iconProvider.getIcon(info, iconDpi, flattenDrawable)
     }
 
-    //TODO
-    /*protected fun makeDefaultIcon(user: UserHandle?): BitmapInfo? {
-        LauncherIcons.obtain(mContext).use({ li ->
-            return li.createBadgedIconBitmap(
-                getFullResDefaultActivityIcon(), user, VERSION.SDK_INT
-            )
-        })
-    }*/
+    protected fun makeDefaultIcon(user: UserHandle?): Bitmap {
+        return launcherIcons.createBadgedIconBitmap(
+            getFullResDefaultActivityIcon(), user, Build.VERSION.SDK_INT
+        )
+    }
 
     /**
      * Remove any records for the supplied ComponentName.
@@ -161,15 +163,63 @@ class IconCache @Inject constructor(
         try {
             val info: PackageInfo = packageManager.getPackageInfo(
                 packageName,
-                PackageManager.GET_UNINSTALLED_PACKAGES
+                PackageManager.MATCH_UNINSTALLED_PACKAGES
             )
             val userSerial: Long = userManager.getSerialNumberForUser(user)
             for (app in launcherApps.getActivityList(packageName, user)) {
-                //addIconToDBAndMemCache(app, info, userSerial, false /*replace existing*/)
+                addIconToDBAndMemCache(app, info, userSerial, false /*replace existing*/)
             }
         } catch (e: PackageManager.NameNotFoundException) {
             Log.d(TAG, "Package not found", e)
         }
+    }
+
+    private fun addIconToDBAndMemCache(
+        app: LauncherActivityInfo,
+        info: PackageInfo,
+        userSerial: Long,
+        replaceExisting: Boolean
+    ) {
+        val componentKey = ComponentKey(app.componentName, app.user)
+        var entry: CacheEntry? = null
+        if (!replaceExisting) {
+            entry = cache[componentKey]
+            if (entry?.bitmap == null) {
+                entry == null
+            }
+        }
+
+        if (entry == null) {
+            entry = launcherIcons.createBadgedIconBitmap(
+                getFullResIcon(app),
+                app.user,
+                app.applicationInfo.targetSdkVersion
+            ).let {
+                CacheEntry(it, app.label, userManager.getBadgedLabelForUser(app.label, app.user))
+            }
+        }
+        cache.put(componentKey, entry)
+        addIconToDB(entry, app.componentName, app.applicationInfo.packageName, info, userSerial)
+    }
+
+    private fun addIconToDB(
+        entry: CacheEntry,
+        componentName: ComponentName,
+        packageName: String,
+        info: PackageInfo,
+        userSerial: Long
+    ) {
+        val iconEntity = IconEntity(
+            componentName.flattenToString(),
+            userSerial,
+            info.lastUpdateTime,
+            info.versionCode,
+            Utilities.flattenBitmap(entry.bitmap),
+            entry.title.toString(),
+            iconProvider.getIconSystemState(packageName)
+        )
+
+        iconDao.insertOrReplace(iconEntity)
     }
 
     /**
@@ -200,11 +250,77 @@ class IconCache @Inject constructor(
             }
             // Update icon cache. This happens in segments and {@link #onPackageIconsUpdated}
             // is called by the icon cache when the job is complete.
-            /*updateDBIcons(
+            updateDBIcons(
                 user,
                 apps,
-                if (Process.myUserHandle() == user) ignorePackagesForMainUser else emptySet<String>()
-            )*/
+                if (Process.myUserHandle() == user) ignorePackagesForMainUser else emptySet()
+            )
+        }
+    }
+
+    private fun updateDBIcons(
+        user: UserHandle,
+        apps: List<LauncherActivityInfo>,
+        ignorePackages: Set<String>
+    ) {
+        val userSerial = userManager.getSerialNumberForUser(user)
+        val pm = context.packageManager
+        val pkgInfoMap = HashMap<String, PackageInfo>()
+        pm.getInstalledPackages(PackageManager.MATCH_UNINSTALLED_PACKAGES).forEach {
+            pkgInfoMap[it.packageName] = it
+        }
+
+        val componentMap = HashMap<ComponentName, LauncherActivityInfo>()
+        for (app in apps) {
+            componentMap[app.componentName] = app
+        }
+
+        val itemsToRemove = HashSet<String>()
+        val appsToUpdate = Stack<LauncherActivityInfo>()
+
+        iconDao.query(userSerial).forEach {
+            val cn = it.componentName
+            val component = ComponentName.unflattenFromString(cn)
+            val info = pkgInfoMap[component.packageName]
+            if (info == null) {
+                if (!ignorePackages.contains(component.packageName)) {
+                    remove(component, user)
+                    itemsToRemove.add(cn)
+                }
+                return@forEach
+            }
+
+            if (info.applicationInfo.flags and ApplicationInfo.FLAG_IS_DATA_ONLY != 0) {
+                return@forEach
+            }
+
+            val app = componentMap.remove(component)
+            if (it.version == info.versionCode && it.lastUpdated == info.lastUpdateTime
+                && it.systemState == iconProvider.getIconSystemState(info.packageName)
+            ) {
+                return@forEach
+            }
+
+            if (app == null) {
+                remove(component, user)
+                itemsToRemove.add(cn)
+            } else {
+                appsToUpdate.add(app)
+            }
+        }
+
+        if (itemsToRemove.isNotEmpty()) {
+            iconDao.delete(itemsToRemove.toList())
+        }
+
+        if (componentMap.isNotEmpty() || appsToUpdate.isNotEmpty()) {
+            val appsToAdd =
+                Stack<LauncherActivityInfo>()
+            appsToAdd.addAll(componentMap.values)
+            /*SerializedIconUpdateTask(
+                userSerial, pkgInfoMap,
+                appsToAdd, appsToUpdate
+            ).scheduleNext()*/
         }
     }
 

@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.widget.pageindicators
+package foundation.e.blisslauncher.views.pageindicators
 
 /**
  * Interface for a page indicator.

@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package foundation.e.blisslauncher.data.graphics
+package foundation.e.blisslauncher.common
 
 import android.annotation.TargetApi
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Picture
 import android.os.Build
-import foundation.e.blisslauncher.common.Utilities
 
 object BitmapRenderer {
-    val USE_HARDWARE_BITMAP: Boolean = Utilities.ATLEAST_P
+    val USE_HARDWARE_BITMAP = Utilities.ATLEAST_P
+
     fun createSoftwareBitmap(
         width: Int,
         height: Int,
@@ -45,7 +45,11 @@ object BitmapRenderer {
         renderer: Renderer
     ): Bitmap {
         if (!USE_HARDWARE_BITMAP) {
-            return createSoftwareBitmap(width, height, renderer)
+            return createSoftwareBitmap(
+                width,
+                height,
+                renderer
+            )
         }
         val picture = Picture()
         renderer.draw(picture.beginRecording(width, height))
@@ -57,6 +61,6 @@ object BitmapRenderer {
      * Interface representing a bitmap draw operation.
      */
     interface Renderer {
-        fun draw(out: Canvas?)
+        fun draw(out: Canvas)
     }
 }

@@ -30,6 +30,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation Libs.Kotlin.stdlib
+    implementation Libs.AndroidX.coreKtx
 
     // Dagger
     implementation Libs.Dagger.dagger

@@ -1,4 +1,4 @@
-package foundation.e.blisslauncher.widget
+package foundation.e.blisslauncher.views
 
 import android.graphics.Rect
 /**

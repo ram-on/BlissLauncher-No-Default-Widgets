@@ -9,7 +9,7 @@ import javax.inject.Singleton
 
 @Singleton
 class IconProvider @Inject constructor(context: Context) {
-    private var mSystemState: String? = null
+    private var mSystemState: String = ""
 
     init {
         updateSystemStateString(context)
@@ -20,7 +20,7 @@ class IconProvider @Inject constructor(context: Context) {
         mSystemState = locale + "," + Build.VERSION.SDK_INT
     }
 
-    fun getIconSystemState(packageName: String?): String? {
+    fun getIconSystemState(packageName: String): String {
         return mSystemState
     }
 

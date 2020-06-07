@@ -29,7 +29,7 @@ class ShortcutInfoCompat(private val shortcutInfo: ShortcutInfo) {
     //@RequiresApi(Build.VERSION_CODES.N_MR1)
     fun getBadgePackage(context: Context): String? {
         val whitelistedPkg = ""
-        return if (whitelistedPkg == getPackage() && shortcutInfo.getExtras().containsKey(
+        return if (whitelistedPkg == getPackage() && shortcutInfo.extras.containsKey(
                 EXTRA_BADGEPKG
             )
         ) {

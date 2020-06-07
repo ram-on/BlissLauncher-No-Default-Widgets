@@ -24,8 +24,7 @@ import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
 import android.util.DisplayMetrics
-import android.view.Surface
-import android.view.WindowManager
+import android.util.Log
 
 class DeviceProfile(
     context: Context,
@@ -33,9 +32,7 @@ class DeviceProfile(
     minSize: Point,
     maxSize: Point,
     width: Int,
-    height: Int,
-    isLandscape: Boolean,
-    isMultiWindowMode: Boolean
+    height: Int
 ) {
     val inv: InvariantDeviceProfile
 
@@ -45,9 +42,6 @@ class DeviceProfile(
     val isPhone: Boolean
     val transposeLayoutWithOrientation: Boolean
 
-    // Device properties in current orientation
-    val isLandscape: Boolean
-    val isMultiWindowMode: Boolean
     val widthPx: Int
     val heightPx: Int
     var availableWidthPx = 0
@@ -61,11 +55,6 @@ class DeviceProfile(
     val defaultWidgetPadding: Rect
     val defaultPageSpacingPx: Int
     private val topWorkspacePadding: Int
-    var workspaceSpringLoadShrinkFactor = 0f
-    val workspaceSpringLoadedBottomSpace: Int
-
-    // Drag handle
-    val verticalDragHandleSizePx: Int
 
     // Workspace icons
     var iconSizePx = 0
@@ -98,17 +87,13 @@ class DeviceProfile(
     val hotseatBarBottomPaddingPx: Int
     val hotseatBarSidePaddingPx: Int
 
-    // All apps
-    var allAppsCellHeightPx = 0
-    var allAppsIconSizePx = 0
-    var allAppsIconDrawablePaddingPx = 0
-    var allAppsIconTextSizePx = 0f
-
     // Widgets
     val appWidgetScale = PointF(1.0f, 1.0f)
 
     // Drop Target
     var dropTargetBarSizePx: Int
+
+    private val TAG = "DeviceProfile"
 
     // Insets
     val insets = Rect()
@@ -120,69 +105,16 @@ class DeviceProfile(
         val size =
             Point(availableWidthPx, availableHeightPx)
         return DeviceProfile(
-            context, inv, size, size, widthPx, heightPx, isLandscape,
-            isMultiWindowMode
+            context, inv, size, size, widthPx, heightPx
         )
-    }
-
-    fun getMultiWindowProfile(
-        context: Context,
-        mwSize: Point
-    ): DeviceProfile {
-        // We take the minimum sizes of this profile and it's multi-window variant to ensure that
-        // the system decor is always excluded.
-        mwSize[Math.min(availableWidthPx, mwSize.x)] = Math.min(availableHeightPx, mwSize.y)
-        // In multi-window mode, we can have widthPx = availableWidthPx
-        // and heightPx = availableHeightPx because Launcher uses the InvariantDeviceProfiles'
-        // widthPx and heightPx values where it's needed.
-        val profile =
-            DeviceProfile(
-                context, inv, mwSize, mwSize, mwSize.x, mwSize.y,
-                isLandscape, true
-            )
-        // If there isn't enough vertical cell padding with the labels displayed, hide the labels.
-        val workspaceCellPaddingY = (profile.cellSize.y - profile.iconSizePx -
-            iconDrawablePaddingPx - profile.iconTextSizePx).toFloat()
-        if (workspaceCellPaddingY < profile.iconDrawablePaddingPx * 2) {
-            profile.adjustToHideWorkspaceLabels()
-        }
-        // We use these scales to measure and layout the widgets using their full invariant profile
-        // sizes and then draw them scaled and centered to fit in their multi-window mode cellspans.
-        val appWidgetScaleX =
-            profile.cellSize.x.toFloat() / cellSize.x
-        val appWidgetScaleY =
-            profile.cellSize.y.toFloat() / cellSize.y
-        profile.appWidgetScale[appWidgetScaleX] = appWidgetScaleY
-        profile.updateWorkspacePadding()
-        return profile
     }
 
     /**
      * Inverse of [.getMultiWindowProfile]
      * @return device profile corresponding to the current orientation in non multi-window mode.
      */
-    val fullScreenProfile: DeviceProfile? = null
-        //get() = if (isLandscape) inv.landscapeProfile else inv.portraitProfile
-
-    /**
-     * Adjusts the profile so that the labels on the Workspace are hidden.
-     * It is important to call this method after the All Apps variables have been set.
-     */
-    private fun adjustToHideWorkspaceLabels() {
-        iconTextSizePx = 0
-        iconDrawablePaddingPx = 0
-        cellHeightPx = iconSizePx
-        // In normal cases, All Apps cell height should equal the Workspace cell height.
-        // Since we are removing labels from the Workspace, we need to manually compute the
-        // All Apps cell height.
-        val topBottomPadding =
-            allAppsIconDrawablePaddingPx * if (isVerticalBarLayout) 2 else 1
-        allAppsCellHeightPx = (allAppsIconSizePx + allAppsIconDrawablePaddingPx +
-            Utilities.calculateTextHeight(
-                allAppsIconTextSizePx
-            ) +
-            topBottomPadding * 2)
-    }
+    var fullScreenProfile: DeviceProfile? = null
+        get() = inv.portraitProfile
 
     private fun updateAvailableDimensions(
         dm: DisplayMetrics,
@@ -204,10 +136,7 @@ class DeviceProfile(
         res: Resources,
         dm: DisplayMetrics
     ) {
-        // Workspace
-        val isVerticalLayout = isVerticalBarLayout
-        val invIconSizePx =
-            if (isVerticalLayout) inv.landscapeIconSize else inv.iconSize
+        val invIconSizePx = inv.iconSize
         iconSizePx =
             (Utilities.pxFromDp(
                 invIconSizePx,
@@ -217,47 +146,19 @@ class DeviceProfile(
             inv.iconTextSize,
             dm
         ) * scale).toInt()
-        iconDrawablePaddingPx = (iconDrawablePaddingOriginalPx * scale).toInt()
-        cellHeightPx = (iconSizePx + iconDrawablePaddingPx +
-            Utilities.calculateTextHeight(
-                iconTextSizePx.toFloat()
-            ))
+        iconDrawablePaddingPx =
+            (availableWidthPx - iconSizePx * inv.numColumns) / (inv.numColumns + 1)
+        cellHeightPx = (iconSizePx + iconDrawablePaddingPx
+            + Utilities.calculateTextHeight(iconTextSizePx.toFloat()))
+
         val cellYPadding = (cellSize.y - cellHeightPx) / 2
-        if (iconDrawablePaddingPx > cellYPadding && !isVerticalLayout &&
-            !isMultiWindowMode
-        ) {
-            // Ensures that the label is closer to its corresponding icon. This is not an issue
-            // with vertical bar layout or multi-window mode since the issue is handled separately
-            // with their calls to {@link #adjustToHideWorkspaceLabels}.
+        if (iconDrawablePaddingPx > cellYPadding) {
             cellHeightPx -= iconDrawablePaddingPx - cellYPadding
             iconDrawablePaddingPx = cellYPadding
         }
         cellWidthPx = iconSizePx + iconDrawablePaddingPx
-        // All apps
-        allAppsIconTextSizePx = iconTextSizePx.toFloat()
-        allAppsIconSizePx = iconSizePx
-        allAppsIconDrawablePaddingPx = iconDrawablePaddingPx
-        allAppsCellHeightPx = cellSize.y
-        if (isVerticalLayout) { // Always hide the Workspace text with vertical bar layout.
-            adjustToHideWorkspaceLabels()
-        }
-        // Hotseat
-        if (isVerticalLayout) {
-            hotseatBarSizePx = iconSizePx
-        }
         hotseatCellHeightPx = iconSizePx
-        workspaceSpringLoadShrinkFactor = if (!isVerticalLayout) {
-            val expectedWorkspaceHeight = (availableHeightPx - hotseatBarSizePx -
-                verticalDragHandleSizePx - topWorkspacePadding)
-            val minRequiredHeight =
-                dropTargetBarSizePx + workspaceSpringLoadedBottomSpace.toFloat()
-            Math.min(
-                res.getInteger(R.integer.config_workspaceSpringLoadShrinkPercentage) / 100.0f,
-                1 - minRequiredHeight / expectedWorkspaceHeight
-            )
-        } else {
-            res.getInteger(R.integer.config_workspaceSpringLoadShrinkPercentage) / 100.0f
-        }
+
         // Folder icon
         folderIconSizePx = iconSizePx
         folderIconOffsetYPx = (iconSizePx - folderIconSizePx) / 2
@@ -327,13 +228,10 @@ class DeviceProfile(
         updateWorkspacePadding()
     }
 
-    // Since we are only concerned with the overall padding, layout direction does
-// not matter.
+    // Since we are only concerned with the overall padding, layout direction does not matter.
     val cellSize: Point
         get() {
             val result = Point()
-            // Since we are only concerned with the overall padding, layout direction does
-// not matter.
             val padding = totalWorkspacePadding
             result.x =
                 calculateCellWidth(
@@ -363,70 +261,43 @@ class DeviceProfile(
      */
     private fun updateWorkspacePadding() {
         val padding = workspacePadding
-        if (isVerticalBarLayout) {
-            padding.top = 0
-            padding.bottom = edgeMarginPx
-            padding.left = hotseatBarSidePaddingPx
-            padding.right = hotseatBarSidePaddingPx
-            if (isSeascape) {
-                padding.left += hotseatBarSizePx
-                padding.right += verticalDragHandleSizePx
-            } else {
-                padding.left += verticalDragHandleSizePx
-                padding.right += hotseatBarSizePx
-            }
-        } else {
-            val paddingBottom = hotseatBarSizePx + verticalDragHandleSizePx
-            if (isTablet) { // Pad the left and right of the workspace to ensure consistent spacing
-// between all icons
-// The amount of screen space available for left/right padding.
-                var availablePaddingX = Math.max(
-                    0, widthPx - (inv.numColumns * cellWidthPx +
-                        (inv.numColumns - 1) * cellWidthPx)
-                )
-                availablePaddingX = Math.min(
-                    availablePaddingX.toFloat(),
-                    widthPx * MAX_HORIZONTAL_PADDING_PERCENT
-                ).toInt()
-                val availablePaddingY = Math.max(
-                    0, heightPx - topWorkspacePadding - paddingBottom -
-                        2 * inv.numRows * cellHeightPx - hotseatBarTopPaddingPx -
-                        hotseatBarBottomPaddingPx
-                )
-                padding[availablePaddingX / 2, topWorkspacePadding + availablePaddingY / 2, availablePaddingX / 2] =
-                    paddingBottom + availablePaddingY / 2
-            } else { // Pad the top and bottom of the workspace with search/hotseat bar sizes
-                padding[desiredWorkspaceLeftRightMarginPx, topWorkspacePadding, desiredWorkspaceLeftRightMarginPx] =
-                    paddingBottom
-            }
+        val paddingBottom = hotseatBarSizePx
+        if (isTablet) { // Pad the left and right of the workspace to ensure consistent spacing
+            // between all icons
+            // The amount of screen space available for left/right padding.
+            var availablePaddingX = Math.max(
+                0, widthPx - (inv.numColumns * cellWidthPx +
+                    (inv.numColumns - 1) * cellWidthPx)
+            )
+            availablePaddingX = Math.min(
+                availablePaddingX.toFloat(),
+                widthPx * MAX_HORIZONTAL_PADDING_PERCENT
+            ).toInt()
+            val availablePaddingY = Math.max(
+                0, heightPx - topWorkspacePadding - paddingBottom -
+                    2 * inv.numRows * cellHeightPx - hotseatBarTopPaddingPx -
+                    hotseatBarBottomPaddingPx
+            )
+            padding[availablePaddingX / 2, topWorkspacePadding + availablePaddingY / 2, availablePaddingX / 2] =
+                paddingBottom + availablePaddingY / 2
+        } else { // Pad the top and bottom of the workspace with search/hotseat bar sizes
+            padding[desiredWorkspaceLeftRightMarginPx, topWorkspacePadding, desiredWorkspaceLeftRightMarginPx] =
+                paddingBottom
         }
     }
 
-    // We want the edges of the hotseat to line up with the edges of the workspace, but the
-// icons in the hotseat are a different size, and so don't line up perfectly. To account
-// for this, we pad the left and right of the hotseat with half of the difference of a
-// workspace cell vs a hotseat cell.
     val hotseatLayoutPadding: Rect
         get() {
-            if (isVerticalBarLayout) {
-                if (isSeascape) {
-                    mHotseatPadding[insets.left, insets.top, hotseatBarSidePaddingPx] =
-                        insets.bottom
-                } else {
-                    mHotseatPadding[hotseatBarSidePaddingPx, insets.top, insets.right] =
-                        insets.bottom
-                }
-            } else { // We want the edges of the hotseat to line up with the edges of the workspace, but the
-// icons in the hotseat are a different size, and so don't line up perfectly. To account
-// for this, we pad the left and right of the hotseat with half of the difference of a
-// workspace cell vs a hotseat cell.
-                val workspaceCellWidth = widthPx.toFloat() / inv.numColumns
-                val hotseatCellWidth = widthPx.toFloat() / inv.numHotseatIcons
-                val hotseatAdjustment =
-                    Math.round((workspaceCellWidth - hotseatCellWidth) / 2)
-                mHotseatPadding[hotseatAdjustment + workspacePadding.left + cellLayoutPaddingLeftRightPx, hotseatBarTopPaddingPx, hotseatAdjustment + workspacePadding.right + cellLayoutPaddingLeftRightPx] =
-                    hotseatBarBottomPaddingPx + insets.bottom + cellLayoutBottomPaddingPx
-            }
+            // We want the edges of the hotseat to line up with the edges of the workspace, but the
+            // icons in the hotseat are a different size, and so don't line up perfectly. To account
+            // for this, we pad the left and right of the hotseat with half of the difference of a
+            // workspace cell vs a hotseat cell.
+            val workspaceCellWidth = widthPx.toFloat() / inv.numColumns
+            val hotseatCellWidth = widthPx.toFloat() / inv.numHotseatIcons
+            val hotseatAdjustment =
+                Math.round((workspaceCellWidth - hotseatCellWidth) / 2)
+            mHotseatPadding[hotseatAdjustment + workspacePadding.left + cellLayoutPaddingLeftRightPx, hotseatBarTopPaddingPx, hotseatAdjustment + workspacePadding.right + cellLayoutPaddingLeftRightPx] =
+                hotseatBarBottomPaddingPx + insets.bottom + cellLayoutBottomPaddingPx
             return mHotseatPadding
         } // Folders should only appear below the drop target bar and above the hotseat// Folders should only appear right of the drop target bar and left of the hotseat
 
@@ -434,52 +305,12 @@ class DeviceProfile(
      * @return the bounds for which the open folders should be contained within
      */
     val absoluteOpenFolderBounds: Rect
-        get() = if (isVerticalBarLayout) { // Folders should only appear right of the drop target bar and left of the hotseat
-            Rect(
-                insets.left + dropTargetBarSizePx + edgeMarginPx,
-                insets.top,
-                insets.left + availableWidthPx - hotseatBarSizePx - edgeMarginPx,
-                insets.top + availableHeightPx
-            )
-        } else { // Folders should only appear below the drop target bar and above the hotseat
-            Rect(
-                insets.left + edgeMarginPx,
-                insets.top + dropTargetBarSizePx + edgeMarginPx,
-                insets.left + availableWidthPx - edgeMarginPx,
-                insets.top + availableHeightPx - hotseatBarSizePx -
-                    verticalDragHandleSizePx - edgeMarginPx
-            )
-        }
-
-    /**
-     * When `true`, the device is in landscape mode and the hotseat is on the right column.
-     * When `false`, either device is in portrait mode or the device is in landscape mode and
-     * the hotseat is on the bottom row.
-     */
-    val isVerticalBarLayout: Boolean
-        get() = isLandscape && transposeLayoutWithOrientation
-
-    /**
-     * Updates orientation information and returns true if it has changed from the previous value.
-     */
-    fun updateIsSeascape(wm: WindowManager): Boolean {
-        if (isVerticalBarLayout) {
-            val isSeascape =
-                wm.defaultDisplay.rotation == Surface.ROTATION_270
-            if (mIsSeascape != isSeascape) {
-                mIsSeascape = isSeascape
-                return true
-            }
-        }
-        return false
-    }
-
-    val isSeascape: Boolean
-        get() = isVerticalBarLayout && mIsSeascape
-
-    fun shouldFadeAdjacentWorkspaceScreens(): Boolean {
-        return isVerticalBarLayout || isLargeTablet
-    }
+        get() = Rect(
+            insets.left + edgeMarginPx,
+            insets.top + dropTargetBarSizePx + edgeMarginPx,
+            insets.left + availableWidthPx - edgeMarginPx,
+            insets.top + availableHeightPx - hotseatBarSizePx - -edgeMarginPx
+        )
 
     fun getCellHeight(containerType: Long): Int {
         return when (containerType) {
@@ -533,8 +364,6 @@ class DeviceProfile(
     init {
         var context = context
         this.inv = inv
-        this.isLandscape = isLandscape
-        this.isMultiWindowMode = isMultiWindowMode
         var res = context.resources
         val dm = res.displayMetrics
         // Constants from resources
@@ -548,8 +377,7 @@ class DeviceProfile(
             res.getBoolean(R.bool.hotseat_transpose_layout_with_orientation)
         context =
             getContext(
-                context,
-                if (isVerticalBarLayout) Configuration.ORIENTATION_LANDSCAPE else Configuration.ORIENTATION_PORTRAIT
+                context, Configuration.ORIENTATION_PORTRAIT
             )
         res = context.resources
         val cn = ComponentName(
@@ -559,14 +387,11 @@ class DeviceProfile(
         defaultWidgetPadding = AppWidgetHostView.getDefaultPaddingForWidget(context, cn, null)
         edgeMarginPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_edge_margin)
-        desiredWorkspaceLeftRightMarginPx = if (isVerticalBarLayout) 0 else edgeMarginPx
+        desiredWorkspaceLeftRightMarginPx = edgeMarginPx
         cellLayoutPaddingLeftRightPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_layout_padding)
         cellLayoutBottomPaddingPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_layout_bottom_padding)
-        verticalDragHandleSizePx = res.getDimensionPixelSize(
-            R.dimen.vertical_drag_handle_size
-        )
         defaultPageSpacingPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_workspace_page_spacing)
         topWorkspacePadding =
@@ -575,8 +400,6 @@ class DeviceProfile(
             res.getDimensionPixelSize(R.dimen.dynamic_grid_icon_drawable_padding)
         dropTargetBarSizePx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_drop_target_size)
-        workspaceSpringLoadedBottomSpace =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_min_spring_loaded_space)
         workspaceCellPaddingXPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_padding_x)
         hotseatBarTopPaddingPx =
@@ -586,21 +409,12 @@ class DeviceProfile(
         hotseatBarSidePaddingPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_side_padding)
         hotseatBarSizePx =
-            if (isVerticalBarLayout) Utilities.pxFromDp(
-                inv.iconSize,
-                dm
-            ) else res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_size)
-        +hotseatBarTopPaddingPx + hotseatBarBottomPaddingPx
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_size) + hotseatBarTopPaddingPx + hotseatBarBottomPaddingPx
         // Determine sizes.
         widthPx = width
         heightPx = height
-        if (isLandscape) {
-            availableWidthPx = maxSize.x
-            availableHeightPx = minSize.y
-        } else {
-            availableWidthPx = minSize.x
-            availableHeightPx = maxSize.y
-        }
+        availableWidthPx = minSize.x
+        availableHeightPx = maxSize.y
         // Calculate all of the remaining variables.
         updateAvailableDimensions(dm, res)
         // Now that we have all of the variables calculated, we can tune certain sizes.
@@ -610,12 +424,13 @@ class DeviceProfile(
                 heightPx
             )
         val isTallDevice = aspectRatio.compareTo(TALL_DEVICE_ASPECT_RATIO_THRESHOLD) >= 0
-        if (!isVerticalBarLayout && isPhone && isTallDevice) { // We increase the hotseat size when there is extra space.
-// ie. For a display with a large aspect ratio, we can keep the icons on the workspace
-// in portrait mode closer together by adding more height to the hotseat.
-// Note: This calculation was created after noticing a pattern in the design spec.
+        if (isPhone && isTallDevice) {
+            // We increase the hotseat size when there is extra space.
+            // ie. For a display with a large aspect ratio, we can keep the icons on the workspace
+            // in portrait mode closer together by adding more height to the hotseat.
+            // Note: This calculation was created after noticing a pattern in the design spec.
             val extraSpace = cellSize.y - iconSizePx - iconDrawablePaddingPx
-            hotseatBarSizePx += extraSpace - verticalDragHandleSizePx
+            hotseatBarSizePx += extraSpace
             // Recalculate the available dimensions using the new hotseat size.
             updateAvailableDimensions(dm, res)
         }

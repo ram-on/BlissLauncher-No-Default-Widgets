@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.LauncherActivityInfo
+import android.os.Build
 import android.os.Process
 import android.os.UserHandle
 import android.util.LongSparseArray
@@ -15,6 +16,7 @@ import foundation.e.blisslauncher.common.compat.ShortcutInfoCompat
 import foundation.e.blisslauncher.common.util.LabelComparator
 import foundation.e.blisslauncher.common.util.MultiHashMap
 import foundation.e.blisslauncher.data.database.roomentity.WorkspaceItem
+import foundation.e.blisslauncher.data.icon.LauncherIcons
 import foundation.e.blisslauncher.data.parser.DefaultHotseatParser
 import foundation.e.blisslauncher.data.shortcuts.PinnedShortcutManager
 import foundation.e.blisslauncher.data.util.LauncherItemComparator
@@ -43,7 +45,8 @@ class WorkspaceRepositoryImpl
     private val shortcutManager: PinnedShortcutManager,
     private val sharedPrefs: SharedPreferences,
     private val idp: InvariantDeviceProfile,
-    private val launcherItemComparator: LauncherItemComparator
+    private val launcherItemComparator: LauncherItemComparator,
+    private val launcherIcons: LauncherIcons
 ) : WorkspaceRepository {
 
     override fun loadWorkspace(): WorkspaceModel {
@@ -371,7 +374,6 @@ class WorkspaceRepositoryImpl
             .commit()
     }
 
-
     private fun isApplicationAlreadyAdded(
         existingWorkspaceItems: List<WorkspaceItem>,
         componentName: ComponentName
@@ -640,8 +642,16 @@ class WorkspaceRepositoryImpl
 
         return if (lai != null) {
             val applicationItem = ApplicationItem(lai, user, quietMode)
-                .apply { itemType = LauncherConstants.ItemType.APPLICATION }
+                .apply {
+                    itemType = LauncherConstants.ItemType.APPLICATION
+                    iconBitmap = launcherIcons.createBadgedIconBitmap(
+                        lai.getBadgedIcon(0),
+                        user,
+                        Build.VERSION.SDK_INT
+                    )
+                }
             val isSuspended = packageManagerHelper.isAppSuspended(lai.applicationInfo)
+            Timber.d("$applicationItem is $isSuspended")
             if (isSuspended) {
                 applicationItem.runtimeStatusFlags =
                     applicationItem.runtimeStatusFlags or LauncherItemWithIcon.FLAG_DISABLED_SUSPENDED
@@ -654,6 +664,14 @@ class WorkspaceRepositoryImpl
                     this.intent = newIntent
                     this.componentName = componentName
                     this.title = title
+                    iconBitmap = launcherIcons.createBadgedIconBitmap(
+                        context.packageManager.getPackageInfo(
+                            this.componentName.packageName,
+                            0
+                        ).applicationInfo.loadIcon(context.packageManager),
+                        user,
+                        Build.VERSION.SDK_INT
+                    )
                 }
 
             if (applicationItem.title == null) {

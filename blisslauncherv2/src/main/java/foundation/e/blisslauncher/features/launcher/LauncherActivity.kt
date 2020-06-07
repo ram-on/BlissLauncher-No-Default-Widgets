@@ -8,10 +8,6 @@ import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
 import android.view.View
-import android.widget.GridLayout
-import android.widget.ImageView
-import android.widget.TextView
-import androidx.core.graphics.drawable.toDrawable
 import dagger.android.AndroidInjection
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.common.DeviceProfile
@@ -20,8 +16,10 @@ import foundation.e.blisslauncher.common.util.TraceHelper
 import foundation.e.blisslauncher.domain.dto.WorkspaceModel
 import foundation.e.blisslauncher.domain.entity.LauncherItem
 import foundation.e.blisslauncher.domain.entity.LauncherItemWithIcon
+import foundation.e.blisslauncher.domain.entity.ShortcutItem
 import foundation.e.blisslauncher.features.LauncherStore
 import foundation.e.blisslauncher.features.base.BaseDraggingActivity
+import foundation.e.blisslauncher.views.IconTextView
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -47,9 +45,9 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
 
     @Inject
     lateinit var idp: InvariantDeviceProfile
-
     lateinit var deviceProfile: DeviceProfile
 
+    lateinit var hotseat: Hotseat
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
         deviceProfile = idp.getDeviceProfile(this)
@@ -73,6 +71,8 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
         }
 
         setContentView(R.layout.activity_launcher)
+
+        //hotseat = findViewById(R.id.hotseat)
 
         TraceHelper.beginSection("Launcher-onCreate")
 
@@ -165,8 +165,8 @@ class LauncherActivity : BaseDraggingActivity(), LauncherView {
         Timber.d("Total workspace items: ${workspaceItems.size}")
         workspaceItems.forEach {
             if (it is LauncherItemWithIcon) {
-                val view = TextView(this)
-                view.setText(it.title)
+                val view = IconTextView(this)
+                view.applyFromShortcutItem(it as ShortcutItem)
                 workspace.addInScreenFromBind(view, it)
             }
         }

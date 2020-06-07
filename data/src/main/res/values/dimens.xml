@@ -26,5 +26,6 @@
     <dimen name="folder_label_text_size">14sp</dimen>
     <dimen name="dynamic_grid_drop_target_size">48dp</dimen>
     <dimen name="vertical_drag_handle_size">24dp</dimen>
+    <dimen name="profile_badge_size">24dp</dimen>
 
 </resources>

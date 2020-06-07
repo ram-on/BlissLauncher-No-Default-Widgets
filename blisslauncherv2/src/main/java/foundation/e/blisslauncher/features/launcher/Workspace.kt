@@ -7,6 +7,7 @@ import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.app.WallpaperManager
 import android.content.Context
+import android.graphics.Color
 import android.graphics.Point
 import android.graphics.Rect
 import android.util.AttributeSet
@@ -14,7 +15,6 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.GridLayout
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.WallpaperChangeReceiver
 import foundation.e.blisslauncher.common.DeviceProfile
@@ -22,8 +22,9 @@ import foundation.e.blisslauncher.common.InvariantDeviceProfile
 import foundation.e.blisslauncher.common.util.LongArrayMap
 import foundation.e.blisslauncher.domain.entity.LauncherConstants
 import foundation.e.blisslauncher.domain.entity.LauncherItem
-import foundation.e.blisslauncher.widget.Insettable
-import foundation.e.blisslauncher.widget.PagedView
+import foundation.e.blisslauncher.views.CellLayout
+import foundation.e.blisslauncher.views.Insettable
+import foundation.e.blisslauncher.views.PagedView
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -58,7 +59,7 @@ class Workspace @JvmOverloads constructor(
 
     private var maxDistanceForFolderCreation: Float = 0.0f
     private val screenOrder = ArrayList<Long>()
-    private val workspaceScreens = LongArrayMap<GridLayout>()
+    private val workspaceScreens = LongArrayMap<CellLayout>()
 
     init {
 
@@ -117,8 +118,8 @@ class Workspace @JvmOverloads constructor(
     }
 
     override fun onViewAdded(child: View?) {
-        require(child is GridLayout) { "A Workspace can only have CellLayout children." }
-        val gridlayout = child as GridLayout
+        require(child is CellLayout) { "A Workspace can only have CellLayout children." }
+        val CellLayout = child as CellLayout
         super.onViewAdded(child)
     }
 
@@ -146,16 +147,20 @@ class Workspace @JvmOverloads constructor(
         insertNewWorkspaceScreen(screenId, childCount)
     }
 
-    fun insertNewWorkspaceScreen(screenId: Long, insertIndex: Int): GridLayout {
+    fun insertNewWorkspaceScreen(screenId: Long, insertIndex: Int): CellLayout {
         if (workspaceScreens.containsKey(screenId)) {
             throw RuntimeException("Screen id $screenId already exists!")
         }
 
         val newScreen = LayoutInflater.from(context)
-            .inflate(R.layout.layout_workspace_screen, this, false) as GridLayout
+            .inflate(R.layout.layout_workspace_screen, this, false) as CellLayout
         // TODO: Set padding if needed
         newScreen.columnCount = invariantDeviceProfile.numColumns
         newScreen.rowCount = invariantDeviceProfile.numRows
+
+        val paddingLeftRight: Int = deviceProfile.cellLayoutPaddingLeftRightPx
+        val paddingBottom: Int = deviceProfile.cellLayoutBottomPaddingPx
+        newScreen.setPadding(paddingLeftRight, 0, paddingLeftRight, paddingBottom)
         workspaceScreens.put(screenId, newScreen)
         screenOrder.add(insertIndex, screenId)
         addView(newScreen, insertIndex)
@@ -249,7 +254,7 @@ class Workspace @JvmOverloads constructor(
         // XXX: Do we need to update LM workspace screens below?
         val alpha = PropertyValuesHolder.ofFloat("alpha", 0f)
         val bgAlpha = PropertyValuesHolder.ofFloat("backgroundAlpha", 0f)
-        val gl: GridLayout =
+        val gl: CellLayout =
             workspaceScreens.get(EXTRA_EMPTY_SCREEN_ID)
         val oa: ObjectAnimator = ObjectAnimator.ofPropertyValuesHolder(gl, alpha, bgAlpha)
         oa.duration = duration.toLong()
@@ -286,7 +291,7 @@ class Workspace @JvmOverloads constructor(
 
     fun getScreenWithId(screenId: Long) = workspaceScreens[screenId]
 
-    fun getIdForScreen(screen: GridLayout): Long {
+    fun getIdForScreen(screen: CellLayout): Long {
         val index = workspaceScreens.indexOfValue(screen)
         return if (index != -1) workspaceScreens.keyAt(index) else -1
     }
@@ -332,26 +337,19 @@ class Workspace @JvmOverloads constructor(
             throw RuntimeException("Screen id should not be EXTRA_EMPTY_SCREEN_ID")
         }
 
-        var layout: GridLayout
+        var layout: CellLayout
         if (container == LauncherConstants.ContainerType.CONTAINER_HOTSEAT) {
             //TODO: Hide folder title in hotseat
-            layout = LauncherActivity.getLauncher(context).findViewById(R.id.hotseat)
+            //layout = LauncherActivity.getLauncher(context).hotseat
         } else {
             layout = getScreenWithId(screenId)
+            layout.addView(child)
+            child.visibility = View.VISIBLE
+            child.isHapticFeedbackEnabled = false
+            child.setOnLongClickListener(null)
         }
 
-        val rowSpec =
-            GridLayout.spec(GridLayout.UNDEFINED)
-        val colSpec =
-            GridLayout.spec(GridLayout.UNDEFINED)
-        val lp = GridLayout.LayoutParams(rowSpec, colSpec)
-        lp.width = deviceProfile.iconSizePx
-        lp.height = deviceProfile.iconSizePx
-        child.layoutParams = lp
-        layout.addView(child, lp)
-        child.visibility = View.VISIBLE
-        child.isHapticFeedbackEnabled = false
-        child.setOnLongClickListener(null)
+        val genericLp = child.layoutParams
     }
 
     private fun shouldConsumeTouch(v: View): Boolean {
