@@ -20,6 +20,9 @@ interface IconDao {
     @Query("SELECT * FROM icons WHERE profileId = :userSerial")
     fun query(userSerial: Long): List<IconEntity>
 
+    @Query("SELECT * FROM icons WHERE componentName = :userSerial AND profileId = :userSerial")
+    fun query(componentName: String, userSerial: Long): IconEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertOrReplace(iconEntity: IconEntity)
 }

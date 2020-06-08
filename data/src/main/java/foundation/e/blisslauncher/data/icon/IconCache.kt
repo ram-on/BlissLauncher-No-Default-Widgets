@@ -16,6 +16,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Process
 import android.os.UserHandle
+import android.text.TextUtils
 import android.util.Log
 import foundation.e.blisslauncher.common.BitmapRenderer
 import foundation.e.blisslauncher.common.InvariantDeviceProfile
@@ -23,8 +24,12 @@ import foundation.e.blisslauncher.common.Utilities
 import foundation.e.blisslauncher.common.compat.LauncherAppsCompat
 import foundation.e.blisslauncher.data.database.dao.IconDao
 import foundation.e.blisslauncher.data.database.roomentity.IconEntity
+import foundation.e.blisslauncher.domain.entity.ApplicationItem
+import foundation.e.blisslauncher.domain.entity.LauncherItemWithIcon
+import foundation.e.blisslauncher.domain.entity.PackageItem
 import foundation.e.blisslauncher.domain.keys.ComponentKey
 import foundation.e.blisslauncher.domain.repository.UserManagerRepository
+import timber.log.Timber
 import java.util.HashSet
 import java.util.Stack
 import javax.inject.Inject
@@ -42,7 +47,7 @@ class IconCache @Inject constructor(
 ) {
 
     data class CacheEntry(
-        var bitmap: Bitmap,
+        var bitmap: Bitmap? = null,
         var title: CharSequence? = "",
         var contentDescription: CharSequence = ""
     )
@@ -117,7 +122,7 @@ class IconCache @Inject constructor(
         return iconProvider.getIcon(info, iconDpi, flattenDrawable)
     }
 
-    protected fun makeDefaultIcon(user: UserHandle?): Bitmap {
+    fun makeDefaultIcon(user: UserHandle?): Bitmap {
         return launcherIcons.createBadgedIconBitmap(
             getFullResDefaultActivityIcon(), user, Build.VERSION.SDK_INT
         )
@@ -250,7 +255,7 @@ class IconCache @Inject constructor(
             }
             // Update icon cache. This happens in segments and {@link #onPackageIconsUpdated}
             // is called by the icon cache when the job is complete.
-            updateDBIcons(
+            updateDbIcons(
                 user,
                 apps,
                 if (Process.myUserHandle() == user) ignorePackagesForMainUser else emptySet()
@@ -258,7 +263,7 @@ class IconCache @Inject constructor(
         }
     }
 
-    private fun updateDBIcons(
+    private fun updateDbIcons(
         user: UserHandle,
         apps: List<LauncherActivityInfo>,
         ignorePackages: Set<String>
@@ -322,6 +327,255 @@ class IconCache @Inject constructor(
                 appsToAdd, appsToUpdate
             ).scheduleNext()*/
         }
+    }
+
+    /**
+     * Updates {@param application} only if a valid entry is found.
+     */
+    @Synchronized
+    fun updateTitleAndIcon(application: ApplicationItem) {
+        val entry: CacheEntry = cacheLocked(
+            application.componentName,
+            null,
+            application.user, false
+        )
+        if (entry.bitmap != null && !isDefaultIcon(entry.bitmap!!, application.user)) {
+            applyCacheEntry(entry, application)
+        }
+    }
+
+    /**
+     * Fill in {@param info} with the icon and label for {@param activityInfo}
+     */
+    @Synchronized
+    fun getTitleAndIcon(
+        info: LauncherItemWithIcon,
+        activityInfo: LauncherActivityInfo?
+    ) {
+        // If we already have activity info, no need to use package icon
+        getTitleAndIcon(info, activityInfo, false)
+    }
+
+    /**
+     * Fill in {@param info} with the icon and label. If the
+     * corresponding activity is not found, it reverts to the package icon.
+     */
+    @Synchronized
+    fun getTitleAndIcon(info: LauncherItemWithIcon) {
+        // null info means not installed, but if we have a component from the intent then
+        // we should still look in the cache for restored app icons.
+        if (info.getTargetComponent() == null) {
+            getDefaultIcon(info.user).let { info.iconBitmap = it }
+            info.title = ""
+            info.contentDescription = ""
+            info.usingLowResIcon = false
+        } else {
+            getTitleAndIcon(
+                info,
+                launcherApps.resolveActivity(info.getIntent(), info.user),
+                true
+            )
+        }
+    }
+
+    /**
+     * Fill in {@param shortcutInfo} with the icon and label for {@param info}
+     */
+    @Synchronized
+    private fun getTitleAndIcon(
+        infoInOut: LauncherItemWithIcon,
+        activityInfoProvider: LauncherActivityInfo?,
+        usePkgIcon: Boolean
+    ) {
+        val entry: CacheEntry = cacheLocked(
+            infoInOut.getTargetComponent()!!, activityInfoProvider,
+            infoInOut.user, usePkgIcon
+        )
+        applyCacheEntry(entry, infoInOut)
+    }
+
+    /**
+     * Fill in {@param infoInOut} with the corresponding icon and label.
+     */
+    @Synchronized
+    fun getTitleAndIconForApp(infoInOut: PackageItem) {
+        val entry: CacheEntry = getEntryForPackageLocked(
+            infoInOut.packageName!!, infoInOut.user
+        )
+        applyCacheEntry(entry, infoInOut)
+    }
+
+    private fun applyCacheEntry(entry: CacheEntry, info: LauncherItemWithIcon) {
+        info.title = Utilities.trim(entry.title)
+        info.contentDescription = entry.contentDescription
+        (if (entry.bitmap == null) getDefaultIcon(info.user) else entry.bitmap).let {
+            info.iconBitmap = it
+        }
+    }
+
+    /**
+     * Retrieves the entry from the cache. If the entry is not present, it creates a new entry.
+     * This method is not thread safe, it must be called from a synchronized method.
+     */
+    protected fun cacheLocked(
+        componentName: ComponentName,
+        info: LauncherActivityInfo?,
+        user: UserHandle, usePackageIcon: Boolean
+    ): CacheEntry {
+        //Preconditions.assertWorkerThread()
+        val cacheKey = ComponentKey(componentName, user)
+        var entry: CacheEntry? = cache[cacheKey]
+        if (entry == null) {
+            entry = CacheEntry()
+            cache[cacheKey] = entry
+
+            if (!getEntryFromDB(cacheKey, entry)) {
+                if (info != null) {
+                    launcherIcons.createBadgedIconBitmap(
+                        getFullResIcon(info), info.user,
+                        info.applicationInfo.targetSdkVersion
+                    ).let {
+                        entry.bitmap = it
+                    }
+                } else {
+                    if (usePackageIcon) {
+                        val packageEntry: CacheEntry =
+                            getEntryForPackageLocked(
+                                componentName.packageName, user
+                            )
+                        entry.bitmap = packageEntry.bitmap
+                        entry.title = packageEntry.title
+                        entry.contentDescription = packageEntry.contentDescription
+                    }
+                    if (entry.bitmap == null) {
+                        getDefaultIcon(user).let {
+                            entry.bitmap = it
+                        }
+                    }
+                }
+            }
+            if (TextUtils.isEmpty(entry.title)) {
+                if (info != null) {
+                    entry.title = info.label
+                    entry.contentDescription =
+                        userManager.getBadgedLabelForUser(entry.title.toString(), user)
+                }
+            }
+        }
+        return entry
+    }
+
+    @Synchronized
+    fun getDefaultIcon(user: UserHandle): Bitmap? {
+        if (!mDefaultIcons.containsKey(user)) {
+            mDefaultIcons[user] = makeDefaultIcon(user)
+        }
+        return mDefaultIcons[user]
+    }
+
+    fun isDefaultIcon(
+        icon: Bitmap,
+        user: UserHandle
+    ): Boolean {
+        return getDefaultIcon(user) === icon
+    }
+
+    private fun getEntryFromDB(
+        cacheKey: ComponentKey,
+        entry: CacheEntry
+    ): Boolean {
+        val iconEntity = iconDao.query(
+            cacheKey.componentName.flattenToString(),
+            userManager.getSerialNumberForUser(cacheKey.user)
+        )
+        if (iconEntity != null) {
+            entry.bitmap = loadIcon(iconEntity.icon, highResOptions)
+            entry.title = iconEntity.label
+            if (entry.title == null) {
+                entry.title = ""
+                entry.contentDescription = ""
+            } else {
+                entry.contentDescription = userManager.getBadgedLabelForUser(
+                    entry.title.toString(), cacheKey.user
+                )
+            }
+            return true
+        } else return false
+    }
+
+    /**
+     * Gets an entry for the package, which can be used as a fallback entry for various components.
+     * This method is not thread safe, it must be called from a synchronized method.
+     */
+    private fun getEntryForPackageLocked(
+        packageName: String, user: UserHandle
+    ): CacheEntry {
+        val cacheKey: ComponentKey = getPackageKey(packageName, user)
+        var entry: CacheEntry? = cache.get(cacheKey)
+        if (entry == null) {
+            entry = CacheEntry()
+            var entryUpdated = true
+
+            // Check the DB first.
+            if (!getEntryFromDB(cacheKey, entry)) {
+                try {
+                    val flags =
+                        if (Process.myUserHandle() == user) 0 else PackageManager.MATCH_UNINSTALLED_PACKAGES
+                    val info: PackageInfo =
+                        packageManager.getPackageInfo(packageName, flags)
+                    val appInfo = info.applicationInfo
+                        ?: throw PackageManager.NameNotFoundException("ApplicationInfo is null")
+                    // Load the full res icon for the application, but if useLowResIcon is set, then
+                    // only keep the low resolution icon instead of the larger full-sized icon
+                    val icon: Bitmap = launcherIcons.createBadgedIconBitmap(
+                        appInfo.loadIcon(packageManager), user, appInfo.targetSdkVersion
+                    )
+                    entry.title = appInfo.loadLabel(packageManager)
+                    entry.contentDescription =
+                        userManager.getBadgedLabelForUser(entry.title.toString(), user)
+                    entry.bitmap = icon
+
+                    // Add the icon in the DB here, since these do not get written during
+                    // package updates.
+                    addIconToDB(
+                        entry,
+                        cacheKey.componentName,
+                        packageName,
+                        info,
+                        userManager.getSerialNumberForUser(user)
+                    )
+                } catch (e: PackageManager.NameNotFoundException) {
+                    Timber.d("Application not installed $packageName")
+                    entryUpdated = false
+                }
+            }
+            // Only add a filled-out entry to the cache
+            if (entryUpdated) {
+                cache[cacheKey] = entry
+            }
+        }
+        return entry
+    }
+
+    private fun getPackageKey(packageName: String, user: UserHandle): ComponentKey {
+        val cn = ComponentName(packageName, packageName + EMPTY_CLASS_NAME)
+        return ComponentKey(cn, user)
+    }
+
+    private fun loadIcon(
+        blob: ByteArray,
+        highResOptions: BitmapFactory.Options?
+    ): Bitmap? {
+        return try {
+            BitmapFactory.decodeByteArray(blob, 0, blob.size, highResOptions)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    @Synchronized
+    fun clear() {
+        iconDao.clear()
     }
 
     companion object {

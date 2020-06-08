@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package foundation.e.blisslauncher.graphics
+package foundation.e.blisslauncher.common.graphics
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.util.SparseArray
+import foundation.e.blisslauncher.common.Utilities
 
 /**
  * Utility class for extracting colors from a bitmap.
@@ -108,5 +111,52 @@ object ColorExtractor {
             }
         }
         return bestColor
+    }
+
+    fun isSingleColor(drawable: Drawable?, color: Int): Boolean {
+        if (drawable == null) return true
+        val testColor = posterize(color)
+        if (drawable is ColorDrawable) {
+            return posterize(drawable.color) == testColor
+        }
+        val bitmap: Bitmap = Utilities.drawableToBitmap(drawable) ?: return false
+        val height = bitmap.height
+        val width = bitmap.width
+        val pixels = IntArray(height * width)
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+        val set: Set<Int> = HashSet(pixels.asList())
+        val distinctPixels = set.toIntArray()
+        for (pixel in distinctPixels) {
+            if (testColor != posterize(pixel)) {
+                return false
+            }
+        }
+        return true
+    }
+
+    private const val MAGIC_NUMBER = 25
+
+    /*
+     * References:
+     * https://www.cs.umb.edu/~jreyes/csit114-fall-2007/project4/filters.html#posterize
+     * https://github.com/gitgraghu/image-processing/blob/master/src/Effects/Posterize.java
+     */
+    fun posterize(rgb: Int): Int {
+        var red = 0xff and (rgb shr 16)
+        var green = 0xff and (rgb shr 8)
+        var blue = 0xff and rgb
+        red -= red % MAGIC_NUMBER
+        green -= green % MAGIC_NUMBER
+        blue -= blue % MAGIC_NUMBER
+        if (red < 0) {
+            red = 0
+        }
+        if (green < 0) {
+            green = 0
+        }
+        if (blue < 0) {
+            blue = 0
+        }
+        return red shl 16 or (green shl 8) or blue
     }
 }

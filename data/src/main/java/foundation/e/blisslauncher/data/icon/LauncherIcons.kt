@@ -49,7 +49,7 @@ import javax.inject.Inject
 class LauncherIcons @Inject constructor(
     context: Context,
     idp: InvariantDeviceProfile,
-    val pinnedShortcutManager: PinnedShortcutManager
+    private val pinnedShortcutManager: PinnedShortcutManager
 ) : AutoCloseable {
 
     override fun close() {
