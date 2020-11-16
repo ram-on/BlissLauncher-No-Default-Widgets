@@ -6,6 +6,12 @@ stages:
 before_script:
 - export GRADLE_USER_HOME=$(pwd)/.gradle
 - chmod +x ./gradlew
+test:
+  stage: test
+  tags:
+    - rpi-vb
+  script:
+    echo "ho ho ho! I'm running test! let it snow let it snow let it snow!!"
 
 cache:
   key: ${CI_PROJECT_ID}
