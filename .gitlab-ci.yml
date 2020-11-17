@@ -16,9 +16,7 @@ test:
     - pwd
     - cd /home/pi/Desktop/linux-x86/framework
     - pwd
-    - ./tradefed.sh
-    - help run
-    - run example/helloworld
+    - ./tradefed.sh run example/helloworld
 
 cache:
   key: ${CI_PROJECT_ID}
