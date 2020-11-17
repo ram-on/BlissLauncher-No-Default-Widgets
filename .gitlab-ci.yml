@@ -8,7 +8,7 @@ before_script:
 - chmod +x ./gradlew
 
 test:
-  stage: .post
+  stage: .pre
   tags:
     - rpi-vb
   script:
