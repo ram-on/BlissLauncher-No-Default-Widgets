@@ -14,7 +14,7 @@ test:
   script:
     - echo "ho ho ho! I'm running test! let it snow let it snow let it snow!!"
     - pwd
-    - cd ../../..
+    - cd home/pi/Desktop/linux-x86/framework
     - pwd
 
 cache:
