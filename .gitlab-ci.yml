@@ -14,6 +14,8 @@ test:
   script:
     - echo "ho ho ho! I'm running test! let it snow let it snow let it snow!!"
     - pwd
+    - cd ../../..
+    - pwd
 
 cache:
   key: ${CI_PROJECT_ID}
