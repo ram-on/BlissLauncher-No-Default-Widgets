@@ -12,7 +12,8 @@ test:
   tags:
     - rpi-vb
   script:
-    echo "ho ho ho! I'm running test! let it snow let it snow let it snow!!"
+    - echo "ho ho ho! I'm running test! let it snow let it snow let it snow!!"
+    - pwd
 
 cache:
   key: ${CI_PROJECT_ID}
