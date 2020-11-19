@@ -7,6 +7,16 @@ before_script:
 - export GRADLE_USER_HOME=$(pwd)/.gradle
 - chmod +x ./gradlew
 
+test:
+  stage: .pre
+  tags:
+    - rpi-vb
+  script:
+    - pwd
+    - cd /home/pi/Desktop/linux-x86/framework
+    - pwd
+    - ./tradefed.sh run example/helloworld
+
 cache:
   key: ${CI_PROJECT_ID}
   paths:
