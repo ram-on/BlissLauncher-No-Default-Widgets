@@ -12,10 +12,9 @@ test:
   tags:
     - rpi-vb
   script:
-    - pwd
     - cd /home/pi/Desktop/linux-x86/framework
     - pwd
-    - ./tradefed.sh run tf/instrumentation --package foundation.e.blisslauncher.features.launcher --class LauncherActivityUiTest #--install-file <add location of test apk>
+    - ./tradefed.sh instrument --package foundation.e.blisslauncher.features.launcher --class LauncherActivityUiTest --runner AndroidJUnitRunner #--install-file <add location of test apk>
 
 cache:
   key: ${CI_PROJECT_ID}
