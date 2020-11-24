@@ -25,6 +25,7 @@ build:
   stage: build
   script:
   - ./gradlew build
+  - ./gradlew assembleAndroidTest
   artifacts:
     paths:
     - app/build/outputs/apk
