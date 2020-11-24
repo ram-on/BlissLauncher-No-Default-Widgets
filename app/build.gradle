@@ -20,7 +20,7 @@ android {
         versionCode versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
+        testBuildType System.getProperty('testBuildType', 'debug')
         renderscriptTargetApi 28
         renderscriptSupportModeEnabled true
     }
@@ -42,7 +42,7 @@ android {
 
         }
     }
-    testBuildType "release"
+
 
     signingConfigs {
         debug {
