@@ -8,14 +8,13 @@ before_script:
 - chmod +x ./gradlew
 
 test:
-  stage: .pre
+  stage: .post
   tags:
     - rpi-vb
   script:
-    - pwd
     - cd /home/pi/Desktop/linux-x86/framework
     - pwd
-    - ./tradefed.sh run example/helloworld
+    - ./tradefed.sh run instrument --package "foundation.e.blisslauncher.debug.test" --class "foundation.e.blisslauncher.features.launcher.LauncherActivityUiTest" --runner "androidx.test.runner.AndroidJUnitRunner"
 
 cache:
   key: ${CI_PROJECT_ID}
