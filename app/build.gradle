@@ -33,11 +33,6 @@ android {
             applicationIdSuffix '.debug'
             signingConfig signingConfigs.debug
         }
-
-        test {
-            applicationIdSuffix '.test'
-            signingConfig signingConfigs.debug
-        }
         applicationVariants.all { variant ->
             if (variant.buildType.name == "debug") {
                 variant.outputs.all { output ->
@@ -47,6 +42,7 @@ android {
 
         }
     }
+    testBuildType "release"
 
     signingConfigs {
         debug {
