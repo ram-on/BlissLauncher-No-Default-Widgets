@@ -3,12 +3,13 @@ image: "registry.gitlab.e.foundation:5000/e/apps/docker-android-apps-cicd:latest
 stages:
 - build
 - test
+
 before_script:
 - export GRADLE_USER_HOME=$(pwd)/.gradle
 - chmod +x ./gradlew
 
 test:
-  stage: .post
+  stage: test
   tags:
     - rpi-vb
   script:
