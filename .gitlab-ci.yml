@@ -2,7 +2,7 @@ image: "registry.gitlab.e.foundation:5000/e/apps/docker-android-apps-cicd:latest
 
 stages:
 - build
-
+- test
 before_script:
 - export GRADLE_USER_HOME=$(pwd)/.gradle
 - chmod +x ./gradlew
@@ -16,8 +16,9 @@ test:
     - pwd
     - ./tradefed.sh run instrument --package "foundation.e.blisslauncher.debug.test" --class "foundation.e.blisslauncher.features.launcher.LauncherActivityUiTest" --runner "androidx.test.runner.AndroidJUnitRunner"
   artifacts:
-    paths:
-      - /tmp
+    reports:
+      junit: foobar.xml
+
 cache:
   key: ${CI_PROJECT_ID}
   paths:
