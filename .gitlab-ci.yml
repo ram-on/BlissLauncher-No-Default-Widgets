@@ -15,8 +15,7 @@ test:
   script:
     - /home/pi/Desktop/linux-x86/framework/tradefed.sh run commandAndExit instrument --package "foundation.e.blisslauncher.debug.test" --class "foundation.e.blisslauncher.features.launcher.LauncherActivityUiTest" --runner "androidx.test.runner.AndroidJUnitRunner" --install-file "app/build/outputs/apk/androidTest/apiNougat/debug/app-apiNougat-debug-androidTest.apk"
   artifacts:
-    reports:
-      junit: /tmp/0/stub/**/*.zip
+    paths: /tmp/0/stub/
 
 cache:
   key: ${CI_PROJECT_ID}
