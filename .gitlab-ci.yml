@@ -17,11 +17,9 @@ test:
     - resultDirectory=$(ls -dt /tmp/0/stub/* |head -n 1)
     - mkdir result
     - cp --recursive "$resultDirectory" result/
-    - OUTPUT_RESULT_DIR=$(ls -dt result/* |head -n 1)
-    - echo "$OUTPUT_RESULT_DIR"
   artifacts:
     paths: 
-    - "$OUTPUT_RESULT_DIR"
+    - result/
 
 cache:
   key: ${CI_PROJECT_ID}
