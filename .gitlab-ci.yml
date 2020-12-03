@@ -20,6 +20,7 @@ test:
   artifacts:
     paths: 
     - result/
+    - test_result_mockup.xml
     reports:
       junit: test_result_mockup.xml
 
