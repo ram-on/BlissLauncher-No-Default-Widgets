@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="stub" tests="2" failures="1" errors="0" time="8073" timestamp="2020-12-03T14:40:16" hostname="localhost">
+  <properties />
+  <testcase name="searchCalendarAppTest" classname="foundation.e.blisslauncher.features.launcher.LauncherActivityUiTest" time="0">
+    <failure>androidx.test.espresso.base.DefaultFailureHandler$AssertionFailedWithCauseError: 'has child: with text: is "Calendar"' doesn't match the selected view.
+Expected: has child: with text: is "Calendar"
+     Got: "GridLayout{id=2131296449, res-name=suggestedAppGrid, visibility=VISIBLE, width=1384, height=410, has-focus=false, has-focusable=false, has-window-focus=true, is-clickable=false, is-enabled=true, is-focused=false, is-focusable=false, is-layout-requested=false, is-selected=false, layout-params=android.widget.FrameLayout$LayoutParams&#64;504a538, tag=null, root-is-layout-requested=false, has-input-connection=false, x=0.0, y=0.0, child-count=4}"
+
+	at dalvik.system.VMStack.getThreadStackTrace(Native Method)
+	at java.lang.Thread.getStackTrace(Thread.java:1566)
+	at androidx.test.espresso.base.DefaultFailureHandler.getUserFriendlyError(DefaultFailureHandler.java:96)
+	at androidx.test.espresso.base.DefaultFailureHandler.handle(DefaultFailureHandler.java:59)
+	at androidx.test.espresso.ViewInteraction.waitForAndHandleInteractionResults(ViewInteraction.java:324)
+	at androidx.test.espresso.ViewInteraction.check(ViewInteraction.java:306)
+	at foundation.e.blisslauncher.features.launcher.LauncherActivityUiTest.searchCalendarAppTest(LauncherActivityUiTest.java:115)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.FailOnTimeout$CallableStatement.call(FailOnTimeout.java:298)
+	at org.junit.internal.runners.statements.FailOnTimeout$CallableStatement.call(FailOnTimeout.java:292)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:237)
+	at java.lang.Thread.run(Thread.java:761)
+Caused by: junit.framework.AssertionFailedError: 'has child: with text: is "Calendar"' doesn't match the selected view.
+Expected: has child: with text: is "Calendar"
+     Got: "GridLayout{id=2131296449, res-name=suggestedAppGrid, visibility=VISIBLE, width=1384, height=410, has-focus=false, has-focusable=false, has-window-focus=true, is-clickable=false, is-enabled=true, is-focused=false, is-focusable=false, is-layout-requested=false, is-selected=false, layout-params=android.widget.FrameLayout$LayoutParams&#64;504a538, tag=null, root-is-layout-requested=false, has-input-connection=false, x=0.0, y=0.0, child-count=4}"
+
+	at androidx.test.espresso.matcher.ViewMatchers.assertThat(ViewMatchers.java:540)
+	at androidx.test.espresso.assertion.ViewAssertions$MatchesViewAssertion.check(ViewAssertions.java:105)
+	at androidx.test.espresso.ViewInteraction$SingleExecutionViewAssertion.check(ViewInteraction.java:425)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:288)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:272)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:237)
+	at android.os.Handler.handleCallback(Handler.java:751)
+	at android.os.Handler.dispatchMessage(Handler.java:95)
+	at android.os.Looper.loop(Looper.java:154)
+	at android.app.ActivityThread.main(ActivityThread.java:6186)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:889)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:779)
+</failure>
+  </testcase>
+  <testcase name="displayLeftPanelTest" classname="foundation.e.blisslauncher.features.launcher.LauncherActivityUiTest" time="0" />
+</testsuite>
