@@ -20,6 +20,8 @@ test:
   artifacts:
     paths: 
     - result/
+    reports:
+      junit: test_result_mockup.xml
 
 cache:
   key: ${CI_PROJECT_ID}
