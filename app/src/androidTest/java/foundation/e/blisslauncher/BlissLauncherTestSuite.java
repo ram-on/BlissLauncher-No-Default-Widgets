@@ -6,13 +6,16 @@ import org.junit.runners.Suite;
 
 import foundation.e.blisslauncher.features.launcher.LauncherActivityUiTest;
 
-@RunWith(Suite::class)
-@Suite.SuiteClasses(
+@RunWith(Suite.class)
 /* Here list all you tests classes that are part of the suite
-* eg: 
-* mainActivityTest::class,     * secondActivityTest::class,
-* serviceTest::class
-*/
-    LauncherActivityUiTest::class
+ * eg:
+ * mainActivityTest.class,
+ * secondActivityTest.class,
+ * serviceTest.class
+ */
+@Suite.SuiteClasses(
+    LauncherActivityUiTest.class
 )
-class BlissLauncherTestSuite
+public class BlissLauncherTestSuite{
+
+}
