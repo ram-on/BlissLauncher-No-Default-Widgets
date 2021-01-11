@@ -3,7 +3,6 @@ package foundation.e.blisslauncher;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-import foundation.e.blisslauncher.features.launcher;
 
 @RunWith(Suite::class
 @Suite.Classes(
