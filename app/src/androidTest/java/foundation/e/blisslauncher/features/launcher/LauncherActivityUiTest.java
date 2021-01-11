@@ -28,7 +28,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withParent;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.not;
-
+//instrument --package foundation.e.blisslauncher.features.launcher --class LauncherActivityUiTest --runner
 
 
 @RunWith(AndroidJUnit4ClassRunner.class)
