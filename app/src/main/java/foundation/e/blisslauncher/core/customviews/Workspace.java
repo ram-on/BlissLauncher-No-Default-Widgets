@@ -27,19 +27,13 @@ public class Workspace extends PagedView<PageIndicatorDots> implements View.OnTo
         setHapticFeedbackEnabled(false);
         initWorkspace();
 
-        setOnTouchListener(new OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                return false;
-            }
-        });
+        setOnTouchListener((v, event) -> false);
     }
 
     private void initWorkspace() {
         mCurrentPage = DEFAULT_PAGE;
         setClipToPadding(false);
         setupLayoutTransition();
-
         //setWallpaperDimension();
     }
 

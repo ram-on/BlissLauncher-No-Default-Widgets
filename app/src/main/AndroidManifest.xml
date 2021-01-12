@@ -9,15 +9,12 @@
         android:label="@string/permlab_install_shortcut"
         android:permissionGroup="android.permission-group.SYSTEM_TOOLS"
         android:protectionLevel="dangerous" />
-
     <permission
         android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT"
         android:description="@string/permdesc_uninstall_shortcut"
         android:label="@string/permlab_uninstall_shortcut"
         android:permissionGroup="android.permission-group.SYSTEM_TOOLS"
-        android:protectionLevel="dangerous" />
-
-    <!-- General permissions BEGIN-->
+        android:protectionLevel="dangerous" /> <!-- General permissions BEGIN -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -35,15 +32,11 @@
         tools:ignore="ProtectedPermissions" />
     <uses-permission
         android:name="android.permission.WRITE_SECURE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
-    <!-- General permissions END-->
-
+        tools:ignore="ProtectedPermissions" /> <!-- General permissions END -->
     <!-- LineageOS specific permissions BEGIN -->
     <uses-permission android:name="lineageos.permission.ACCESS_WEATHER_MANAGER" />
-    <uses-permission android:name="lineageos.permission.READ_WEATHER" />
-    <!-- LineageOS specific permissions END -->
-
-    <uses-permission android:name="foundation.e.pwaplayer.provider.READ_WRITE"/>
+    <uses-permission android:name="lineageos.permission.READ_WEATHER" /> <!-- LineageOS specific permissions END -->
+    <uses-permission android:name="foundation.e.pwaplayer.provider.READ_WRITE" />
 
     <application
         android:name=".BlissLauncher"
@@ -53,7 +46,15 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup,GoogleAppIndexingWarning">
-
+        <activity android:name=".features.test.TestActivity"
+            android:theme="@style/Theme.AppCompat">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.MONKEY" />
+            </intent-filter>
+        </activity>
         <!--
         Main launcher activity. When extending only change the name, and keep all the
         attributes and intent filters the same
@@ -76,7 +77,6 @@
                 <category android:name="android.intent.category.MONKEY" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".features.shortcuts.AddItemActivity"
             android:autoRemoveFromRecents="true"
@@ -87,25 +87,21 @@
                 <action android:name="android.content.pm.action.CONFIRM_PIN_SHORTCUT" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".features.weather.WeatherPreferences"
             android:theme="@style/AppTheme" />
-
         <activity
             android:name=".features.weather.PermissionRequestActivity"
             android:excludeFromRecents="true"
             android:exported="true"
             android:noHistory="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-
         <activity
             android:name=".features.widgets.WidgetsActivity"
             android:autoRemoveFromRecents="true"
             android:excludeFromRecents="true"
             android:label="@string/widgets"
             android:theme="@style/AppTheme" />
-
         <activity
             android:name=".features.widgets.WidgetPicker"
             android:autoRemoveFromRecents="true"
@@ -124,13 +120,9 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
-
         <service android:name=".features.weather.WeatherUpdateService" />
         <service android:name=".features.weather.DeviceStatusService" />
-        <service android:name=".features.weather.WeatherSourceListenerService" />
-
-
-        <!-- Intent received used to install shortcuts from other applications -->
+        <service android:name=".features.weather.WeatherSourceListenerService" /> <!-- Intent received used to install shortcuts from other applications -->
         <receiver
             android:name=".features.shortcuts.InstallShortcutReceiver"
             android:enabled="true"
@@ -138,9 +130,7 @@
             <intent-filter>
                 <action android:name="com.android.launcher.action.INSTALL_SHORTCUT" />
             </intent-filter>
-        </receiver>
-
-        <!-- Intent received used to uninstall shortcuts from other applications -->
+        </receiver> <!-- Intent received used to uninstall shortcuts from other applications -->
         <receiver
             android:name=".features.shortcuts.UninstallShortcutReceiver"
             android:enabled="true"
@@ -148,10 +138,9 @@
             <intent-filter>
                 <action android:name="com.android.launcher.action.UNINSTALL_SHORTCUT" />
             </intent-filter>
-        </receiver>
-
-        <!-- Intent received when a session is committed -->
-        <!--<receiver android:name="com.android.launcher3.SessionCommitReceiver">
+        </receiver> <!-- Intent received when a session is committed -->
+        <!--
+<receiver android:name="com.android.launcher3.SessionCommitReceiver">
             <intent-filter>
                 <action android:name="android.content.pm.action.SESSION_COMMITTED" />
             </intent-filter>
@@ -162,12 +151,13 @@
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_HOST_RESTORED" />
             </intent-filter>
-        </receiver>-->
-
+        </receiver>
+        -->
         <receiver android:name="core.broadcast.PackageAddedRemovedHandler" />
 
         <meta-data
             android:name="android.nfc.disable_beam_default"
             android:value="true" />
     </application>
+
 </manifest>

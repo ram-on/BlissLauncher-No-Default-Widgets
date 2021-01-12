@@ -99,6 +99,8 @@ android {
 
 dependencies {
     implementation 'me.relex:circleindicator:2.1.4'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
 
     apiNougatImplementation 'org.cyanogenmod:platform.sdk:6.0'
     apiOreoImplementation files('libs/lineage-sdk-oreo.jar')

@@ -151,7 +151,7 @@
     <string name="icon_set">Icon set image</string>
 
     <!-- Permissions: -->
-    <skip/>
+    <skip />
     <!-- Permission short label -->
     <string name="permlab_install_shortcut">install shortcuts</string>
     <string name="permlab_uninstall_shortcut">uninstall shortcuts</string>

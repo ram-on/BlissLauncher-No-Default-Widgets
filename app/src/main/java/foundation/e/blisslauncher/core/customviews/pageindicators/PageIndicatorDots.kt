@@ -32,6 +32,7 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
     private val mIsRtl: Boolean = false
     private var mNumPages = 0
     private var mActivePage = 0
+
     /**
      * The current position of the active dot including the animation progress.
      * For ex:
@@ -254,6 +255,7 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
      */
     private inner class AnimationCycleListener : AnimatorListenerAdapter() {
         private var mCancelled = false
+
         override fun onAnimationCancel(animation: Animator?) {
             mCancelled = true
         }
@@ -270,12 +272,16 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
         private const val SHIFT_PER_ANIMATION = 0.5f
         private const val SHIFT_THRESHOLD = 0.1f
         private const val ANIMATION_DURATION: Long = 150
+
         private const val ENTER_ANIMATION_START_DELAY = 300
         private const val ENTER_ANIMATION_STAGGERED_DELAY = 150
         private const val ENTER_ANIMATION_DURATION = 400
+
         // This value approximately overshoots to 1.5 times the original size.
         private const val ENTER_ANIMATION_OVERSHOOT_TENSION = 4.9f
+
         private val sTempRect: RectF? = RectF()
+
         private val CURRENT_POSITION: Property<PageIndicatorDots, Float> =
             object : Property<PageIndicatorDots, Float>(
                 Float::class.java, "current_position"
@@ -297,7 +303,7 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
         mDotRadius = resources.getDimension(R.dimen.dotSize) / 2
         outlineProvider = MyOutlineProver()
         mActiveColor = resources.getColor(R.color.dot_on_color)
-        mInActiveColor = resources.getColor(R.color.dot_on_color)
+        mInActiveColor = resources.getColor(R.color.dot_off_color)
         //mIsRtl = Utilities.isRtl(getResources())
     }
 }

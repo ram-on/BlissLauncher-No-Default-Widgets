@@ -24,6 +24,10 @@
     <XML>
       <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
     </XML>
+    <codeStyleSettings language="JAVA">
+      <option name="WRAP_LONG_LINES" value="true" />
+      <option name="WRAP_ON_TYPING" value="0" />
+    </codeStyleSettings>
     <codeStyleSettings language="JSON">
       <indentOptions>
         <option name="CONTINUATION_INDENT_SIZE" value="4" />
