@@ -1,14 +1,20 @@
 package foundation.e.blisslauncher.features.launcher;
 
 
+import android.view.View;
+
+import androidx.test.espresso.ViewAssertion;
 import androidx.test.espresso.ViewInteraction;
 import androidx.test.espresso.action.ViewActions;
+import androidx.test.espresso.assertion.ViewAssertions;
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
+import androidx.test.uiautomator.UiAutomatorInstrumentationTestRunner;
 import androidx.test.uiautomator.UiDevice;
 
 import org.hamcrest.Matcher;
+import org.hamcrest.core.IsInstanceOf;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -74,10 +80,20 @@ public class LauncherActivityUiTest {
 
         device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
 
+
+
+
         //Swipe on the main view to display the left panel
         onView(withId(R.id.appGrid)).perform(ViewActions.swipeRight());
         final Matcher notChildOfSwipeSearchContainer = not( withParent( withParent( withParent( withId(R.id.swipe_search_container ) ) ) ) );
         final Matcher searchInputMatcher = allOf(withId(R.id.search_input), notChildOfSwipeSearchContainer );
+
+
+        //Check there is 4  app  suggested
+        final ViewInteraction appGrid = onView(allOf(withId(R.id.suggestedAppGrid), withParent(withParent(withId(R.id.used_apps_layout) ) ), isDisplayed() ) );
+        appGrid.check(matches(hasChildCount(4)));
+
+
 
         //Click on "search input bar"
         final ViewInteraction editText = onView(searchInputMatcher);
@@ -109,10 +125,32 @@ public class LauncherActivityUiTest {
 
 
         //Check calendar is the only displayed in suggested app
-        final ViewInteraction appGrid = onView(allOf(withId(R.id.suggestedAppGrid), hasMinimumChildCount(1) ) );
+        appGrid.check(matches(withChild(hasChildCount(1)))); //DOESN't WORK
 
-        //This test fails because it doesn't find the label under the icon...
-        appGrid.check(matches(withChild(withText(Calendar_app_name))));
+
+        /*
+        final ViewInteraction appIcon = onView( allOf(
+                withId(R.id.icon_calendar),
+                isDisplayed()
+                )
+            );
+
+
+
+       appIcon.check(matches(allOf(                withChild( withId(R.id.calendar_month_textview)),
+               withChild( withId(R.id.calendar_date_textview)))));*/
+
+        final ViewInteraction appLabel = onView(
+            allOf(
+                withId( R.id.app_label),
+                withText(Calendar_app_name),
+                withParent(
+                    withParent(IsInstanceOf.<View>instanceOf(android.widget.FrameLayout.class) )
+                )
+            ) ) ;
+
+        appLabel.check(matches(withText(Calendar_app_name)));
+
 
     }
 
