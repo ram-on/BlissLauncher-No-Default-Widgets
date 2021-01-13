@@ -3,15 +3,11 @@ package foundation.e.blisslauncher.features.launcher;
 
 import android.view.View;
 
-import androidx.test.espresso.DataInteraction;
-import androidx.test.espresso.ViewAssertion;
 import androidx.test.espresso.ViewInteraction;
 import androidx.test.espresso.action.ViewActions;
-import androidx.test.espresso.assertion.ViewAssertions;
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
-import androidx.test.uiautomator.UiAutomatorInstrumentationTestRunner;
 import androidx.test.uiautomator.UiDevice;
 
 import org.hamcrest.Matcher;
@@ -20,13 +16,10 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import java.io.IOException;
-
 import foundation.e.blisslauncher.R;
 
 import static androidx.test.espresso.Espresso.closeSoftKeyboard;
-import static androidx.test.espresso.Espresso.onData;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.assertion.ViewAssertions.*;
 import static androidx.test.espresso.matcher.ViewMatchers.*;
@@ -38,6 +31,8 @@ import static androidx.test.espresso.matcher.ViewMatchers.withParent;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.not;
+
+
 //instrument --package foundation.e.blisslauncher.features.launcher --class LauncherActivityUiTest --runner
 
 
@@ -87,9 +82,6 @@ public class LauncherActivityUiTest {
         final String Calendar_app_name = "Calendar";
 
         device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-
-
-
 
         //Swipe on the main view to display the left panel
         onView(withId(R.id.appGrid)).perform(ViewActions.swipeRight());
