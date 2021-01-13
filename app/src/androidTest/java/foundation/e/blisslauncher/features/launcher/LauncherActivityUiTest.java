@@ -3,6 +3,7 @@ package foundation.e.blisslauncher.features.launcher;
 
 import android.view.View;
 
+import androidx.test.espresso.DataInteraction;
 import androidx.test.espresso.ViewAssertion;
 import androidx.test.espresso.ViewInteraction;
 import androidx.test.espresso.action.ViewActions;
@@ -23,6 +24,9 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import foundation.e.blisslauncher.R;
+
+import static androidx.test.espresso.Espresso.closeSoftKeyboard;
+import static androidx.test.espresso.Espresso.onData;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.assertion.ViewAssertions.*;
 import static androidx.test.espresso.matcher.ViewMatchers.*;
@@ -74,6 +78,10 @@ public class LauncherActivityUiTest {
         onView(withId(R.id.weather_info_layout)).check(matches(isDisplayed()));
     }
 
+    /**
+     * This test requires Calendar App to be installed on the device
+     * @throws Exception
+     */
     @Test
     public void searchCalendarAppTest() throws Exception{
         final String Calendar_app_name = "Calendar";
@@ -119,39 +127,35 @@ public class LauncherActivityUiTest {
         editText.check(matches(withText(Calendar_app_name)));
 
 
+
         //check the clear button is present
         onView(allOf(withId(R.id.clearSuggestionImageView), notChildOfSwipeSearchContainer)  )
                 .check(matches( not(withEffectiveVisibility(Visibility.GONE))));
 
 
-        //Check calendar is the only displayed in suggested app
-        appGrid.check(matches(withChild(hasChildCount(1)))); //DOESN't WORK
+        //close soft keyboard
+        closeSoftKeyboard();
 
-
-        /*
-        final ViewInteraction appIcon = onView( allOf(
-                withId(R.id.icon_calendar),
-                isDisplayed()
-                )
-            );
+        Thread.sleep(5000); //required to wait for update of UI
 
 
 
-       appIcon.check(matches(allOf(                withChild( withId(R.id.calendar_month_textview)),
-               withChild( withId(R.id.calendar_date_textview)))));*/
+        //Check that there is only one app show in grid
+        final ViewInteraction appGrid2 = onView(allOf(withId(R.id.suggestedAppGrid), withParent(withParent(withId(R.id.used_apps_layout) ) ), isDisplayed() ) );
+        appGrid2.check(matches(hasChildCount(1))); //DOESN't WORK
 
+
+        // Check that Calendar icon is clickable
         final ViewInteraction appLabel = onView(
             allOf(
                 withId( R.id.app_label),
                 withText(Calendar_app_name),
                 withParent(
                     withParent(IsInstanceOf.<View>instanceOf(android.widget.FrameLayout.class) )
-                )
+                ), isDisplayed()
             ) ) ;
 
-        appLabel.check(matches(withText(Calendar_app_name)));
-
-
+        appLabel.check(matches(withParent(withChild(allOf(withId(R.id.app_icon), isClickable())))));
     }
 
 }
