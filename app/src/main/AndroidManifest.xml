@@ -47,7 +47,7 @@
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup,GoogleAppIndexingWarning">
         <activity android:name=".features.test.TestActivity"
-            android:theme="@style/Theme.AppCompat">
+            android:theme="@style/HomeScreenTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

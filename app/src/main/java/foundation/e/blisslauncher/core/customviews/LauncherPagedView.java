@@ -9,6 +9,7 @@ import android.annotation.SuppressLint;
 import android.app.WallpaperManager;
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -185,6 +186,17 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 appView.setLayoutParams(iconLayoutParams);
                 appView.setWithText(true);
                 workspaceScreen.addView(appView);
+            } else if(launcherItem.container == Constants.CONTAINER_HOTSEAT) {
+                appView.findViewById(R.id.app_label).setVisibility(GONE);
+                GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
+                GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
+                GridLayout.LayoutParams iconLayoutParams = new GridLayout.LayoutParams(rowSpec, colSpec);
+                iconLayoutParams.height = mLauncher.getDeviceProfile().hotseatCellHeightPx;
+                iconLayoutParams.width = mLauncher.getDeviceProfile().cellWidthPx;
+                iconLayoutParams.setGravity(Gravity.CENTER);
+                appView.setLayoutParams(iconLayoutParams);
+                appView.setWithText(false);
+                mLauncher.getHotseat().getLayout().addView(appView);
             }
         }
     }

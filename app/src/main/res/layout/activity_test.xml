@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/root">
+    android:id="@+id/root"
+    android:fitsSystemWindows="true">
 
     <foundation.e.blisslauncher.core.customviews.LauncherPagedView
         android:id="@+id/workspace"
@@ -16,4 +17,15 @@
         android:layout_width="match_parent"
         android:layout_height="4dp"
         android:layout_gravity="bottom|center_horizontal"/>
+    <foundation.e.blisslauncher.features.launcher.Hotseat
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:id="@+id/hotseat">
+        <GridLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:id="@+id/dockLayout"
+            android:layout_gravity="center"/>
+    </foundation.e.blisslauncher.features.launcher.Hotseat>
 </FrameLayout>

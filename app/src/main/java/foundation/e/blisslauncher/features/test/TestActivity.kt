@@ -1,35 +1,34 @@
 package foundation.e.blisslauncher.features.test
 
+import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
-import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.GridLayout
-import androidx.appcompat.app.AppCompatActivity
 import foundation.e.blisslauncher.BlissLauncher
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.database.model.LauncherItem
+import foundation.e.blisslauncher.features.launcher.Hotseat
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableObserver
 import kotlinx.android.synthetic.main.activity_test.*
 
-class TestActivity : AppCompatActivity() {
+class TestActivity : Activity() {
     private var mCompositeDisposable: CompositeDisposable? = null
+    private lateinit var mHotseat: Hotseat
 
     private val TAG = "TestActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_test)
-        val tv1 = layoutInflater.inflate(R.layout.test_page_view, null)
+        mHotseat = findViewById(R.id.hotseat)
         workspace.initParentViews(root)
 
         createOrUpdateIconGrid()
     }
+
+    fun getHotseat() = mHotseat
 
     fun isWorkspaceLoading() = false
 
