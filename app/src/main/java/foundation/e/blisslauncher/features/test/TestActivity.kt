@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.os.Bundle
+import android.view.View
 import foundation.e.blisslauncher.BlissLauncher
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.database.model.LauncherItem
@@ -25,6 +26,9 @@ class TestActivity : Activity() {
         mHotseat = findViewById(R.id.hotseat)
         workspace.initParentViews(root)
 
+        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
         createOrUpdateIconGrid()
     }
 

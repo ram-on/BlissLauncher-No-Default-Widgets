@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+<foundation.e.blisslauncher.core.customviews.InsettableFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     android:fitsSystemWindows="true">
 
     <foundation.e.blisslauncher.core.customviews.LauncherPagedView
@@ -11,21 +13,24 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
-        app:pageIndicator="@+id/page_indicator"/>
+        app:pageIndicator="@+id/page_indicator" />
+
     <foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots
         android:id="@+id/page_indicator"
         android:layout_width="match_parent"
         android:layout_height="4dp"
-        android:layout_gravity="bottom|center_horizontal"/>
+        android:layout_gravity="bottom|center_horizontal" />
+
     <foundation.e.blisslauncher.features.launcher.Hotseat
+        android:id="@+id/hotseat"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:id="@+id/hotseat">
+        android:layout_height="match_parent"
+        android:layout_gravity="bottom">
+
         <GridLayout
+            android:id="@+id/dockLayout"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:id="@+id/dockLayout"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center" />
     </foundation.e.blisslauncher.features.launcher.Hotseat>
-</FrameLayout>
+</foundation.e.blisslauncher.core.customviews.InsettableFrameLayout>

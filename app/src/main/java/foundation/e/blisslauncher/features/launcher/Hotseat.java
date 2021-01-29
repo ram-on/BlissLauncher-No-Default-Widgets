@@ -19,6 +19,7 @@ package foundation.e.blisslauncher.features.launcher;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.ViewDebug;
@@ -30,12 +31,15 @@ import android.widget.GridLayout;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.DeviceProfile;
 import foundation.e.blisslauncher.core.customviews.Insettable;
+import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
 
 public class Hotseat extends FrameLayout implements Insettable {
 
     private final TestActivity mLauncher;
     private GridLayout mContent;
+
+    private static final String TAG = "Hotseat";
 
     @ViewDebug.ExportedProperty(category = "launcher")
     private boolean mHasVerticalHotseat;
@@ -61,6 +65,7 @@ public class Hotseat extends FrameLayout implements Insettable {
     protected void onFinishInflate() {
         super.onFinishInflate();
         mContent = findViewById(R.id.dockLayout);
+        setBackgroundColor(Color.RED);
     }
 
     void resetLayout(boolean hasVerticalHotseat) {
@@ -80,6 +85,7 @@ public class Hotseat extends FrameLayout implements Insettable {
 
     @Override
     public void setInsets(WindowInsets insets) {
+        Log.d(TAG, "setInsets() called with: insets = [" + insets + "]");
         LayoutParams lp = (LayoutParams) getLayoutParams();
         DeviceProfile grid = mLauncher.getDeviceProfile();
 
@@ -93,7 +99,6 @@ public class Hotseat extends FrameLayout implements Insettable {
             grid.iconDrawablePaddingPx / 2, insets.getSystemWindowInsetBottom()
         );
         setLayoutParams(lp);
-        setBackgroundColor(Color.RED);
-        //InsettableFrameLayout.dispatchInsets(this, insets);
+        InsettableFrameLayout.Companion.dispatchInsets(this, insets);
     }
 }
