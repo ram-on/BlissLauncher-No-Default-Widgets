@@ -16,9 +16,9 @@
 
 package foundation.e.blisslauncher.features.widgets;
 
+
 import android.util.Log;
 import android.view.View;
-
 import foundation.e.blisslauncher.BlissLauncher;
 
 public class CheckLongPressHelper {

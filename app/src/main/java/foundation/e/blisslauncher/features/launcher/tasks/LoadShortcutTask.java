@@ -1,16 +1,15 @@
 package foundation.e.blisslauncher.features.launcher.tasks;
 
+
 import android.os.AsyncTask;
 import android.os.Process;
 import android.util.Log;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import foundation.e.blisslauncher.features.launcher.AppProvider;
 import foundation.e.blisslauncher.features.shortcuts.DeepShortcutManager;
 import foundation.e.blisslauncher.features.shortcuts.ShortcutInfoCompat;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class LoadShortcutTask extends AsyncTask<Void, Void, Map<String, ShortcutInfoCompat>> {
 

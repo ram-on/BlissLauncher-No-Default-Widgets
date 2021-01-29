@@ -1,8 +1,8 @@
 package foundation.e.blisslauncher.core.database.model;
 
-import java.util.List;
 
 import foundation.e.blisslauncher.core.utils.Constants;
+import java.util.List;
 
 public class FolderItem extends LauncherItem {
 

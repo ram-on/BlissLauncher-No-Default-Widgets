@@ -1,5 +1,7 @@
 package foundation.e.blisslauncher.core.broadcast;
 
+import static android.content.Context.WALLPAPER_SERVICE;
+
 import android.app.WallpaperManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -7,10 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.IBinder;
 import android.view.View;
-
 import foundation.e.blisslauncher.core.blur.BlurWallpaperProvider;
-
-import static android.content.Context.WALLPAPER_SERVICE;
 
 public class WallpaperChangeReceiver extends BroadcastReceiver {
     private final Context mContext;

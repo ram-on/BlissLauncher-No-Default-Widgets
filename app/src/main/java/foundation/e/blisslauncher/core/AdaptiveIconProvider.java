@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core;
 
+
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
@@ -7,13 +8,10 @@ import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
-
 import androidx.core.content.res.ResourcesCompat;
-
-import org.xmlpull.v1.XmlPullParser;
-
 import foundation.e.blisslauncher.core.customviews.AdaptiveIconDrawableCompat;
 import foundation.e.blisslauncher.core.utils.ResourceUtils;
+import org.xmlpull.v1.XmlPullParser;
 
 /**
  * Created by falcon on 19/4/18.

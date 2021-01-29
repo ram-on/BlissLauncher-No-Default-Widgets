@@ -1,11 +1,11 @@
 package foundation.e.blisslauncher.features.shortcuts;
 
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.LauncherApps;
 import android.os.Build;
 import android.os.Bundle;
-
 import androidx.appcompat.app.AppCompatActivity;
 
 @TargetApi(Build.VERSION_CODES.O)

@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher;
 
+
 import android.annotation.TargetApi;
 import android.content.res.Resources;
 import android.graphics.Canvas;
@@ -7,7 +8,6 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.DrawableWrapper;
 import android.os.Build;
 import android.util.AttributeSet;
-
 import org.xmlpull.v1.XmlPullParser;
 
 /**

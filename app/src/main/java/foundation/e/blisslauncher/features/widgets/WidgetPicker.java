@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.widgets;
 
+
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
@@ -13,18 +14,15 @@ import android.os.Parcelable;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.Toast;
-
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
+import foundation.e.blisslauncher.R;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import foundation.e.blisslauncher.R;
 
 public class WidgetPicker extends Activity implements WidgetPickerAdapter.OnClickListener {
 

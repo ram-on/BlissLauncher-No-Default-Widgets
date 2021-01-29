@@ -9,7 +9,8 @@ import android.content.Intent;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
-
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.Preferences;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -17,9 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import foundation.e.blisslauncher.R;
-import foundation.e.blisslauncher.core.Preferences;
 
 public class AppUsageStats {
 

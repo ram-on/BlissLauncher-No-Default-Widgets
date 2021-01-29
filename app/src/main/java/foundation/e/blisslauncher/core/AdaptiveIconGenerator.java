@@ -1,5 +1,9 @@
 package foundation.e.blisslauncher.core;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.round;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -8,16 +12,10 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.util.SparseIntArray;
-
 import androidx.annotation.NonNull;
 import androidx.core.graphics.ColorUtils;
-
 import foundation.e.blisslauncher.FixedScaleDrawable;
 import foundation.e.blisslauncher.core.customviews.AdaptiveIconDrawableCompat;
-
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.round;
 
 public class AdaptiveIconGenerator {
 

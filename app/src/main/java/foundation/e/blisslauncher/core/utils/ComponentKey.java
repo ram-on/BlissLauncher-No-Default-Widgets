@@ -16,14 +16,13 @@ package foundation.e.blisslauncher.core.utils;
  * limitations under the License.
  */
 
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.os.Process;
 import android.os.UserHandle;
-
-import java.util.Arrays;
-
 import foundation.e.blisslauncher.core.UserManagerCompat;
+import java.util.Arrays;
 
 public class ComponentKey {
 

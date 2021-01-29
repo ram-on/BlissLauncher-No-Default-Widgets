@@ -1,18 +1,16 @@
 package foundation.e.blisslauncher.core.migrate;
 
+
 import android.content.Context;
 import android.util.Log;
-
 import com.google.gson.Gson;
-
+import foundation.e.blisslauncher.core.Preferences;
+import foundation.e.blisslauncher.core.database.DatabaseManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import foundation.e.blisslauncher.core.Preferences;
-import foundation.e.blisslauncher.core.database.DatabaseManager;
 
 public class Migration {
 

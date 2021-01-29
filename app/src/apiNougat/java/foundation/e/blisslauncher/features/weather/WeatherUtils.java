@@ -1,13 +1,12 @@
 package foundation.e.blisslauncher.features.weather;
 
+
 import android.content.Context;
 import android.content.res.Resources;
-
-import java.text.DecimalFormat;
-
 import cyanogenmod.app.CMContextConstants;
 import cyanogenmod.providers.WeatherContract;
 import foundation.e.blisslauncher.R;
+import java.text.DecimalFormat;
 
 public final class WeatherUtils {
 

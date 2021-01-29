@@ -1,11 +1,10 @@
 package foundation.e.blisslauncher.features.notification;
 
+
 import android.app.Notification;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
-
 import com.jakewharton.rxrelay2.BehaviorRelay;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;

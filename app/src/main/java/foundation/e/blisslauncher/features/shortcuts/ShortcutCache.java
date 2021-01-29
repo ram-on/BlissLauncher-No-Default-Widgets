@@ -16,11 +16,11 @@
 
 package foundation.e.blisslauncher.features.shortcuts;
 
+
 import android.annotation.TargetApi;
 import android.os.Build;
 import android.util.ArrayMap;
 import android.util.LruCache;
-
 import java.util.List;
 
 /**

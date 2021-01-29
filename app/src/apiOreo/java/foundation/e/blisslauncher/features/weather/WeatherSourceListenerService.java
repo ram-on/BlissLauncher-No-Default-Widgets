@@ -1,11 +1,11 @@
 package foundation.e.blisslauncher.features.weather;
 
+
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
-
 import foundation.e.blisslauncher.core.Preferences;
 import foundation.e.blisslauncher.core.utils.Constants;
 import lineageos.weather.LineageWeatherManager;

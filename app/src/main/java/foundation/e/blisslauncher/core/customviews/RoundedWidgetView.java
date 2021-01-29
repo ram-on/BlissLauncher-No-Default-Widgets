@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core.customviews;
 
+
 import android.appwidget.AppWidgetHostView;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -11,9 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-
 import androidx.annotation.Nullable;
-
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.features.widgets.CheckLongPressHelper;
 

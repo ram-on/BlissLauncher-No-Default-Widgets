@@ -1,9 +1,7 @@
 package foundation.e.blisslauncher.features.launcher;
 
+
 import android.util.Log;
-
-import java.util.Calendar;
-
 import foundation.e.blisslauncher.core.events.AppAddEvent;
 import foundation.e.blisslauncher.core.events.AppChangeEvent;
 import foundation.e.blisslauncher.core.events.AppRemoveEvent;
@@ -12,6 +10,7 @@ import foundation.e.blisslauncher.core.events.EventRelay;
 import foundation.e.blisslauncher.core.events.ForceReloadEvent;
 import foundation.e.blisslauncher.core.events.ShortcutAddEvent;
 import foundation.e.blisslauncher.core.events.TimeChangedEvent;
+import java.util.Calendar;
 
 public class EventsObserverImpl implements EventRelay.EventsObserver<Event> {
 

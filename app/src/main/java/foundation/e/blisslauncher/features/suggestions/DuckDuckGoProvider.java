@@ -1,13 +1,13 @@
 package foundation.e.blisslauncher.features.suggestions;
 
-import java.io.IOException;
-import java.util.ArrayList;
 
 import foundation.e.blisslauncher.core.network.RetrofitService;
 import foundation.e.blisslauncher.core.network.duckduckgo.DuckDuckGoResult;
 import foundation.e.blisslauncher.core.network.duckduckgo.DuckDuckGoSuggestionService;
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import java.io.IOException;
+import java.util.ArrayList;
 
 public class DuckDuckGoProvider implements SuggestionProvider {
 

@@ -14,17 +14,15 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
+import cyanogenmod.weather.WeatherInfo;
+import cyanogenmod.weather.util.WeatherUtils;
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.Preferences;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
-
-import cyanogenmod.weather.WeatherInfo;
-import cyanogenmod.weather.util.WeatherUtils;
-import foundation.e.blisslauncher.R;
-import foundation.e.blisslauncher.core.Preferences;
 
 public class ForecastBuilder {
 

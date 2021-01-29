@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core.customviews;
 
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
@@ -7,13 +8,10 @@ import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.View;
-
 import androidx.core.content.ContextCompat;
-
-import java.util.Calendar;
-
 import foundation.e.blisslauncher.BlissLauncher;
 import foundation.e.blisslauncher.R;
+import java.util.Calendar;
 
 /**
  * Created by falcon on 8/3/18.

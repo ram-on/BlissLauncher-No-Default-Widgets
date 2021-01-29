@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core.events;
 
+
 import foundation.e.blisslauncher.core.database.model.ShortcutItem;
 
 public class ShortcutAddEvent extends Event {

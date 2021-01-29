@@ -1,18 +1,16 @@
 package foundation.e.blisslauncher.features.launcher;
 
+
 import android.view.View;
 import android.view.ViewGroup;
-
 import androidx.recyclerview.widget.RecyclerView;
-
-import java.util.ArrayList;
-
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.customviews.BlissFrameLayout;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.features.suggestions.AutoCompleteAdapter;
 import foundation.e.blisslauncher.features.suggestions.SuggestionsResult;
 import io.reactivex.observers.DisposableObserver;
+import java.util.ArrayList;
 
 public class SearchInputDisposableObserver extends DisposableObserver<SuggestionsResult> {
 

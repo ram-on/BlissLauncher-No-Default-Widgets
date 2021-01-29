@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core.customviews;
 
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -17,18 +18,15 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowInsets;
 import android.widget.Scroller;
-
 import androidx.core.view.GestureDetectorCompat;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-
 import foundation.e.blisslauncher.BlissLauncher;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.features.launcher.DetectSwipeGestureListener;
 import foundation.e.blisslauncher.features.launcher.LauncherActivity;
 import foundation.e.blisslauncher.features.launcher.OnSwipeDownListener;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class HorizontalPager extends ViewGroup implements Insettable {
     private static final String TAG = "HorizontalPager";

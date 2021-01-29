@@ -16,6 +16,7 @@
 
 package foundation.e.blisslauncher.features.shortcuts;
 
+
 import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Context;
@@ -27,12 +28,10 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.UserHandle;
 import android.util.Log;
-
+import foundation.e.blisslauncher.core.Utilities;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import foundation.e.blisslauncher.core.Utilities;
 
 /**
  * Performs operations related to deep shortcuts, such as querying for them, pinning them, etc.

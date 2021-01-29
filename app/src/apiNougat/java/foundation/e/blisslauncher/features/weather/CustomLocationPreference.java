@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.weather;
 
+
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -12,14 +13,12 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-
-import java.util.HashSet;
-import java.util.List;
-
 import cyanogenmod.weather.CMWeatherManager;
 import cyanogenmod.weather.WeatherLocation;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Preferences;
+import java.util.HashSet;
+import java.util.List;
 
 public class CustomLocationPreference extends EditTextPreference
         implements CMWeatherManager.LookupCityRequestListener {

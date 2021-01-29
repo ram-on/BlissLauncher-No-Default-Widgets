@@ -1,10 +1,10 @@
 package foundation.e.blisslauncher.features.widgets;
 
+
+import foundation.e.blisslauncher.core.customviews.RoundedWidgetView;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
-
-import foundation.e.blisslauncher.core.customviews.RoundedWidgetView;
 
 public class WidgetManager {
     private static final WidgetManager ourInstance = new WidgetManager();

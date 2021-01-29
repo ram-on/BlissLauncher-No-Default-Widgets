@@ -15,15 +15,14 @@
  */
 package foundation.e.blisslauncher.core.utils;
 
+
 import android.annotation.SuppressLint;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
-
-import java.lang.reflect.InvocationTargetException;
-
 import foundation.e.blisslauncher.core.Utilities;
+import java.lang.reflect.InvocationTargetException;
 
 public class ResourceUtils {
 

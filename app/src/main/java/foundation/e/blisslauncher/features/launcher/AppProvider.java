@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.launcher;
 
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -17,15 +18,6 @@ import android.os.UserManager;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.LongSparseArray;
-
-import java.text.Collator;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-
 import foundation.e.blisslauncher.BlissLauncher;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
@@ -46,6 +38,13 @@ import foundation.e.blisslauncher.features.launcher.tasks.LoadDatabaseTask;
 import foundation.e.blisslauncher.features.launcher.tasks.LoadShortcutTask;
 import foundation.e.blisslauncher.features.shortcuts.DeepShortcutManager;
 import foundation.e.blisslauncher.features.shortcuts.ShortcutInfoCompat;
+import java.text.Collator;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 
 // TODO: Find better solution instead of excessively using volatile and synchronized.

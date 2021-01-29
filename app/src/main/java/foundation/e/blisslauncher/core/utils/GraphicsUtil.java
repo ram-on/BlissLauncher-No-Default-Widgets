@@ -15,6 +15,7 @@
  */
 package foundation.e.blisslauncher.core.utils;
 
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -24,13 +25,11 @@ import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import foundation.e.blisslauncher.BlissLauncher;
 import foundation.e.blisslauncher.core.DeviceProfile;
 import foundation.e.blisslauncher.core.database.model.FolderItem;
+import java.util.HashMap;
+import java.util.Map;
 
 public class GraphicsUtil {
 

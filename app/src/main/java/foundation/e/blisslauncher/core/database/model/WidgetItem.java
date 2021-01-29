@@ -1,6 +1,7 @@
 package foundation.e.blisslauncher.core.database.model;
 
 
+
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 

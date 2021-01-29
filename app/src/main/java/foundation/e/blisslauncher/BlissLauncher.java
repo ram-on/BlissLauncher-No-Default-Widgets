@@ -1,9 +1,9 @@
 package foundation.e.blisslauncher;
 
+
 import android.app.Application;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
-
 import foundation.e.blisslauncher.core.DeviceProfile;
 import foundation.e.blisslauncher.core.IconsHandler;
 import foundation.e.blisslauncher.core.blur.BlurWallpaperProvider;

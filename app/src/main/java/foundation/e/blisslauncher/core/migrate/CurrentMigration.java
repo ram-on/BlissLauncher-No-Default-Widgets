@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core.migrate;
 
+
 import java.util.List;
 
 public class CurrentMigration {

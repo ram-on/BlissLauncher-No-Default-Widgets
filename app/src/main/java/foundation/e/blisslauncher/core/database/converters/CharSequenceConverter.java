@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core.database.converters;
 
+
 import androidx.room.TypeConverter;
 
 public class CharSequenceConverter {

@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core.database.model;
 
+
 import android.widget.TextView;
 
 /**

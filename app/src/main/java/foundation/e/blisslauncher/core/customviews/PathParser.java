@@ -1,8 +1,8 @@
 package foundation.e.blisslauncher.core.customviews;
 
+
 import android.graphics.Path;
 import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 

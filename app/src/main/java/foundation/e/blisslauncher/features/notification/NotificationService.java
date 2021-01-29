@@ -1,9 +1,9 @@
 package foundation.e.blisslauncher.features.notification;
 
+
 import android.content.Intent;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
-
 import foundation.e.blisslauncher.core.utils.ListUtil;
 
 /**

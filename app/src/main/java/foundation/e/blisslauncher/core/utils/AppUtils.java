@@ -15,6 +15,7 @@
  */
 package foundation.e.blisslauncher.core.utils;
 
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -26,17 +27,14 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.UserManager;
 import android.util.Log;
-
 import androidx.annotation.Nullable;
-
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import foundation.e.blisslauncher.BlissLauncher;
 import foundation.e.blisslauncher.core.IconsHandler;
 import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.features.launcher.AppProvider;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class AppUtils {
 

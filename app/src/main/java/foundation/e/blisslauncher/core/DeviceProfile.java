@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core;
 
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -12,11 +13,9 @@ import android.graphics.RectF;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
-
-import java.util.ArrayList;
-
 import foundation.e.blisslauncher.core.customviews.PathParser;
 import foundation.e.blisslauncher.core.utils.AdaptiveIconUtils;
+import java.util.ArrayList;
 
 public class DeviceProfile {
 

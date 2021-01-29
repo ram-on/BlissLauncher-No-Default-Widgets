@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.suggestions;
 
+
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;

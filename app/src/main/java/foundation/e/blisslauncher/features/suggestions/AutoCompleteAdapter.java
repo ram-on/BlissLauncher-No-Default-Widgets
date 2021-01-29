@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.suggestions;
 
+
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -12,16 +13,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AlphaAnimation;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.features.launcher.LauncherActivity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import foundation.e.blisslauncher.R;
-import foundation.e.blisslauncher.features.launcher.LauncherActivity;
 
 public class AutoCompleteAdapter extends
         RecyclerView.Adapter<AutoCompleteAdapter.AutoCompleteViewHolder> {

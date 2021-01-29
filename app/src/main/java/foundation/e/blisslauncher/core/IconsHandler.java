@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core;
 
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -16,24 +17,20 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
+import foundation.e.blisslauncher.BlissLauncher;
+import foundation.e.blisslauncher.core.customviews.AdaptiveIconDrawableCompat;
+import foundation.e.blisslauncher.core.utils.GraphicsUtil;
+import foundation.e.blisslauncher.core.utils.UserHandle;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.xml.parsers.DocumentBuilderFactory;
-
-import foundation.e.blisslauncher.BlissLauncher;
-import foundation.e.blisslauncher.core.customviews.AdaptiveIconDrawableCompat;
-import foundation.e.blisslauncher.core.utils.GraphicsUtil;
-import foundation.e.blisslauncher.core.utils.UserHandle;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * Inspired from http://stackoverflow.com/questions/31490630/how-to-load-icon-from-icon-pack

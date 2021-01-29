@@ -17,15 +17,14 @@ package foundation.e.blisslauncher.core;
  * limitations under the License.
  */
 
+
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.SparseArray;
-
 import java.util.HashSet;
 import java.util.Set;
-
 import kotlin.collections.ArraysKt;
 
 /**

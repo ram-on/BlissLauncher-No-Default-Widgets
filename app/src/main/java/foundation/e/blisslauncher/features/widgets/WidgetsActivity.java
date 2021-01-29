@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.widgets;
 
+
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
@@ -8,19 +9,16 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.widget.Toast;
-
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import foundation.e.blisslauncher.BlissLauncher;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.customviews.RoundedWidgetView;
 import foundation.e.blisslauncher.core.customviews.WidgetHost;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class WidgetsActivity extends Activity implements AddedWidgetsAdapter.OnActionClickListener {
 

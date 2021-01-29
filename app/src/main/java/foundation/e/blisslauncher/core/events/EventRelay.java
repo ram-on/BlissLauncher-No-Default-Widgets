@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core.events;
 
+
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 

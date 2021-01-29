@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.weather;
 
+
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,7 +9,6 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.os.IBinder;
 import android.util.Log;
-
 import foundation.e.blisslauncher.core.utils.Constants;
 
 public class DeviceStatusService extends Service {

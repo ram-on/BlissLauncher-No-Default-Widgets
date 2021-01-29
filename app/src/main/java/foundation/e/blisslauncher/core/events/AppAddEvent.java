@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core.events;
 
+
 import foundation.e.blisslauncher.core.utils.UserHandle;
 
 public class AppAddEvent extends Event{

@@ -1,12 +1,12 @@
 package foundation.e.blisslauncher.features.weather;
 
+
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.ResultReceiver;
-
 import androidx.annotation.NonNull;
 
 public class PermissionRequestActivity extends Activity {

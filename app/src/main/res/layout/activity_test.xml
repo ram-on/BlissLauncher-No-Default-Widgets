@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".features.test.TestActivity">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root">
 
-    <foundation.e.blisslauncher.features.test.TestPagedView
+    <foundation.e.blisslauncher.core.customviews.LauncherPagedView
+        android:id="@+id/workspace"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/testView"/>
-
+        android:layout_gravity="center"
+        app:pageIndicator="@+id/page_indicator"/>
+    <foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots
+        android:id="@+id/page_indicator"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_gravity="bottom|center_horizontal"/>
 </FrameLayout>

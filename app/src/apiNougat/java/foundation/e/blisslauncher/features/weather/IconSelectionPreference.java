@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.weather;
 
+
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
@@ -25,14 +26,11 @@ import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
-
+import foundation.e.blisslauncher.R;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
-
-import foundation.e.blisslauncher.R;
 
 public class IconSelectionPreference extends DialogPreference implements
         AdapterView.OnItemClickListener {

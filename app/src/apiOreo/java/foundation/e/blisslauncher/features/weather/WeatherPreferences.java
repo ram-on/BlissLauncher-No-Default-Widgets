@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.weather;
 
+
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -19,9 +20,7 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
-
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Preferences;
 import foundation.e.blisslauncher.core.utils.Constants;

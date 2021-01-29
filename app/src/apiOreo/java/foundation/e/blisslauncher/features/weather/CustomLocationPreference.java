@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.weather;
 
+
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -13,12 +14,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-
-import java.util.HashSet;
-import java.util.List;
-
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Preferences;
+import java.util.HashSet;
+import java.util.List;
 import lineageos.weather.LineageWeatherManager;
 import lineageos.weather.WeatherLocation;
 

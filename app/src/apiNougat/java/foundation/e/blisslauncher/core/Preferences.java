@@ -1,19 +1,17 @@
 package foundation.e.blisslauncher.core;
 
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.Locale;
-
 import cyanogenmod.weather.WeatherInfo;
 import cyanogenmod.weather.WeatherLocation;
 import foundation.e.blisslauncher.core.utils.Constants;
+import java.util.ArrayList;
+import java.util.Locale;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class Preferences {
 

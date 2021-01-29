@@ -1,11 +1,10 @@
 package foundation.e.blisslauncher.features.weather;
 
+
 import android.content.Context;
 import android.content.res.Resources;
-
-import java.text.DecimalFormat;
-
 import foundation.e.blisslauncher.R;
+import java.text.DecimalFormat;
 import lineageos.app.LineageContextConstants;
 import lineageos.providers.WeatherContract;
 import lineageos.providers.WeatherContract.WeatherColumns.WeatherCode;

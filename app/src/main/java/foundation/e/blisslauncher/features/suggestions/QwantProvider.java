@@ -1,6 +1,5 @@
 package foundation.e.blisslauncher.features.suggestions;
 
-import java.io.IOException;
 
 import foundation.e.blisslauncher.core.network.RetrofitService;
 import foundation.e.blisslauncher.core.network.qwant.QwantItem;
@@ -8,6 +7,7 @@ import foundation.e.blisslauncher.core.network.qwant.QwantResult;
 import foundation.e.blisslauncher.core.network.qwant.QwantSuggestionService;
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import java.io.IOException;
 
 public class QwantProvider implements SuggestionProvider {
 

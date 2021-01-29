@@ -1,12 +1,12 @@
 package foundation.e.blisslauncher.features.notification;
 
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-
 import foundation.e.blisslauncher.R;
 
 /**

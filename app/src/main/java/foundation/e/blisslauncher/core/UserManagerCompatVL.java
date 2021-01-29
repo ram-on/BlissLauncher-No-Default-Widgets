@@ -1,18 +1,17 @@
 package foundation.e.blisslauncher.core;
 
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.util.ArrayMap;
-
+import foundation.e.blisslauncher.core.utils.Constants;
+import foundation.e.blisslauncher.core.utils.LongArrayMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import foundation.e.blisslauncher.core.utils.Constants;
-import foundation.e.blisslauncher.core.utils.LongArrayMap;
 
 public class UserManagerCompatVL extends UserManagerCompat {
 

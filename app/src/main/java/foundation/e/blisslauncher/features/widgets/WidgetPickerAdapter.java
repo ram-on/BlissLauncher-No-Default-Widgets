@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.widgets;
 
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -12,14 +13,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
+import foundation.e.blisslauncher.R;
 import java.util.ArrayList;
 import java.util.List;
-
-import foundation.e.blisslauncher.R;
 
 public class WidgetPickerAdapter extends
         RecyclerView.Adapter<WidgetPickerAdapter.WidgetsViewHolder> {
