@@ -13,9 +13,11 @@ import android.graphics.RectF;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
+
+import java.util.ArrayList;
+
 import foundation.e.blisslauncher.core.customviews.PathParser;
 import foundation.e.blisslauncher.core.utils.AdaptiveIconUtils;
-import java.util.ArrayList;
 
 public class DeviceProfile {
 
@@ -407,5 +409,19 @@ public class DeviceProfile {
         }
 
         return density;
+    }
+
+    /**
+     * Callback when a component changes the DeviceProfile associated with it, as a result of
+     * configuration change
+     */
+    public interface OnDeviceProfileChangeListener {
+
+        /**
+         * Called when the device profile is reassigned. Note that for layout and measurements, it
+         * is sufficient to listen for inset changes. Use this callback when you need to perform
+         * a one time operation.
+         */
+        void onDeviceProfileChanged(DeviceProfile dp);
     }
 }

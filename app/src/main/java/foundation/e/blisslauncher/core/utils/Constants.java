@@ -57,7 +57,7 @@ public class Constants {
     /**
      * Represents types of container.
      */
-    public static final int CONTAINER_DESKTOP = -100;
-    public static final int CONTAINER_HOTSEAT = -101;
+    public static final long CONTAINER_DESKTOP = -100;
+    public static final long CONTAINER_HOTSEAT = -101;
 
 }
