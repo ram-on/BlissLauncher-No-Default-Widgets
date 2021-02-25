@@ -33,7 +33,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="bottom">
 
-            <GridLayout
+            <foundation.e.blisslauncher.features.test.CellLayout
                 android:id="@+id/dockLayout"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"

@@ -26,18 +26,18 @@ import android.view.ViewDebug;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.widget.FrameLayout;
-import android.widget.GridLayout;
 
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.customviews.Insettable;
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
+import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 
 public class Hotseat extends FrameLayout implements Insettable {
 
     private final TestActivity mLauncher;
-    private GridLayout mContent;
+    private CellLayout mContent;
 
     private static final String TAG = "Hotseat";
 
@@ -57,7 +57,7 @@ public class Hotseat extends FrameLayout implements Insettable {
         mLauncher = TestActivity.Companion.getLauncher(context);
     }
 
-    public GridLayout getLayout() {
+    public CellLayout getLayout() {
         return mContent;
     }
 

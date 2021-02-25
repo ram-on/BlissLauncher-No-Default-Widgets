@@ -24,6 +24,7 @@ import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.WindowInsets
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
@@ -144,6 +145,7 @@ class VariantDeviceProfile(
             inv.iconTextSize,
             dm
         ) * scale).toInt()
+        Log.i("Iconsizepx", ""+iconSizePx+" "+invIconSizePx)
         iconDrawablePaddingPx =
             (availableWidthPx - iconSizePx * inv.numColumns) / (inv.numColumns + 1)
         cellHeightPx = (iconSizePx + iconDrawablePaddingPx +

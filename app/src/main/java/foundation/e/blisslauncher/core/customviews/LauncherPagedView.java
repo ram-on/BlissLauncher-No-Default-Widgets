@@ -11,7 +11,6 @@ import android.content.Context;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -30,6 +29,7 @@ import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.LongArrayMap;
+import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.dragndrop.DragController;
 import foundation.e.blisslauncher.features.test.dragndrop.DragOptions;
@@ -58,7 +58,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private LayoutTransition mLayoutTransition;
     final WallpaperManager mWallpaperManager;
 
-    final LongArrayMap<GridLayout> mWorkspaceScreens = new LongArrayMap<>();
+    final LongArrayMap<CellLayout> mWorkspaceScreens = new LongArrayMap<>();
     final ArrayList<Long> mScreenOrder = new ArrayList<>();
 
     // Variables relating to touch disambiguation (scrolling workspace vs. scrolling a widget)
@@ -193,26 +193,26 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 }
                 launcherItem.screenId = mScreenOrder.size() - 1;
                 launcherItem.cell = workspaceScreen.getChildCount();
-                GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
+                /*GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.LayoutParams iconLayoutParams =
                     new GridLayout.LayoutParams(rowSpec, colSpec);
                 iconLayoutParams.height = mLauncher.getDeviceProfile().getCellHeightPx();
-                iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
+                iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();*/
                 appView.findViewById(R.id.app_label).setVisibility(View.VISIBLE);
-                appView.setLayoutParams(iconLayoutParams);
+                //appView.setLayoutParams(iconLayoutParams);
                 appView.setWithText(true);
                 workspaceScreen.addView(appView);
             } else if (launcherItem.container == Constants.CONTAINER_HOTSEAT) {
                 appView.findViewById(R.id.app_label).setVisibility(GONE);
-                GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
+                /*GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.LayoutParams iconLayoutParams =
                     new GridLayout.LayoutParams(rowSpec, colSpec);
                 iconLayoutParams.height = mLauncher.getDeviceProfile().getHotseatCellHeightPx();
-                iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
-                iconLayoutParams.setGravity(Gravity.CENTER);
-                appView.setLayoutParams(iconLayoutParams);
+                iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();*/
+                //iconLayoutParams.setGravity(Gravity.CENTER);
+                //appView.setLayoutParams(iconLayoutParams);
                 appView.setWithText(false);
                 mLauncher.getHotseat().getLayout().addView(appView);
             }
@@ -230,7 +230,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         // Inflate the cell layout, but do not add it automatically so that we can get the newly
         // created CellLayout.
-        GridLayout newScreen = (GridLayout) LayoutInflater.from(getContext()).inflate(
+        CellLayout newScreen = (CellLayout) LayoutInflater.from(getContext()).inflate(
             R.layout.workspace_screen, this, false /* attachToRoot */);
         /*int paddingLeftRight = mLauncher.getDeviceProfile().cellLayoutPaddingLeftRightPx;
         int paddingBottom = mLauncher.getDeviceProfile().cellLayoutBottomPaddingPx;
@@ -268,7 +268,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (hasExtraEmptyScreen() || mScreenOrder.size() == 0) return;
         long finalScreenId = mScreenOrder.get(mScreenOrder.size() - 1);
 
-        GridLayout finalScreen = mWorkspaceScreens.get(finalScreenId);
+        CellLayout finalScreen = mWorkspaceScreens.get(finalScreenId);
 
         // If the final screen is empty, convert it to the extra empty screen
         if (finalScreen.getChildCount() == 0) {
@@ -386,7 +386,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             return -1;
         }
 
-        GridLayout cl = mWorkspaceScreens.get(EXTRA_EMPTY_SCREEN_ID);
+        CellLayout cl = mWorkspaceScreens.get(EXTRA_EMPTY_SCREEN_ID);
         mWorkspaceScreens.remove(EXTRA_EMPTY_SCREEN_ID);
         mScreenOrder.remove(EXTRA_EMPTY_SCREEN_ID);
 
@@ -404,7 +404,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         return mWorkspaceScreens.get(screenId);
     }
 
-    public long getIdForScreen(GridLayout layout) {
+    public long getIdForScreen(CellLayout layout) {
         int index = mWorkspaceScreens.indexOfValue(layout);
         if (index != -1) {
             return mWorkspaceScreens.keyAt(index);
@@ -424,6 +424,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             R.layout.app_view,
             null
         );
+
         iconView.setLauncherItem(launcherItem);
         final SquareFrameLayout icon = iconView.findViewById(R.id.app_icon);
         if (launcherItem.itemType == Constants.ITEM_TYPE_FOLDER) {
@@ -545,7 +546,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         int pageShift = 0;
         for (Long id : removeScreens) {
-            GridLayout cl = mWorkspaceScreens.get(id);
+            CellLayout cl = mWorkspaceScreens.get(id);
             mWorkspaceScreens.remove(id);
             mScreenOrder.remove(id);
 
