@@ -1,6 +1,5 @@
 package foundation.e.blisslauncher.core;
 
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -40,7 +39,7 @@ public class Utilities {
     private static final String TAG = "Utilities";
 
     private static final Pattern sTrimPattern =
-            Pattern.compile("^[\\s|\\p{javaSpaceChar}]*(.*)[\\s|\\p{javaSpaceChar}]*$");
+        Pattern.compile("^[\\s|\\p{javaSpaceChar}]*(.*)[\\s|\\p{javaSpaceChar}]*$");
 
     private static final int[] sLoc0 = new int[2];
     private static final int[] sLoc1 = new int[2];
@@ -52,17 +51,16 @@ public class Utilities {
      * Use hard coded values to compile with android source.
      */
     public static final boolean ATLEAST_OREO =
-            Build.VERSION.SDK_INT >= 26;
+        Build.VERSION.SDK_INT >= 26;
 
     public static final boolean ATLEAST_NOUGAT_MR1 =
-            Build.VERSION.SDK_INT >= 25;
+        Build.VERSION.SDK_INT >= 25;
 
     public static final boolean ATLEAST_NOUGAT =
-            Build.VERSION.SDK_INT >= 24;
+        Build.VERSION.SDK_INT >= 24;
 
     public static final boolean ATLEAST_MARSHMALLOW =
-            Build.VERSION.SDK_INT >= 23;
-
+        Build.VERSION.SDK_INT >= 23;
 
     // These values are same as that in {@link AsyncTask}.
     private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
@@ -73,8 +71,9 @@ public class Utilities {
      * An {@link Executor} to be used with async task with no limit on the queue size.
      */
     public static final Executor THREAD_POOL_EXECUTOR = new ThreadPoolExecutor(
-            CORE_POOL_SIZE, MAXIMUM_POOL_SIZE, KEEP_ALIVE,
-            TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        CORE_POOL_SIZE, MAXIMUM_POOL_SIZE, KEEP_ALIVE,
+        TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>()
+    );
 
     /**
      * Compresses the bitmap to a byte array for serialization.
@@ -95,13 +94,15 @@ public class Utilities {
         }
     }
 
-    public static float dpiFromPx(int size, DisplayMetrics metrics){
+    public static float dpiFromPx(int size, DisplayMetrics metrics) {
         float densityRatio = (float) metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT;
         return (size / densityRatio);
     }
+
     public static int pxFromDp(float size, DisplayMetrics metrics) {
         return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                size, metrics));
+            size, metrics
+        ));
     }
 
     public static float pxFromDp(int dp, Context context) {
@@ -111,7 +112,8 @@ public class Utilities {
 
     public static int pxFromSp(float size, DisplayMetrics metrics) {
         return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
-                size, metrics));
+            size, metrics
+        ));
     }
 
     /**
@@ -125,7 +127,7 @@ public class Utilities {
     }
 
     public static String convertMonthToString() {
-        Calendar cal=Calendar.getInstance();
+        Calendar cal = Calendar.getInstance();
         SimpleDateFormat month_date = new SimpleDateFormat("MMM");
         return month_date.format(cal.getTime());
     }
@@ -177,7 +179,11 @@ public class Utilities {
         return drawableToBitmap(drawable, forceCreate, 0);
     }
 
-    public static Bitmap drawableToBitmap(Drawable drawable, boolean forceCreate, int fallbackSize) {
+    public static Bitmap drawableToBitmap(
+        Drawable drawable,
+        boolean forceCreate,
+        int fallbackSize
+    ) {
         if (!forceCreate && drawable instanceof BitmapDrawable) {
             return ((BitmapDrawable) drawable).getBitmap();
         }
@@ -228,6 +234,13 @@ public class Utilities {
         return Math.max(lowerBound, Math.min(value, upperBound));
     }
 
+    /**
+     * @see #boundToRange(int, int, int).
+     */
+    public static float boundToRange(float value, float lowerBound, float upperBound) {
+        return Math.max(lowerBound, Math.min(value, upperBound));
+    }
+
     public static boolean isSystemApp(Context context, Intent intent) {
         PackageManager pm = context.getPackageManager();
         ComponentName cn = intent.getComponent();
@@ -257,23 +270,24 @@ public class Utilities {
      * Given a coordinate relative to the descendant, find the coordinate in a parent view's
      * coordinates.
      *
-     * @param descendant The descendant to which the passed coordinate is relative.
-     * @param ancestor The root view to make the coordinates relative to.
-     * @param coord The coordinate that we want mapped.
+     * @param descendant        The descendant to which the passed coordinate is relative.
+     * @param ancestor          The root view to make the coordinates relative to.
+     * @param coord             The coordinate that we want mapped.
      * @param includeRootScroll Whether or not to account for the scroll of the descendant:
-     *          sometimes this is relevant as in a child's coordinates within the descendant.
+     *                          sometimes this is relevant as in a child's coordinates within the descendant.
      * @return The factor by which this descendant is scaled relative to this DragLayer. Caution
-     *         this scale factor is assumed to be equal in X and Y, and so if at any point this
-     *         assumption fails, we will need to return a pair of scale factors.
+     * this scale factor is assumed to be equal in X and Y, and so if at any point this
+     * assumption fails, we will need to return a pair of scale factors.
      */
     public static float getDescendantCoordRelativeToAncestor(
-        View descendant, View ancestor, int[] coord, boolean includeRootScroll) {
+        View descendant, View ancestor, int[] coord, boolean includeRootScroll
+    ) {
         sPoint[0] = coord[0];
         sPoint[1] = coord[1];
 
         float scale = 1.0f;
         View v = descendant;
-        while(v != ancestor && v != null) {
+        while (v != ancestor && v != null) {
             // For TextViews, scroll has a meaning which relates to the text position
             // which is very strange... ignore the scroll.
             if (v != descendant || includeRootScroll) {
@@ -300,7 +314,7 @@ public class Utilities {
     public static void mapCoordInSelfToDescendant(View descendant, View root, int[] coord) {
         sMatrix.reset();
         View v = descendant;
-        while(v != root) {
+        while (v != root) {
             sMatrix.postTranslate(-v.getScrollX(), -v.getScrollY());
             sMatrix.postConcat(v.getMatrix());
             sMatrix.postTranslate(v.getLeft(), v.getTop());

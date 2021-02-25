@@ -40,5 +40,8 @@
     <dimen name="folder_label_text_size">14sp</dimen>
     <dimen name="dynamic_grid_drop_target_size">48dp</dimen>
     <dimen name="vertical_drag_handle_size">24dp</dimen>
+    <dimen name="pre_drag_view_scale">6dp</dimen>
+    <dimen name="blur_size_medium_outline">2dp</dimen>
+    <dimen name="drag_elevation">30dp</dimen>
 
 </resources>

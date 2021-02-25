@@ -24,21 +24,19 @@ import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
 import android.util.DisplayMetrics
-import android.util.Log
+import android.view.WindowInsets
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.utils.Constants
 
 class VariantDeviceProfile(
-    context: Context,
-    inv: InvariantDeviceProfile,
-    minSize: Point,
-    maxSize: Point,
-    width: Int,
-    height: Int
+    val context: Context,
+    val inv: InvariantDeviceProfile,
+    val minSize: Point,
+    val maxSize: Point,
+    val width: Int,
+    val height: Int
 ) {
-    val inv: InvariantDeviceProfile
-
     // Device properties
     val isTablet: Boolean
     val isLargeTablet: Boolean
@@ -92,9 +90,6 @@ class VariantDeviceProfile(
 
     // Widgets
     val appWidgetScale = PointF(1.0f, 1.0f)
-
-    // Drop Target
-    var dropTargetBarSizePx: Int
 
     private val TAG = "DeviceProfile"
 
@@ -151,8 +146,8 @@ class VariantDeviceProfile(
         ) * scale).toInt()
         iconDrawablePaddingPx =
             (availableWidthPx - iconSizePx * inv.numColumns) / (inv.numColumns + 1)
-        cellHeightPx = (iconSizePx + iconDrawablePaddingPx
-            + Utilities.calculateTextHeight(iconTextSizePx.toFloat()))
+        cellHeightPx = (iconSizePx + iconDrawablePaddingPx +
+            Utilities.calculateTextHeight(iconTextSizePx.toFloat()))
 
         val cellYPadding = (cellSize.y - cellHeightPx) / 2
         if (iconDrawablePaddingPx > cellYPadding) {
@@ -226,7 +221,12 @@ class VariantDeviceProfile(
         )
     }
 
-    fun updateInsets(insets: Rect?) {
+    fun updateInsets(windowInsets: WindowInsets) {
+        val insets = Rect(
+            windowInsets.getSystemWindowInsetLeft(),
+            windowInsets.getSystemWindowInsetTop(),
+            windowInsets.getSystemWindowInsetRight(), windowInsets.getSystemWindowInsetBottom()
+        )
         insets!!.set(insets)
         updateWorkspacePadding()
     }
@@ -310,7 +310,7 @@ class VariantDeviceProfile(
     val absoluteOpenFolderBounds: Rect
         get() = Rect(
             insets.left + edgeMarginPx,
-            insets.top + dropTargetBarSizePx + edgeMarginPx,
+            insets.top + edgeMarginPx,
             insets.left + availableWidthPx - edgeMarginPx,
             insets.top + availableHeightPx - hotseatBarSizePx - -edgeMarginPx
         )
@@ -366,7 +366,6 @@ class VariantDeviceProfile(
 
     init {
         var context = context
-        this.inv = inv
         var res = context.resources
         val dm = res.displayMetrics
         // Constants from resources
@@ -401,8 +400,6 @@ class VariantDeviceProfile(
             res.getDimensionPixelSize(R.dimen.dynamic_grid_workspace_top_padding)
         iconDrawablePaddingOriginalPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_icon_drawable_padding)
-        dropTargetBarSizePx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_drop_target_size)
         workspaceCellPaddingXPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_padding_x)
         hotseatBarTopPaddingPx =

@@ -17,6 +17,7 @@
 package foundation.e.blisslauncher.features.test.dragndrop;
 
 import android.graphics.Rect;
+import android.view.View;
 
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 
@@ -49,7 +50,7 @@ public interface DropTarget {
         /**
          * The view that moves around while you drag.
          */
-        public DragView dragView = null;
+        public View dragView = null;
 
         /**
          * The data associated with the object, after item is dropped.
@@ -101,8 +102,8 @@ public interface DropTarget {
             int top = y - yOffset;
 
             // In order to find the visual center, we shift by half the dragRect
-            res[0] = left + dragView.getDragRegion().width() / 2;
-            res[1] = top + dragView.getDragRegion().height() / 2;
+            res[0] = left + dragView.getWidth() / 2;
+            res[1] = top + dragView.getHeight() / 2;
 
             return res;
         }

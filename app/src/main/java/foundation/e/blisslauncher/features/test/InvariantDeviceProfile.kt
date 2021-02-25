@@ -23,14 +23,13 @@ import android.util.Log
 import android.util.Xml
 import android.view.WindowManager
 import foundation.e.blisslauncher.R
-import foundation.e.blisslauncher.core.DeviceProfile
 import foundation.e.blisslauncher.core.Utilities
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import java.io.IOException
 import java.util.ArrayList
-
 import kotlin.math.hypot
+import kotlin.math.pow
 
 open class InvariantDeviceProfile {
     // Profile-defining invariant properties
@@ -79,25 +78,27 @@ open class InvariantDeviceProfile {
         display.getCurrentSizeRange(smallestSize, largestSize)
         // This guarantees that width < height
         minWidthDps = Utilities.dpiFromPx(
-            Math.min(
-                smallestSize.x,
-                smallestSize.y
-            ), dm
+            smallestSize.x.coerceAtMost(smallestSize.y), dm
         )
         minHeightDps = Utilities.dpiFromPx(
-            Math.min(
-                largestSize.x,
-                largestSize.y
-            ), dm
+            largestSize.x.coerceAtMost(largestSize.y), dm
         )
+
+        Log.d("ClosestProfiles", "[$minWidthDps], [$minHeightDps]")
         val closestProfiles =
             findClosestDeviceProfiles(
                 minWidthDps, minHeightDps, getPredefinedDeviceProfiles(context)
             )
+        closestProfiles.forEach {
+            Log.d("InvariantDeviceProfile", it.name)
+        }
         val interpolatedDeviceProfileOut =
             invDistWeightedInterpolate(minWidthDps, minHeightDps, closestProfiles)
         val closestProfile = closestProfiles[0]
-        Log.d("InvariantDevice",  "rows and col: ${closestProfile.numRows} * ${closestProfile.numColumns}")
+        Log.d(
+            "InvariantDevice",
+            "rows and col: ${closestProfile.numRows} * ${closestProfile.numColumns}"
+        )
         numRows = closestProfile.numRows
         numColumns = closestProfile.numColumns
         numHotseatIcons = closestProfile.numHotseatIcons
@@ -281,7 +282,7 @@ open class InvariantDeviceProfile {
     }
 
     fun dist(x0: Float, y0: Float, x1: Float, y1: Float): Float {
-        return hypot(x1 - x0.toDouble(), y1 - y0.toDouble()).toFloat()
+        return hypot(x1 - x0, y1 - y0)
     }
 
     /**
@@ -291,10 +292,12 @@ open class InvariantDeviceProfile {
         width: Float,
         height: Float,
         points: ArrayList<InvariantDeviceProfile>
-    ): ArrayList<InvariantDeviceProfile> { // Sort the profiles by their closeness to the dimensions
-        points.sortWith(Comparator { a, b ->
-            dist(width, height, a.minWidthDps, a.minHeightDps).compareTo(
-                dist(
+    ): ArrayList<InvariantDeviceProfile> {
+        // Sort the profiles by their closeness to the dimensions
+        var pointsByNearness = points
+        pointsByNearness.sortWith(Comparator { a, b ->
+            java.lang.Float.compare(
+                dist(width, height, a.minWidthDps, a.minHeightDps), dist(
                     width,
                     height,
                     b.minWidthDps,
@@ -302,7 +305,7 @@ open class InvariantDeviceProfile {
                 )
             )
         })
-        return points
+        return pointsByNearness
     }
 
     // Package private visibility for testing.
@@ -319,8 +322,7 @@ open class InvariantDeviceProfile {
         val out = InvariantDeviceProfile()
         var i = 0
         while (i < points.size && i < KNEARESTNEIGHBOR) {
-            p =
-                InvariantDeviceProfile(points[i])
+            p = InvariantDeviceProfile(points[i])
             val w = weight(
                 width,
                 height,
@@ -329,19 +331,19 @@ open class InvariantDeviceProfile {
                 WEIGHT_POWER
             )
             weights += w
-            out += p * w
+            out.add(p.multiply(w))
             ++i
         }
-        return out * (1.0f / weights)
+        return out.multiply(1.0f / weights)
     }
 
-    operator fun plusAssign(p: InvariantDeviceProfile) {
+    private fun add(p: InvariantDeviceProfile) {
         iconSize += p.iconSize
         landscapeIconSize += p.landscapeIconSize
         iconTextSize += p.iconTextSize
     }
 
-    operator fun times(w: Float): InvariantDeviceProfile {
+    private fun multiply(w: Float): InvariantDeviceProfile {
         iconSize *= w
         landscapeIconSize *= w
         iconTextSize *= w
@@ -371,10 +373,7 @@ open class InvariantDeviceProfile {
         val d = dist(x0, y0, x1, y1)
         return if (d.compareTo(0f) == 0) {
             Float.POSITIVE_INFINITY
-        } else (WEIGHT_EFFICIENT / Math.pow(
-            d.toDouble(),
-            pow.toDouble()
-        )).toFloat()
+        } else (WEIGHT_EFFICIENT / d.toDouble().pow(pow.toDouble())).toFloat()
     }
 
     companion object {

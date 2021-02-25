@@ -16,20 +16,16 @@
 
 package foundation.e.blisslauncher.features.test;
 
+import static java.lang.annotation.RetentionPolicy.SOURCE;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.view.View.AccessibilityDelegate;
-
 import androidx.annotation.IntDef;
-
 import java.lang.annotation.Retention;
 import java.util.ArrayList;
-
-import foundation.e.blisslauncher.core.DeviceProfile;
-
-import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 public abstract class BaseActivity extends Activity {
 
@@ -45,10 +41,10 @@ public abstract class BaseActivity extends Activity {
     public @interface InvisibilityFlags {
     }
 
-    private final ArrayList<DeviceProfile.OnDeviceProfileChangeListener> mDPChangeListeners =
+    private final ArrayList<VariantDeviceProfile.OnDeviceProfileChangeListener> mDPChangeListeners =
         new ArrayList<>();
 
-    protected DeviceProfile mDeviceProfile;
+    protected VariantDeviceProfile mDeviceProfile;
     protected SystemUiController mSystemUiController;
 
     private static final int ACTIVITY_STATE_STARTED = 1 << 0;
@@ -71,7 +67,7 @@ public abstract class BaseActivity extends Activity {
     @InvisibilityFlags
     private int mForceInvisible;
 
-    public DeviceProfile getDeviceProfile() {
+    public VariantDeviceProfile getDeviceProfile() {
         return mDeviceProfile;
     }
 
@@ -147,11 +143,11 @@ public abstract class BaseActivity extends Activity {
         return (mActivityFlags & ACTIVITY_STATE_USER_ACTIVE) != 0;
     }
 
-    public void addOnDeviceProfileChangeListener(DeviceProfile.OnDeviceProfileChangeListener listener) {
+    public void addOnDeviceProfileChangeListener(VariantDeviceProfile.OnDeviceProfileChangeListener listener) {
         mDPChangeListeners.add(listener);
     }
 
-    public void removeOnDeviceProfileChangeListener(DeviceProfile.OnDeviceProfileChangeListener listener) {
+    public void removeOnDeviceProfileChangeListener(VariantDeviceProfile.OnDeviceProfileChangeListener listener) {
         mDPChangeListeners.remove(listener);
     }
 
@@ -173,4 +169,3 @@ public abstract class BaseActivity extends Activity {
         return mForceInvisible != 0;
     }
 }
-

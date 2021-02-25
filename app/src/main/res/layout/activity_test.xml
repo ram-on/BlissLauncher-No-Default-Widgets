@@ -1,36 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<foundation.e.blisslauncher.core.customviews.InsettableFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<foundation.e.blisslauncher.features.test.LauncherRootView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/root"
+    android:id="@+id/launcher"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:clipChildren="false"
-    android:clipToPadding="false"
     android:fitsSystemWindows="true">
 
-    <foundation.e.blisslauncher.core.customviews.LauncherPagedView
-        android:id="@+id/workspace"
+    <foundation.e.blisslauncher.features.test.dragndrop.DragLayer
+        android:id="@+id/drag_layer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="center"
-        app:pageIndicator="@+id/page_indicator" />
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:importantForAccessibility="no">
 
-    <foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots
-        android:id="@+id/page_indicator"
-        android:layout_width="match_parent"
-        android:layout_height="4dp"
-        android:layout_gravity="bottom|center_horizontal" />
-
-    <foundation.e.blisslauncher.features.launcher.Hotseat
-        android:id="@+id/hotseat"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="bottom">
-
-        <GridLayout
-            android:id="@+id/dockLayout"
-            android:layout_width="wrap_content"
+        <foundation.e.blisslauncher.core.customviews.LauncherPagedView
+            android:id="@+id/workspace"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_gravity="center" />
-    </foundation.e.blisslauncher.features.launcher.Hotseat>
-</foundation.e.blisslauncher.core.customviews.InsettableFrameLayout>
+            android:layout_gravity="center"
+            app:pageIndicator="@+id/page_indicator" />
+
+        <foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots
+            android:id="@+id/page_indicator"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_gravity="bottom|center_horizontal" />
+
+        <foundation.e.blisslauncher.features.launcher.Hotseat
+            android:id="@+id/hotseat"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="bottom">
+
+            <GridLayout
+                android:id="@+id/dockLayout"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center" />
+        </foundation.e.blisslauncher.features.launcher.Hotseat>
+
+    </foundation.e.blisslauncher.features.test.dragndrop.DragLayer>
+</foundation.e.blisslauncher.features.test.LauncherRootView>

@@ -38,7 +38,7 @@ public class SystemUiController {
     public static final int FLAG_DARK_STATUS = 1 << 3;
 
     private final Window mWindow;
-    private final int[] mStates = new int[5];
+    private final int[] mStates = new int[2];
 
     public SystemUiController(Window window) {
         mWindow = window;

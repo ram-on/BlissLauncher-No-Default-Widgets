@@ -29,10 +29,10 @@ import android.widget.FrameLayout;
 import android.widget.GridLayout;
 
 import foundation.e.blisslauncher.R;
-import foundation.e.blisslauncher.core.DeviceProfile;
 import foundation.e.blisslauncher.core.customviews.Insettable;
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 
 public class Hotseat extends FrameLayout implements Insettable {
 
@@ -71,8 +71,8 @@ public class Hotseat extends FrameLayout implements Insettable {
     void resetLayout(boolean hasVerticalHotseat) {
         mContent.removeAllViewsInLayout();
         mHasVerticalHotseat = hasVerticalHotseat;
-        DeviceProfile idp = mLauncher.getDeviceProfile();
-        mContent.setColumnCount(idp.numHotseatIcons);
+        VariantDeviceProfile idp = mLauncher.getDeviceProfile();
+        mContent.setColumnCount(idp.getInv().getNumColumns());
         mContent.setRowCount(1);
     }
 
@@ -87,16 +87,16 @@ public class Hotseat extends FrameLayout implements Insettable {
     public void setInsets(WindowInsets insets) {
         Log.d(TAG, "setInsets() called with: insets = [" + insets + "]");
         LayoutParams lp = (LayoutParams) getLayoutParams();
-        DeviceProfile grid = mLauncher.getDeviceProfile();
+        VariantDeviceProfile grid = mLauncher.getDeviceProfile();
 
         lp.gravity = Gravity.BOTTOM;
         lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-        lp.height = grid.hotseatCellHeightPx + insets.getSystemWindowInsetBottom();
+        lp.height = grid.getHotseatCellHeightPx() + insets.getSystemWindowInsetBottom();
 
         //Rect padding = grid.getHotseatLayoutPadding();
         getLayout().setPadding(
-            grid.iconDrawablePaddingPx / 2, 0,
-            grid.iconDrawablePaddingPx / 2, insets.getSystemWindowInsetBottom()
+            grid.getIconDrawablePaddingPx() / 2, 0,
+            grid.getIconDrawablePaddingPx() / 2, insets.getSystemWindowInsetBottom()
         );
         setLayoutParams(lp);
         InsettableFrameLayout.Companion.dispatchInsets(this, insets);

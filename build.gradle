@@ -44,6 +44,7 @@ subprojects {
             target '**/*.java'
             importOrder() // standard import order
             removeUnusedImports() // removes any unused imports
+            paddedCell()
         }
         kotlin {
             target "**/*.kt"

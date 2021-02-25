@@ -8,6 +8,8 @@ import android.animation.PropertyValuesHolder;
 import android.annotation.SuppressLint;
 import android.app.WallpaperManager;
 import android.content.Context;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -29,9 +31,14 @@ import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.LongArrayMap;
 import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.dragndrop.DragController;
+import foundation.e.blisslauncher.features.test.dragndrop.DragOptions;
+import foundation.e.blisslauncher.features.test.dragndrop.DragSource;
+import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
+import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
-    Insettable {
+    Insettable, DropTarget, DragSource, DragController.DragListener {
 
     private static final String TAG = "LauncherPagedView";
     private static final int DEFAULT_PAGE = 0;
@@ -61,9 +68,14 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     final static float MAX_SWIPE_ANGLE = (float) Math.PI / 3;
     final static float TOUCH_SLOP_DAMPING_FACTOR = 4;
 
+    private final static Paint sPaint = new Paint();
+
     Runnable mRemoveEmptyScreenRunnable;
     boolean mDeferRemoveExtraEmptyScreen = false;
     private boolean mStripScreensOnPageStopMoving = false;
+    private SpringLoadedDragController mSpringLoadedDragController;
+    private DragController mDragController;
+    private boolean mChildrenLayersEnabled = true;
 
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -108,7 +120,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void onViewAdded(View child) {
-        if(!(child instanceof GridLayout)) {
+        if (!(child instanceof GridLayout)) {
             throw new IllegalArgumentException("A Workspace can only have GridLayout children.");
         }
         GridLayout grid = (GridLayout) child;
@@ -122,7 +134,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void setInsets(WindowInsets insets) {
-        mInsets.set(insets.getSystemWindowInsetLeft(),
+        mInsets.set(
+            insets.getSystemWindowInsetLeft(),
             insets.getSystemWindowInsetTop(),
             insets.getSystemWindowInsetRight(),
             insets.getSystemWindowInsetBottom()
@@ -135,7 +148,9 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         mDeferRemoveExtraEmptyScreen = true;
     }
 
-    public void bindAndInitFirstScreen(View view) {}
+    public void bindAndInitFirstScreen(View view) {
+        // Do nothing here.
+    }
 
     public void removeAllWorkspaceScreens() {
         // Disable all layout transitions before removing all pages to ensure that we don't get the
@@ -171,7 +186,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         for (LauncherItem launcherItem : launcherItems) {
             BlissFrameLayout appView = prepareLauncherItem(launcherItem);
             if (launcherItem.container == Constants.CONTAINER_DESKTOP) {
-                if (workspaceScreen.getChildCount() >= mLauncher.getDeviceProfile().maxAppsPerPage
+                if (workspaceScreen.getChildCount() >= mLauncher.getDeviceProfile().getInv()
+                    .getNumRows() * mLauncher.getDeviceProfile().getInv().getNumColumns()
                     || launcherItem.screenId > mScreenOrder.size() - 1) {
                     workspaceScreen = insertNewWorkspaceScreen(mScreenOrder.size());
                 }
@@ -179,20 +195,22 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 launcherItem.cell = workspaceScreen.getChildCount();
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
-                GridLayout.LayoutParams iconLayoutParams = new GridLayout.LayoutParams(rowSpec, colSpec);
-                iconLayoutParams.height = mLauncher.getDeviceProfile().cellHeightPx;
-                iconLayoutParams.width = mLauncher.getDeviceProfile().cellWidthPx;
+                GridLayout.LayoutParams iconLayoutParams =
+                    new GridLayout.LayoutParams(rowSpec, colSpec);
+                iconLayoutParams.height = mLauncher.getDeviceProfile().getCellHeightPx();
+                iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
                 appView.findViewById(R.id.app_label).setVisibility(View.VISIBLE);
                 appView.setLayoutParams(iconLayoutParams);
                 appView.setWithText(true);
                 workspaceScreen.addView(appView);
-            } else if(launcherItem.container == Constants.CONTAINER_HOTSEAT) {
+            } else if (launcherItem.container == Constants.CONTAINER_HOTSEAT) {
                 appView.findViewById(R.id.app_label).setVisibility(GONE);
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
-                GridLayout.LayoutParams iconLayoutParams = new GridLayout.LayoutParams(rowSpec, colSpec);
-                iconLayoutParams.height = mLauncher.getDeviceProfile().hotseatCellHeightPx;
-                iconLayoutParams.width = mLauncher.getDeviceProfile().cellWidthPx;
+                GridLayout.LayoutParams iconLayoutParams =
+                    new GridLayout.LayoutParams(rowSpec, colSpec);
+                iconLayoutParams.height = mLauncher.getDeviceProfile().getHotseatCellHeightPx();
+                iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
                 iconLayoutParams.setGravity(Gravity.CENTER);
                 appView.setLayoutParams(iconLayoutParams);
                 appView.setWithText(false);
@@ -217,11 +235,11 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         /*int paddingLeftRight = mLauncher.getDeviceProfile().cellLayoutPaddingLeftRightPx;
         int paddingBottom = mLauncher.getDeviceProfile().cellLayoutBottomPaddingPx;
         newScreen.setPadding(paddingLeftRight, 0, paddingLeftRight, paddingBottom);*/
-        newScreen.setRowCount(mLauncher.getDeviceProfile().numRows);
-        newScreen.setColumnCount(4);
-        newScreen.setPadding(mLauncher.getDeviceProfile().iconDrawablePaddingPx / 2,
+        newScreen.setRowCount(mLauncher.getDeviceProfile().getInv().getNumRows());
+        newScreen.setColumnCount(mLauncher.getDeviceProfile().getInv().getNumColumns());
+        newScreen.setPadding(mLauncher.getDeviceProfile().getIconDrawablePaddingPx() / 2,
             (int) (Utilities.pxFromDp(8, this.getContext())),
-            mLauncher.getDeviceProfile().iconDrawablePaddingPx / 2, 0
+            mLauncher.getDeviceProfile().getIconDrawablePaddingPx() / 2, 0
         );
 
         mWorkspaceScreens.put(screenId, newScreen);
@@ -270,15 +288,22 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         removeExtraEmptyScreenDelayed(animate, null, 0, stripEmptyScreens);
     }
 
-    public void removeExtraEmptyScreenDelayed(final boolean animate, final Runnable onComplete,
-        final int delay, final boolean stripEmptyScreens) {
+    public void removeExtraEmptyScreenDelayed(
+        final boolean animate, final Runnable onComplete,
+        final int delay, final boolean stripEmptyScreens
+    ) {
         if (mLauncher.isWorkspaceLoading()) {
             // Don't strip empty screens if the workspace is still loading
             return;
         }
 
         if (delay > 0) {
-            postDelayed(() -> removeExtraEmptyScreenDelayed(animate, onComplete, 0, stripEmptyScreens), delay);
+            postDelayed(() -> removeExtraEmptyScreenDelayed(
+                animate,
+                onComplete,
+                0,
+                stripEmptyScreens
+            ), delay);
             return;
         }
 
@@ -288,11 +313,13 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             if (getNextPage() == emptyIndex) {
                 snapToPage(getNextPage() - 1, SNAP_OFF_EMPTY_SCREEN_DURATION);
                 fadeAndRemoveEmptyScreen(SNAP_OFF_EMPTY_SCREEN_DURATION, FADE_EMPTY_SCREEN_DURATION,
-                    onComplete, stripEmptyScreens);
+                    onComplete, stripEmptyScreens
+                );
             } else {
                 snapToPage(getNextPage(), 0);
                 fadeAndRemoveEmptyScreen(0, FADE_EMPTY_SCREEN_DURATION,
-                    onComplete, stripEmptyScreens);
+                    onComplete, stripEmptyScreens
+                );
             }
             return;
         } else if (stripEmptyScreens) {
@@ -306,8 +333,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
     }
 
-    private void fadeAndRemoveEmptyScreen(int delay, int duration, final Runnable onComplete,
-        final boolean stripEmptyScreens) {
+    private void fadeAndRemoveEmptyScreen(
+        int delay, int duration, final Runnable onComplete,
+        final boolean stripEmptyScreens
+    ) {
         // XXX: Do we need to update LM workspace screens below?
         PropertyValuesHolder alpha = PropertyValuesHolder.ofFloat("alpha", 0f);
         PropertyValuesHolder bgAlpha = PropertyValuesHolder.ofFloat("backgroundAlpha", 0f);
@@ -510,13 +539,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             removeScreens.add(id);
         }
 
-
         // We enforce at least one page to add new items to. In the case that we remove the last
         // such screen, we convert the last screen to the empty screen
         int minScreens = 1;
 
         int pageShift = 0;
-        for (Long id: removeScreens) {
+        for (Long id : removeScreens) {
             GridLayout cl = mWorkspaceScreens.get(id);
             mWorkspaceScreens.remove(id);
             mScreenOrder.remove(id);
@@ -565,13 +593,14 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         return false;
     }
 
-    /** This differs from isSwitchingState in that we take into account how far the transition
-     *  has completed. */
+    /**
+     * This differs from isSwitchingState in that we take into account how far the transition
+     * has completed.
+     */
     /*public boolean isFinishedSwitchingState() {
         return !mIsSwitchingState
             || (mTransitionProgress > FINISHED_SWITCHING_STATE_TRANSITION_PROGRESS);
     }*/
-
     @Override
     public boolean dispatchUnhandledMove(View focused, int direction) {
         return super.dispatchUnhandledMove(focused, direction);
@@ -657,12 +686,124 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     @Override
     public int getExpectedHeight() {
         return getMeasuredHeight() <= 0 || !mIsLayoutValid
-            ? mLauncher.getDeviceProfile().heightPx : getMeasuredHeight();
+            ? mLauncher.getDeviceProfile().getHeightPx() : getMeasuredHeight();
     }
 
     @Override
     public int getExpectedWidth() {
         return getMeasuredWidth() <= 0 || !mIsLayoutValid
-            ? mLauncher.getDeviceProfile().widthPx : getMeasuredWidth();
+            ? mLauncher.getDeviceProfile().getWidthPx() : getMeasuredWidth();
+    }
+
+    private void updateChildrenLayersEnabled() {
+        boolean enableChildrenLayers = isPageInTransition();
+
+        if (enableChildrenLayers != mChildrenLayersEnabled) {
+            mChildrenLayersEnabled = enableChildrenLayers;
+            if (mChildrenLayersEnabled) {
+                enableHwLayersOnVisiblePages();
+            } else {
+                for (int i = 0; i < getPageCount(); i++) {
+                    final GridLayout grid = (GridLayout) getChildAt(i);
+                    grid.setLayerType(LAYER_TYPE_NONE, sPaint);
+                }
+            }
+        }
+    }
+
+    private void enableHwLayersOnVisiblePages() {
+        if (mChildrenLayersEnabled) {
+            final int screenCount = getChildCount();
+
+            final int[] visibleScreens = getVisibleChildrenRange();
+            int leftScreen = visibleScreens[0];
+            int rightScreen = visibleScreens[1];
+
+            if (leftScreen == rightScreen) {
+                // make sure we're caching at least two pages always
+                if (rightScreen < screenCount - 1) {
+                    rightScreen++;
+                } else if (leftScreen > 0) {
+                    leftScreen--;
+                }
+            }
+
+            for (int i = 0; i < screenCount; i++) {
+                final GridLayout layout = (GridLayout) getPageAt(i);
+                // enable layers between left and right screen inclusive.
+                boolean enableLayer = leftScreen <= i && i <= rightScreen;
+                layout.setLayerType(enableLayer ? LAYER_TYPE_HARDWARE : LAYER_TYPE_NONE, sPaint);
+            }
+        }
+    }
+
+    public void setup(@NotNull DragController dragController) {
+        mSpringLoadedDragController = new SpringLoadedDragController(mLauncher);
+        mDragController = dragController;
+
+        // hardware layers on children are enabled on startup, but should be disabled until
+        // needed
+        updateChildrenLayersEnabled();
+    }
+
+    @Override
+    public void onDragStart(
+        DragObject dragObject, DragOptions options
+    ) {
+
+    }
+
+    @Override
+    public void onDragEnd() {
+
+    }
+
+    @Override
+    public void onDropCompleted(
+        View target, DragObject d, boolean success
+    ) {
+
+    }
+
+    @Override
+    public boolean isDropEnabled() {
+        return false;
+    }
+
+    @Override
+    public void onDrop(
+        DragObject dragObject, DragOptions options
+    ) {
+
+    }
+
+    @Override
+    public void onDragEnter(DragObject dragObject) {
+
+    }
+
+    @Override
+    public void onDragOver(DragObject dragObject) {
+
+    }
+
+    @Override
+    public void onDragExit(DragObject dragObject) {
+
+    }
+
+    @Override
+    public boolean acceptDrop(DragObject dragObject) {
+        return false;
+    }
+
+    @Override
+    public void prepareAccessibilityDrop() {
+
+    }
+
+    @Override
+    public void getHitRectRelativeToDragLayer(Rect outRect) {
+
     }
 }

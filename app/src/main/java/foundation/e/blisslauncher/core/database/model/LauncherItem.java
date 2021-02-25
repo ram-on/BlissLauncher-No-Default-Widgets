@@ -139,6 +139,15 @@ public class LauncherItem {
         }
     }
 
+    public void copyFrom(LauncherItem item) {
+        this.id = item.id;
+        this.itemType = item.itemType;
+        this.screenId = item.screenId;
+        this.container = item.container;
+        this.user = item.user;
+        this.cell = item.cell;
+    }
+
     @Override
     public String toString() {
         return "[id: " + id + "item_type: " + itemType + ", container: " + container + ", screen: " + screenId

@@ -7,23 +7,29 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
+import android.view.LayoutInflater
 import android.view.View
 import foundation.e.blisslauncher.BlissLauncher
 import foundation.e.blisslauncher.R
+import foundation.e.blisslauncher.core.customviews.LauncherPagedView
 import foundation.e.blisslauncher.core.database.model.LauncherItem
 import foundation.e.blisslauncher.features.launcher.Hotseat
+import foundation.e.blisslauncher.features.test.dragndrop.DragController
+import foundation.e.blisslauncher.features.test.dragndrop.DragLayer
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableObserver
-import kotlinx.android.synthetic.main.activity_test.*
 
 class TestActivity : BaseDraggingActivity() {
 
+    lateinit var dragController: DragController
     private lateinit var mOldConfig: Configuration
     private var mCompositeDisposable: CompositeDisposable? = null
-    private lateinit var mHotseat: Hotseat
 
-    private lateinit var deviceProfile: VariantDeviceProfile
+    private lateinit var launcherView: View
+    private lateinit var dragLayer: DragLayer
+    private lateinit var workspace: LauncherPagedView
+    private lateinit var hotseat: Hotseat
 
     private val TAG = "TestActivity"
 
@@ -53,10 +59,11 @@ class TestActivity : BaseDraggingActivity() {
 
         mOldConfig = Configuration(resources.configuration)
         initDeviceProfile(BlissLauncher.getApplication(this).invariantDeviceProfile)
+        dragController = DragController(this)
+        launcherView = LayoutInflater.from(this).inflate(R.layout.activity_test, null)
+        setupViews()
 
-        setContentView(R.layout.activity_test)
-        mHotseat = findViewById(R.id.hotseat)
-        workspace.initParentViews(root)
+        setContentView(launcherView)
 
         window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -64,20 +71,37 @@ class TestActivity : BaseDraggingActivity() {
         createOrUpdateIconGrid()
     }
 
+    private fun setupViews() {
+        dragLayer = findViewById(R.id.drag_layer)
+        workspace = dragLayer.findViewById(R.id.workspace)
+        workspace.initParentViews(dragLayer)
+        hotseat = findViewById(R.id.hotseat)
+        launcherView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            or View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
+        dragLayer.setup(dragController, workspace)
+        workspace.setup(dragController)
+        workspace.bindAndInitFirstScreen(null)
+        dragController.addDragListener(workspace)
+        dragController.addDropTarget(workspace)
+    }
+
+    override fun <T : View> findViewById(id: Int): T {
+        return launcherView.findViewById(id)
+    }
+
     private fun initDeviceProfile(idp: InvariantDeviceProfile) {
         // Load device specific profile
-        deviceProfile = idp.getDeviceProfile(this)
+        mDeviceProfile = idp.getDeviceProfile(this)
         onDeviceProfileInitiated()
     }
 
-    fun getHotseat() = mHotseat
+    fun getHotseat() = hotseat
 
     fun isWorkspaceLoading() = false
 
-    fun getDeviceProfile() = BlissLauncher.getApplication(this).deviceProfile
-
-    override fun getDragLayer(): BaseDragLayer {
-        return mDragLayer
+    override fun getDragLayer(): DragLayer {
+        return dragLayer
     }
 
     override fun <T : View?> getOverviewPanel(): T {
@@ -92,8 +116,9 @@ class TestActivity : BaseDraggingActivity() {
         TODO("Not yet implemented")
     }
 
+    fun getWorkspace(): LauncherPagedView = workspace
+
     override fun reapplyUi() {
-        getR
     }
 
     private fun getCompositeDisposable(): CompositeDisposable {
