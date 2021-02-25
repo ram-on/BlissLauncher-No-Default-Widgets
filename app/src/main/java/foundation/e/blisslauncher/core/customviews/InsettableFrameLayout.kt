@@ -9,14 +9,14 @@ import android.view.WindowInsets
 import android.widget.FrameLayout
 import foundation.e.blisslauncher.BlissLauncher
 
-class InsettableFrameLayout(private val mContext: Context, attrs: AttributeSet?) : FrameLayout(
+open class InsettableFrameLayout(private val mContext: Context, attrs: AttributeSet?) : FrameLayout(
     mContext, attrs
 ), Insettable {
 
     private var mInsets: WindowInsets? = null
 
     private fun setFrameLayoutChildInsets(child: View, newInsets: WindowInsets?) {
-        if(newInsets == null) return
+        if (newInsets == null) return
         val lp: LayoutParams =
             child.layoutParams as LayoutParams
         if (child is Insettable) {
@@ -32,6 +32,7 @@ class InsettableFrameLayout(private val mContext: Context, attrs: AttributeSet?)
         setInsets(insets)
         return insets
     }
+
     override fun setInsets(insets: WindowInsets?) {
         if (insets == null) return
         setPadding(
@@ -50,7 +51,7 @@ class InsettableFrameLayout(private val mContext: Context, attrs: AttributeSet?)
         setFrameLayoutChildInsets(child, mInsets)
     }
 
-    companion object{
+    companion object {
         fun dispatchInsets(parent: ViewGroup, insets: WindowInsets) {
             val n = parent.childCount
             for (i in 0 until n) {
@@ -61,5 +62,4 @@ class InsettableFrameLayout(private val mContext: Context, attrs: AttributeSet?)
             }
         }
     }
-
 }

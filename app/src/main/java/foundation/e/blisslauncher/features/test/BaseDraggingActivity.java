@@ -196,6 +196,7 @@ public abstract class BaseDraggingActivity extends BaseActivity {
     }
 
     protected void onDeviceProfileInitiated() {
+        //TODO: Enable or disable rotation listener here if supporting landscape launcher.
     }
 
     protected abstract void reapplyUi();

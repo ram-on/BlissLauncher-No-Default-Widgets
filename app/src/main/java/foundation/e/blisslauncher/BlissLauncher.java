@@ -9,10 +9,12 @@ import foundation.e.blisslauncher.core.IconsHandler;
 import foundation.e.blisslauncher.core.blur.BlurWallpaperProvider;
 import foundation.e.blisslauncher.core.customviews.WidgetHost;
 import foundation.e.blisslauncher.features.launcher.AppProvider;
+import foundation.e.blisslauncher.features.test.InvariantDeviceProfile;
 
 public class BlissLauncher extends Application {
     private IconsHandler iconsPackHandler;
     private DeviceProfile deviceProfile;
+    private InvariantDeviceProfile invDeviceProfile;
 
     private AppProvider mAppProvider;
 
@@ -40,6 +42,13 @@ public class BlissLauncher extends Application {
             deviceProfile = new DeviceProfile(this);
         }
         return deviceProfile;
+    }
+
+    public InvariantDeviceProfile getInvariantDeviceProfile() {
+        if (invDeviceProfile == null) {
+            invDeviceProfile = new InvariantDeviceProfile(this);
+        }
+        return invDeviceProfile;
     }
 
     public void resetDeviceProfile() {

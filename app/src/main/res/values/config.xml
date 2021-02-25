@@ -9,4 +9,6 @@
     <bool name="hotseat_transpose_layout_with_orientation">true</bool>
     <integer name="config_workspaceSpringLoadShrinkPercentage">90</integer>
 
+    <!-- Tag id used for view scrim -->
+    <item type="id" name="view_scrim" />
 </resources>

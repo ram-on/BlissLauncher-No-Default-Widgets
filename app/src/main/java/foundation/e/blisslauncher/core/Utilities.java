@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -40,6 +41,12 @@ public class Utilities {
 
     private static final Pattern sTrimPattern =
             Pattern.compile("^[\\s|\\p{javaSpaceChar}]*(.*)[\\s|\\p{javaSpaceChar}]*$");
+
+    private static final int[] sLoc0 = new int[2];
+    private static final int[] sLoc1 = new int[2];
+    private static final float[] sPoint = new float[2];
+    private static final Matrix sMatrix = new Matrix();
+    private static final Matrix sInverseMatrix = new Matrix();
 
     /**
      * Use hard coded values to compile with android source.
@@ -244,5 +251,68 @@ public class Utilities {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Given a coordinate relative to the descendant, find the coordinate in a parent view's
+     * coordinates.
+     *
+     * @param descendant The descendant to which the passed coordinate is relative.
+     * @param ancestor The root view to make the coordinates relative to.
+     * @param coord The coordinate that we want mapped.
+     * @param includeRootScroll Whether or not to account for the scroll of the descendant:
+     *          sometimes this is relevant as in a child's coordinates within the descendant.
+     * @return The factor by which this descendant is scaled relative to this DragLayer. Caution
+     *         this scale factor is assumed to be equal in X and Y, and so if at any point this
+     *         assumption fails, we will need to return a pair of scale factors.
+     */
+    public static float getDescendantCoordRelativeToAncestor(
+        View descendant, View ancestor, int[] coord, boolean includeRootScroll) {
+        sPoint[0] = coord[0];
+        sPoint[1] = coord[1];
+
+        float scale = 1.0f;
+        View v = descendant;
+        while(v != ancestor && v != null) {
+            // For TextViews, scroll has a meaning which relates to the text position
+            // which is very strange... ignore the scroll.
+            if (v != descendant || includeRootScroll) {
+                sPoint[0] -= v.getScrollX();
+                sPoint[1] -= v.getScrollY();
+            }
+
+            v.getMatrix().mapPoints(sPoint);
+            sPoint[0] += v.getLeft();
+            sPoint[1] += v.getTop();
+            scale *= v.getScaleX();
+
+            v = (View) v.getParent();
+        }
+
+        coord[0] = Math.round(sPoint[0]);
+        coord[1] = Math.round(sPoint[1]);
+        return scale;
+    }
+
+    /**
+     * Inverse of {@link #getDescendantCoordRelativeToAncestor(View, View, int[], boolean)}.
+     */
+    public static void mapCoordInSelfToDescendant(View descendant, View root, int[] coord) {
+        sMatrix.reset();
+        View v = descendant;
+        while(v != root) {
+            sMatrix.postTranslate(-v.getScrollX(), -v.getScrollY());
+            sMatrix.postConcat(v.getMatrix());
+            sMatrix.postTranslate(v.getLeft(), v.getTop());
+            v = (View) v.getParent();
+        }
+        sMatrix.postTranslate(-v.getScrollX(), -v.getScrollY());
+        sMatrix.invert(sInverseMatrix);
+
+        sPoint[0] = coord[0];
+        sPoint[1] = coord[1];
+        sInverseMatrix.mapPoints(sPoint);
+        coord[0] = Math.round(sPoint[0]);
+        coord[1] = Math.round(sPoint[1]);
     }
 }

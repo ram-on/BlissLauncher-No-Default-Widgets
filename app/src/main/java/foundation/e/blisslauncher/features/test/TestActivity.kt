@@ -23,6 +23,8 @@ class TestActivity : BaseDraggingActivity() {
     private var mCompositeDisposable: CompositeDisposable? = null
     private lateinit var mHotseat: Hotseat
 
+    private lateinit var deviceProfile: VariantDeviceProfile
+
     private val TAG = "TestActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,6 +52,7 @@ class TestActivity : BaseDraggingActivity() {
         TraceHelper.partitionSection("Launcher-onCreate", "super call")
 
         mOldConfig = Configuration(resources.configuration)
+        initDeviceProfile(BlissLauncher.getApplication(this).invariantDeviceProfile)
 
         setContentView(R.layout.activity_test)
         mHotseat = findViewById(R.id.hotseat)
@@ -61,6 +64,12 @@ class TestActivity : BaseDraggingActivity() {
         createOrUpdateIconGrid()
     }
 
+    private fun initDeviceProfile(idp: InvariantDeviceProfile) {
+        // Load device specific profile
+        deviceProfile = idp.getDeviceProfile(this)
+        onDeviceProfileInitiated()
+    }
+
     fun getHotseat() = mHotseat
 
     fun isWorkspaceLoading() = false
@@ -68,7 +77,7 @@ class TestActivity : BaseDraggingActivity() {
     fun getDeviceProfile() = BlissLauncher.getApplication(this).deviceProfile
 
     override fun getDragLayer(): BaseDragLayer {
-        TODO("Not yet implemented")
+        return mDragLayer
     }
 
     override fun <T : View?> getOverviewPanel(): T {
