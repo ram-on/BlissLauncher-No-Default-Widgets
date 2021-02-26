@@ -12,19 +12,25 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.util.Property
+import android.view.Gravity
 import android.view.View
 import android.view.ViewOutlineProvider
+import android.view.WindowInsets
 import android.view.animation.Interpolator
 import android.view.animation.OvershootInterpolator
+import android.widget.FrameLayout
 import foundation.e.blisslauncher.R
+import foundation.e.blisslauncher.core.customviews.Insettable
+import foundation.e.blisslauncher.features.test.TestActivity
 import kotlin.math.abs
 
 /**
  * [PageIndicator] which shows dots per page. The active page is shown with the current
  * accent color.
  */
-class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) :
-    View(context, attrs, defStyleAttr), PageIndicator {
+class PageIndicatorDots(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
+    View(context, attrs, defStyleAttr), PageIndicator, Insettable {
+    private var mLauncher: TestActivity
     private val mCirclePaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val mDotRadius: Float
     private val mActiveColor: Int
@@ -47,8 +53,8 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
     private var mAnimator: ObjectAnimator? = null
     private var mEntryAnimationRadiusFactors: FloatArray? = null
 
-    constructor(context: Context?) : this(context, null)
-    constructor(context: Context?, attrs: AttributeSet?) : this(context, attrs, 0)
+    constructor(context: Context) : this(context, null)
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
 
     override fun setScroll(currentScroll: Int, totalScroll: Int) {
         var currentScroll = currentScroll
@@ -152,6 +158,7 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
         if (mActivePage != activePage) {
             mActivePage = activePage
         }
+        invalidate()
     }
 
     override fun setMarkersCount(numMarkers: Int) {
@@ -299,11 +306,21 @@ class PageIndicatorDots(context: Context?, attrs: AttributeSet?, defStyleAttr: I
     }
 
     init {
+        mLauncher = TestActivity.getLauncher(context)
         mCirclePaint.style = Paint.Style.FILL
         mDotRadius = resources.getDimension(R.dimen.dotSize) / 2
         outlineProvider = MyOutlineProver()
         mActiveColor = resources.getColor(R.color.dot_on_color)
         mInActiveColor = resources.getColor(R.color.dot_off_color)
         //mIsRtl = Utilities.isRtl(getResources())
+    }
+
+    override fun setInsets(insets: WindowInsets) {
+        val deviceProfile = mLauncher.deviceProfile
+        val lp = layoutParams as FrameLayout.LayoutParams
+        lp.leftMargin = 0.also { lp.rightMargin = it }
+        lp.gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
+        lp.bottomMargin = deviceProfile.hotseatBarSizePx + insets.systemWindowInsetBottom
+        layoutParams = lp
     }
 }

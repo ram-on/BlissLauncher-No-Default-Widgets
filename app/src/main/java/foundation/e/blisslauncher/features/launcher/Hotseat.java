@@ -18,8 +18,8 @@ package foundation.e.blisslauncher.features.launcher;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.ViewDebug;
@@ -29,7 +29,6 @@ import android.widget.FrameLayout;
 
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.customviews.Insettable;
-import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
@@ -72,7 +71,7 @@ public class Hotseat extends FrameLayout implements Insettable {
         mContent.removeAllViewsInLayout();
         mHasVerticalHotseat = hasVerticalHotseat;
         VariantDeviceProfile idp = mLauncher.getDeviceProfile();
-        mContent.setColumnCount(idp.getInv().getNumColumns());
+        mContent.setColumnCount(idp.getInv().getNumHotseatIcons());
         mContent.setRowCount(1);
     }
 
@@ -85,20 +84,15 @@ public class Hotseat extends FrameLayout implements Insettable {
 
     @Override
     public void setInsets(WindowInsets insets) {
-        Log.d(TAG, "setInsets() called with: insets = [" + insets + "]");
         LayoutParams lp = (LayoutParams) getLayoutParams();
         VariantDeviceProfile grid = mLauncher.getDeviceProfile();
-
         lp.gravity = Gravity.BOTTOM;
         lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-        lp.height = grid.getHotseatCellHeightPx() + insets.getSystemWindowInsetBottom();
-
-        //Rect padding = grid.getHotseatLayoutPadding();
-        getLayout().setPadding(
-            grid.getIconDrawablePaddingPx() / 2, 0,
-            grid.getIconDrawablePaddingPx() / 2, insets.getSystemWindowInsetBottom()
-        );
+        lp.bottomMargin = 0;
+        lp.height = grid.getHotseatBarSizePx()+insets.getSystemWindowInsetBottom();
+        Rect padding = grid.getHotseatLayoutPadding();
+        getLayout().setPadding(padding.left, padding.top, padding.right, padding.bottom);
         setLayoutParams(lp);
-        InsettableFrameLayout.Companion.dispatchInsets(this, insets);
+        //InsettableFrameLayout.Companion.dispatchInsets(this, insets);
     }
 }

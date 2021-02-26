@@ -29,6 +29,8 @@ import android.view.WindowInsets
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.utils.Constants
+import kotlin.math.max
+import kotlin.math.min
 
 class VariantDeviceProfile(
     val context: Context,
@@ -145,11 +147,11 @@ class VariantDeviceProfile(
             inv.iconTextSize,
             dm
         ) * scale).toInt()
-        Log.i("Iconsizepx", ""+iconSizePx+" "+invIconSizePx)
+        Log.i("Iconsizepx", "" + iconSizePx + " " + invIconSizePx)
         iconDrawablePaddingPx =
             (availableWidthPx - iconSizePx * inv.numColumns) / (inv.numColumns + 1)
         cellHeightPx = (iconSizePx + iconDrawablePaddingPx +
-            Utilities.calculateTextHeight(iconTextSizePx.toFloat()))
+            Utilities.calculateTextHeight(iconTextSizePx.toFloat()) * 2)
 
         val cellYPadding = (cellSize.y - cellHeightPx) / 2
         if (iconDrawablePaddingPx > cellYPadding) {
@@ -243,6 +245,7 @@ class VariantDeviceProfile(
                     availableWidthPx - padding.x -
                         cellLayoutPaddingLeftRightPx * 2, inv.numColumns
                 )
+            Log.i("Padding", "$availableHeightPx, $padding, $cellLayoutBottomPaddingPx")
             result.y =
                 calculateCellHeight(
                     availableHeightPx - padding.y -
@@ -412,6 +415,7 @@ class VariantDeviceProfile(
             res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_side_padding)
         hotseatBarSizePx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_size) + hotseatBarTopPaddingPx + hotseatBarBottomPaddingPx
+        Log.d("DeviceProfile", "$hotseatBarSizePx")
         // Determine sizes.
         widthPx = width
         heightPx = height
@@ -421,7 +425,7 @@ class VariantDeviceProfile(
         updateAvailableDimensions(dm, res)
         // Now that we have all of the variables calculated, we can tune certain sizes.
         val aspectRatio =
-            Math.max(widthPx, heightPx).toFloat() / Math.min(
+            max(widthPx, heightPx).toFloat() / min(
                 widthPx,
                 heightPx
             )
@@ -431,8 +435,9 @@ class VariantDeviceProfile(
             // ie. For a display with a large aspect ratio, we can keep the icons on the workspace
             // in portrait mode closer together by adding more height to the hotseat.
             // Note: This calculation was created after noticing a pattern in the design spec.
-            val extraSpace = cellSize.y - iconSizePx - iconDrawablePaddingPx
-            hotseatBarSizePx += extraSpace
+            val extraSpace = cellSize.y - cellHeightPx
+            //hotseatBarSizePx += extraSpace
+            Log.d("DeviceProfile", "$hotseatBarSizePx")
             // Recalculate the available dimensions using the new hotseat size.
             updateAvailableDimensions(dm, res)
         }

@@ -3,6 +3,7 @@ package foundation.e.blisslauncher.features.test;
 import android.content.Context;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -217,7 +218,7 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
 
     @Override
     protected LayoutParams generateDefaultLayoutParams() {
-        return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
     }
 
     // Override to allow type-checking of LayoutParams.
@@ -288,8 +289,9 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
             final FrameLayout.LayoutParams flp = (FrameLayout.LayoutParams) child.getLayoutParams();
             if (flp instanceof LayoutParams) {
                 final LayoutParams lp = (LayoutParams) flp;
+                Log.i("BaseDragLayer","called");
                 if (lp.customPosition) {
-                    child.layout(lp.x, lp.y, lp.x + lp.width, lp.y + lp.height);
+                    child.layout(lp.x, lp.y, lp.x + lp.width, lp.y + lp.height+lp.height);
                 }
             }
         }

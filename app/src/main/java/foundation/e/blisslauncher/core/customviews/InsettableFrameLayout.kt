@@ -20,19 +20,18 @@ open class InsettableFrameLayout(private val mContext: Context, attrs: Attribute
         val lp: LayoutParams =
             child.layoutParams as LayoutParams
         if (child is Insettable) {
+            Log.i("Insettable", "setIsnets for child")
             (child as Insettable).setInsets(newInsets)
-        } else {
+        } /*else {
             lp.topMargin += newInsets.systemWindowInsetTop - oldInsets.top
             lp.leftMargin += newInsets.systemWindowInsetLeft - oldInsets.left
             lp.rightMargin += newInsets.systemWindowInsetRight - oldInsets.right
             lp.bottomMargin += newInsets.systemWindowInsetBottom - oldInsets.bottom
-        }
+        }*/
         child.layoutParams = lp
     }
 
     override fun onApplyWindowInsets(insets: WindowInsets?): WindowInsets? {
-        Log.d("InsettableFrameLayout", "setInsets() called with: insets = $insets")
-
         //BlissLauncher.getApplication(mContext).resetDeviceProfile()
         setInsets(insets)
         return insets

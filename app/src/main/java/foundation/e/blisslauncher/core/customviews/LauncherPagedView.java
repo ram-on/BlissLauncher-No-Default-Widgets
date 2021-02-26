@@ -11,6 +11,8 @@ import android.content.Context;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -23,14 +25,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import foundation.e.blisslauncher.R;
-import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots;
 import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
+import foundation.e.blisslauncher.core.touch.ItemClickHandler;
+import foundation.e.blisslauncher.core.touch.ItemLongClickListener;
 import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.LongArrayMap;
 import foundation.e.blisslauncher.features.test.CellLayout;
+import foundation.e.blisslauncher.features.test.IconTextView;
 import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.dragndrop.DragController;
 import foundation.e.blisslauncher.features.test.dragndrop.DragOptions;
 import foundation.e.blisslauncher.features.test.dragndrop.DragSource;
@@ -141,7 +146,15 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             insets.getSystemWindowInsetBottom()
         );
 
-        //TODO: set padding from device profile.
+        VariantDeviceProfile grid = mLauncher.getDeviceProfile();
+        Rect padding = grid.getWorkspacePadding();
+        setPadding(padding.left, padding.top, padding.right, padding.bottom);
+        int paddingLeftRight = grid.getCellLayoutPaddingLeftRightPx();
+        int paddingBottom = grid.getCellLayoutBottomPaddingPx();
+        for (int i = mWorkspaceScreens.size() - 1; i >= 0; i--) {
+            mWorkspaceScreens.valueAt(i)
+                .setPadding(paddingLeftRight, 0, paddingLeftRight, paddingBottom);
+        }
     }
 
     public void deferRemoveExtraEmptyScreen() {
@@ -184,7 +197,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         removeAllWorkspaceScreens();
         GridLayout workspaceScreen = insertNewWorkspaceScreen(0);
         for (LauncherItem launcherItem : launcherItems) {
-            BlissFrameLayout appView = prepareLauncherItem(launcherItem);
+            IconTextView appView = new IconTextView(getContext());
+            appView.applyFromShortcutItem(launcherItem);
+            appView.setOnClickListener(ItemClickHandler.INSTANCE);
+            appView.setOnLongClickListener(ItemLongClickListener.INSTANCE_WORKSPACE);
             if (launcherItem.container == Constants.CONTAINER_DESKTOP) {
                 if (workspaceScreen.getChildCount() >= mLauncher.getDeviceProfile().getInv()
                     .getNumRows() * mLauncher.getDeviceProfile().getInv().getNumColumns()
@@ -199,21 +215,19 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     new GridLayout.LayoutParams(rowSpec, colSpec);
                 iconLayoutParams.height = mLauncher.getDeviceProfile().getCellHeightPx();
                 iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();*/
-                appView.findViewById(R.id.app_label).setVisibility(View.VISIBLE);
+                //appView.findViewById(R.id.app_label).setVisibility(View.VISIBLE);
                 //appView.setLayoutParams(iconLayoutParams);
-                appView.setWithText(true);
+                //appView.setWithText(true);
                 workspaceScreen.addView(appView);
             } else if (launcherItem.container == Constants.CONTAINER_HOTSEAT) {
-                appView.findViewById(R.id.app_label).setVisibility(GONE);
-                /*GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
+                //appView.findViewById(R.id.app_label).setVisibility(GONE);
+                GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.LayoutParams iconLayoutParams =
                     new GridLayout.LayoutParams(rowSpec, colSpec);
-                iconLayoutParams.height = mLauncher.getDeviceProfile().getHotseatCellHeightPx();
-                iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();*/
-                //iconLayoutParams.setGravity(Gravity.CENTER);
-                //appView.setLayoutParams(iconLayoutParams);
-                appView.setWithText(false);
+                iconLayoutParams.setGravity(Gravity.CENTER);
+                appView.setLayoutParams(iconLayoutParams);
+                //appView.setWithText(false);
                 mLauncher.getHotseat().getLayout().addView(appView);
             }
         }
@@ -232,15 +246,11 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         // created CellLayout.
         CellLayout newScreen = (CellLayout) LayoutInflater.from(getContext()).inflate(
             R.layout.workspace_screen, this, false /* attachToRoot */);
-        /*int paddingLeftRight = mLauncher.getDeviceProfile().cellLayoutPaddingLeftRightPx;
-        int paddingBottom = mLauncher.getDeviceProfile().cellLayoutBottomPaddingPx;
-        newScreen.setPadding(paddingLeftRight, 0, paddingLeftRight, paddingBottom);*/
+        int paddingLeftRight = mLauncher.getDeviceProfile().getCellLayoutPaddingLeftRightPx();
+        int paddingBottom = mLauncher.getDeviceProfile().getCellLayoutBottomPaddingPx();
+        newScreen.setPadding(paddingLeftRight, 0, paddingLeftRight, paddingBottom);
         newScreen.setRowCount(mLauncher.getDeviceProfile().getInv().getNumRows());
         newScreen.setColumnCount(mLauncher.getDeviceProfile().getInv().getNumColumns());
-        newScreen.setPadding(mLauncher.getDeviceProfile().getIconDrawablePaddingPx() / 2,
-            (int) (Utilities.pxFromDp(8, this.getContext())),
-            mLauncher.getDeviceProfile().getIconDrawablePaddingPx() / 2, 0
-        );
 
         mWorkspaceScreens.put(screenId, newScreen);
         mScreenOrder.add(insertIndex, screenId);
@@ -806,5 +816,13 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     @Override
     public void getHitRectRelativeToDragLayer(Rect outRect) {
 
+    }
+
+    public void startDrag(CellLayout.CellInfo longClickCellInfo, DragOptions dragOptions) {
+        Log.d(
+            TAG,
+            "startDrag() called with: longClickCellInfo = [" + longClickCellInfo + "], dragOptions = [" + dragOptions + "]"
+        );
+        View child = longClickCellInfo.getCell();
     }
 }

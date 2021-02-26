@@ -22,6 +22,7 @@ import io.reactivex.observers.DisposableObserver
 
 class TestActivity : BaseDraggingActivity() {
 
+    private val mAppTransitionManager: LauncherAppTransitionManager = LauncherAppTransitionManager()
     lateinit var dragController: DragController
     private lateinit var mOldConfig: Configuration
     private var mCompositeDisposable: CompositeDisposable? = null
@@ -64,10 +65,6 @@ class TestActivity : BaseDraggingActivity() {
         setupViews()
 
         setContentView(launcherView)
-
-        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
         createOrUpdateIconGrid()
     }
 
@@ -113,13 +110,15 @@ class TestActivity : BaseDraggingActivity() {
     }
 
     override fun getActivityLaunchOptions(v: View?): ActivityOptions {
-        TODO("Not yet implemented")
+        return mAppTransitionManager.getActivityLaunchOptions(v)
     }
 
     fun getWorkspace(): LauncherPagedView = workspace
 
     override fun reapplyUi() {
     }
+
+    fun isWorkspaceLocked() = false
 
     private fun getCompositeDisposable(): CompositeDisposable {
         if (mCompositeDisposable == null || mCompositeDisposable!!.isDisposed) {
