@@ -17,7 +17,6 @@
 package foundation.e.blisslauncher.features.test.dragndrop;
 
 import android.graphics.Rect;
-import android.view.View;
 
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 
@@ -50,7 +49,7 @@ public interface DropTarget {
         /**
          * The view that moves around while you drag.
          */
-        public View dragView = null;
+        public DragView dragView = null;
 
         /**
          * The data associated with the object, after item is dropped.

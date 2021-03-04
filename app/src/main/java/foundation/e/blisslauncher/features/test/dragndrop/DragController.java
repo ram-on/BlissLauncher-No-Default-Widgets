@@ -128,7 +128,7 @@ public class DragController implements DragDriver.EventListener, TouchController
      * @param dragRegion Coordinates within the bitmap b for the position of item being dragged.
      *          Makes dragging feel more precise, e.g. you can clip out a transparent border
      */
-    public void startDrag(
+    public DragView startDrag(
         Bitmap b, int dragLayerX, int dragLayerY,
             DragSource source, LauncherItem dragInfo, Point dragOffset, Rect dragRegion,
             float initialDragViewScale, float dragViewScaleOnDrop, DragOptions options) {
@@ -161,6 +161,8 @@ public class DragController implements DragDriver.EventListener, TouchController
         final Resources res = mLauncher.getResources();
         final float scaleDps = mIsInPreDrag
                 ? res.getDimensionPixelSize(R.dimen.pre_drag_view_scale) : 0f;
+        final DragView dragView = mDragObject.dragView = new DragView(mLauncher, b, registrationX,
+            registrationY, initialDragViewScale, dragViewScaleOnDrop, scaleDps);
         mDragObject.dragComplete = false;
         mDragObject.xOffset = mMotionDownX - (dragLayerX + dragRegionLeft);
         mDragObject.yOffset = mMotionDownY - (dragLayerY + dragRegionTop);
@@ -171,7 +173,15 @@ public class DragController implements DragDriver.EventListener, TouchController
         mDragObject.originalDragInfo = new LauncherItem();
         mDragObject.originalDragInfo.copyFrom(dragInfo);
 
+        if (dragOffset != null) {
+            dragView.setDragVisualizeOffset(new Point(dragOffset));
+        }
+        if (dragRegion != null) {
+            dragView.setDragRegion(new Rect(dragRegion));
+        }
+
         mLauncher.getDragLayer().performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+        dragView.show(mMotionDownX, mMotionDownY);
         mDistanceSinceScroll = 0;
 
         if (!mIsInPreDrag) {
@@ -183,6 +193,7 @@ public class DragController implements DragDriver.EventListener, TouchController
         mLastTouch[0] = mMotionDownX;
         mLastTouch[1] = mMotionDownY;
         handleMoveEvent(mMotionDownX, mMotionDownY);
+        return dragView;
     }
 
     private void callOnDragStart() {

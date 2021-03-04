@@ -8,8 +8,11 @@ import android.animation.PropertyValuesHolder;
 import android.annotation.SuppressLint;
 import android.app.WallpaperManager;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -39,8 +42,10 @@ import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.dragndrop.DragController;
 import foundation.e.blisslauncher.features.test.dragndrop.DragOptions;
 import foundation.e.blisslauncher.features.test.dragndrop.DragSource;
+import foundation.e.blisslauncher.features.test.dragndrop.DragView;
 import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
+import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
     Insettable, DropTarget, DragSource, DragController.DragListener {
@@ -81,6 +86,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private SpringLoadedDragController mSpringLoadedDragController;
     private DragController mDragController;
     private boolean mChildrenLayersEnabled = true;
+    private CellLayout.CellInfo mDragInfo;
+    private CellLayout mDragSourceInternal;
+    private DragPreviewProvider mOutlineProvider;
+    private final int[] mTempXY = new int[2];
+    float[] mDragViewVisualCenter = new float[2];
+    private final float[] mTempTouchCoordinates = new float[2];
 
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -818,11 +829,78 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     }
 
-    public void startDrag(CellLayout.CellInfo longClickCellInfo, DragOptions dragOptions) {
+    public void startDrag(CellLayout.CellInfo cellInfo, DragOptions dragOptions) {
         Log.d(
             TAG,
-            "startDrag() called with: longClickCellInfo = [" + longClickCellInfo + "], dragOptions = [" + dragOptions + "]"
+            "startDrag() called with: longClickCellInfo = [" + cellInfo + "], dragOptions = [" + dragOptions + "]"
         );
-        View child = longClickCellInfo.getCell();
+        View child = cellInfo.getCell();
+        mDragInfo = cellInfo;
+        child.setVisibility(GONE);
+        beginDragShared(child, this, dragOptions);
+    }
+
+    public void beginDragShared(View child, DragSource source, DragOptions options) {
+        Object dragObject = child.getTag();
+        if(!(dragObject instanceof LauncherItem)) {
+            String msg = "Drag started with a view that has no tag set. This "
+                + "will cause a crash (issue 11627249) down the line. "
+                + "View: " + child + "  tag: " + child.getTag();
+            throw new IllegalStateException(msg);
+        }
+
+        beginDragShared(child, source, (LauncherItem) dragObject, new DragPreviewProvider(child), options);
+    }
+
+    private DragView beginDragShared(
+        View child,
+        DragSource source,
+        LauncherItem dragObject,
+        DragPreviewProvider previewProvider,
+        DragOptions dragOptions
+    ) {
+        float iconScale = 1f;
+        if (child instanceof  IconTextView) {
+            Drawable icon = ((IconTextView) child).getIcon();
+        }
+
+        child.clearFocus();
+        child.setPressed(false);
+        mOutlineProvider = previewProvider;
+
+        // The drag bitmap follows the touch point around on the screen
+        final Bitmap b = previewProvider.createDragBitmap();
+        int halfPadding = previewProvider.previewPadding / 2;
+
+        float scale = previewProvider.getScaleAndPosition(b, mTempXY);
+        int dragLayerX = mTempXY[0];
+        int dragLayerY = mTempXY[1];
+
+        VariantDeviceProfile grid = mLauncher.getDeviceProfile();
+        Point dragVisualizeOffset = null;
+        Rect dragRect = null;
+        if (child instanceof IconTextView) {
+            dragRect =
+            ((IconTextView) child).getIconBounds();
+            dragLayerY += dragRect.top;
+            // Note: The dragRect is used to calculate drag layer offsets, but the
+            // dragVisualizeOffset in addition to the dragRect (the size) to position the outline.
+            dragVisualizeOffset = new Point(- halfPadding, halfPadding);
+        }
+
+        // Clear the pressed state if necessary
+        if (child instanceof IconTextView) {
+            IconTextView icon = (IconTextView) child;
+            icon.clearPressedBackground();
+        }
+
+        if (child.getParent() instanceof CellLayout) {
+            mDragSourceInternal = (CellLayout) child.getParent();
+        }
+
+        DragView dv = mDragController.startDrag(b, dragLayerX, dragLayerY, source,
+            dragObject, dragVisualizeOffset, dragRect, scale * iconScale, scale, dragOptions);
+        dv.setIntrinsicIconScaleFactor(dragOptions.intrinsicIconScaleFactor);
+        return dv;
     }
 }

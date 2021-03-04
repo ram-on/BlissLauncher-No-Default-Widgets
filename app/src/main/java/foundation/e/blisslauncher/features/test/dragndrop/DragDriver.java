@@ -65,7 +65,8 @@ public abstract class DragDriver {
     public static DragDriver create(
         Context context, DragController dragController,
         DropTarget.DragObject dragObject, DragOptions options) {
-        return new SystemDragDriver(dragController, context, dragObject);
+        //return new SystemDragDriver(dragController, context, dragObject);
+        return new InternalDragDriver(dragController);
     }
 }
 
@@ -128,4 +129,14 @@ class SystemDragDriver extends DragDriver {
                 return false;
         }
     }
+}
+
+class InternalDragDriver extends DragDriver {
+
+    public InternalDragDriver(EventListener eventListener) {
+        super(eventListener);
+    }
+
+    @Override
+    public boolean onDragEvent (DragEvent event) { return false; }
 }

@@ -43,5 +43,6 @@
     <dimen name="pre_drag_view_scale">6dp</dimen>
     <dimen name="blur_size_medium_outline">2dp</dimen>
     <dimen name="drag_elevation">30dp</dimen>
+    <dimen name="blur_size_thin_outline">1dp</dimen>
 
 </resources>
