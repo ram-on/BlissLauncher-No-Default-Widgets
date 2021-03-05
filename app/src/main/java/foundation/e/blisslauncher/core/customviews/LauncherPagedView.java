@@ -35,6 +35,8 @@ import foundation.e.blisslauncher.core.touch.ItemClickHandler;
 import foundation.e.blisslauncher.core.touch.ItemLongClickListener;
 import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.LongArrayMap;
+import foundation.e.blisslauncher.features.launcher.Hotseat;
+import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.IconTextView;
 import foundation.e.blisslauncher.features.test.TestActivity;
@@ -92,6 +94,25 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private final int[] mTempXY = new int[2];
     float[] mDragViewVisualCenter = new float[2];
     private final float[] mTempTouchCoordinates = new float[2];
+    private boolean mAddToExistingFolderOnDrop;
+    private boolean mCreateUserFolderOnDrop;
+    private CellLayout mDropToLayout;
+    private CellLayout mDragTargetLayout;
+    private CellLayout mDragOverlappingLayout;
+    private int mDragOverX;
+    private int mDragOverY;
+
+    private final Alarm mFolderCreationAlarm = new Alarm();
+    private final Alarm mReorderAlarm = new Alarm();
+
+    // Related to dragging, folder creation and reordering
+    private static final int DRAG_MODE_NONE = 0;
+    private static final int DRAG_MODE_CREATE_FOLDER = 1;
+    private static final int DRAG_MODE_ADD_TO_FOLDER = 2;
+    private static final int DRAG_MODE_REORDER = 3;
+    private int mDragMode = DRAG_MODE_NONE;
+    int mLastReorderX = -1;
+    int mLastReorderY = -1;
 
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -272,6 +293,32 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         return newScreen;
     }
 
+    public void addExtraEmptyScreenOnDrag() {
+        boolean lastChildOnScreen = false;
+        boolean childOnFinalScreen = false;
+
+        // Cancel any pending removal of empty screen
+        mRemoveEmptyScreenRunnable = null;
+
+        if (mDragSourceInternal != null) {
+            if (mDragSourceInternal.getChildCount() == 1) {
+                lastChildOnScreen = true;
+            }
+            CellLayout cl = (CellLayout) mDragSourceInternal;
+            if (indexOfChild(cl) == getChildCount() - 1) {
+                childOnFinalScreen = true;
+            }
+        }
+
+        // If this is the last item on the final screen
+        if (lastChildOnScreen && childOnFinalScreen) {
+            return;
+        }
+        if (!mWorkspaceScreens.containsKey(EXTRA_EMPTY_SCREEN_ID)) {
+            insertNewWorkspaceScreen(EXTRA_EMPTY_SCREEN_ID);
+        }
+    }
+
     public boolean addExtraEmptyScreen() {
         if (!mWorkspaceScreens.containsKey(EXTRA_EMPTY_SCREEN_ID)) {
             insertNewWorkspaceScreen(EXTRA_EMPTY_SCREEN_ID);
@@ -364,19 +411,16 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         final GridLayout cl = mWorkspaceScreens.get(EXTRA_EMPTY_SCREEN_ID);
 
-        mRemoveEmptyScreenRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (hasExtraEmptyScreen()) {
-                    mWorkspaceScreens.remove(EXTRA_EMPTY_SCREEN_ID);
-                    mScreenOrder.remove(EXTRA_EMPTY_SCREEN_ID);
-                    removeView(cl);
-                    if (stripEmptyScreens) {
-                        stripEmptyScreens();
-                    }
-                    // Update the page indicator to reflect the removed page.
-                    //TODO: showPageIndicatorAtCurrentScroll();
+        mRemoveEmptyScreenRunnable = () -> {
+            if (hasExtraEmptyScreen()) {
+                mWorkspaceScreens.remove(EXTRA_EMPTY_SCREEN_ID);
+                mScreenOrder.remove(EXTRA_EMPTY_SCREEN_ID);
+                removeView(cl);
+                if (stripEmptyScreens) {
+                    stripEmptyScreens();
                 }
+                // Update the page indicator to reflect the removed page.
+                //TODO: showPageIndicatorAtCurrentScroll();
             }
         };
 
@@ -672,12 +716,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     protected void onPageBeginTransition() {
         super.onPageBeginTransition();
-        //updateChildrenLayersEnabled();
+        updateChildrenLayersEnabled();
     }
 
     protected void onPageEndTransition() {
         super.onPageEndTransition();
-        //updateChildrenLayersEnabled();
+        updateChildrenLayersEnabled();
 
         //TODO:
         /*if (mDragController.isDragging()) {
@@ -772,32 +816,99 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     public void onDragStart(
         DragObject dragObject, DragOptions options
     ) {
-        Log.d(
-            TAG,
-            "onDragStart() called with: dragObject = [" + dragObject + "], options = [" + options + "]"
-        );
+        if (mDragInfo != null && mDragInfo.getCell() != null) {
+            CellLayout layout = (CellLayout) mDragInfo.getCell().getParent();
+            //TODO: Mark the current cell as unoccupied.
+            // layout.markCellsAsUnoccupiedForView(mDragInfo.getCell());
+        }
+
+        if (mOutlineProvider != null) {
+            if (dragObject.dragView != null) {
+                Bitmap preview = dragObject.dragView.getPreviewBitmap();
+
+                // The outline is used to visualize where the item will land if dropped
+                mOutlineProvider.generateDragOutline(preview);
+            }
+        }
+
+        updateChildrenLayersEnabled();
+
+        // Do not add a new page if it is a accessible drag which was not started by the workspace.
+        // We do not support accessibility drag from other sources and instead provide a direct
+        // action for move/add to homescreen.
+        // When a accessible drag is started by the folder, we only allow rearranging withing the
+        // folder.
+        // boolean addNewPage = !(options.isAccessibleDrag && dragObject.dragSource != this);
+        boolean addNewPage = true;
+
+        if (addNewPage) {
+            mDeferRemoveExtraEmptyScreen = false;
+            addExtraEmptyScreenOnDrag();
+
+            // [BlissLauncher] We don't need this as we don't support widgets on workspace grid.
+            /*if (dragObject.dragInfo.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPWIDGET
+                && dragObject.dragSource != this) {
+                // When dragging a widget from different source, move to a page which has
+                // enough space to place this widget (after rearranging/resizing). We special case
+                // widgets as they cannot be placed inside a folder.
+                // Start at the current page and search right (on LTR) until finding a page with
+                // enough space. Since an empty screen is the furthest right, a page must be found.
+                int currentPage = getPageNearestToCenterOfScreen();
+                for (int pageIndex = currentPage; pageIndex < getPageCount(); pageIndex++) {
+                    CellLayout page = (CellLayout) getPageAt(pageIndex);
+                    if (page.hasReorderSolution(dragObject.dragInfo)) {
+                        setCurrentPage(pageIndex);
+                        break;
+                    }
+                }
+            }*/
+        }
 
     }
 
     @Override
     public void onDragEnd() {
-        Log.d(TAG, "onDragEnd() called");
+        if (!mDeferRemoveExtraEmptyScreen) {
+            removeExtraEmptyScreen(true, mDragSourceInternal != null);
+        }
+
+        updateChildrenLayersEnabled();
+        mDragInfo = null;
+        mOutlineProvider = null;
+        mDragSourceInternal = null;
     }
 
-    @Override
+    /**
+     * Called at the end of a drag which originated on the workspace.
+     */
     public void onDropCompleted(
         View target, DragObject d, boolean success
     ) {
-        Log.d(
-            TAG,
-            "onDropCompleted() called with: target = [" + target + "], d = [" + d + "], success = [" + success + "]"
-        );
+        if (success) {
+            if (target != this && mDragInfo != null) {
+                removeWorkspaceItem(mDragInfo.cell);
+            }
+        } else if (mDragInfo != null) {
+            final CellLayout cellLayout = mLauncher.getCellLayout(
+                mDragInfo.getContainer(), mDragInfo.getScreenId());
+            if (cellLayout != null) {
+                cellLayout.onDropChild(mDragInfo.cell);
+            } else if (FeatureFlags.IS_DOGFOOD_BUILD) {
+                throw new RuntimeException("Invalid state: cellLayout == null in "
+                    + "Workspace#onDropCompleted. Please file a bug. ");
+            }
+        }
+        View cell = getHomescreenIconByItemId(d.originalDragInfo.id);
+        if (d.cancelled && cell != null) {
+            cell.setVisibility(VISIBLE);
+        }
+        mDragInfo = null;
     }
 
     @Override
     public boolean isDropEnabled() {
         Log.d(TAG, "isDropEnabled() called");
-        return false;
+        return true;
     }
 
     @Override
@@ -812,7 +923,192 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void onDragEnter(DragObject dragObject) {
-        Log.d(TAG, "onDragEnter() called with: dragObject = [" + dragObject + "]");
+        mCreateUserFolderOnDrop = false;
+        mAddToExistingFolderOnDrop = false;
+
+        mDropToLayout = null;
+        mDragViewVisualCenter = dragObject.getVisualCenter(mDragViewVisualCenter);
+        setDropLayoutForDragObject(dragObject, mDragViewVisualCenter[0], mDragViewVisualCenter[1]);
+    }
+
+    /**
+     * Updates {@link #mDragTargetLayout} and {@link #mDragOverlappingLayout}
+     * based on the DragObject's position.
+     *
+     * The layout will be:
+     * - The Hotseat if the drag object is over it
+     * - A side page if we are in spring-loaded mode and the drag object is over it
+     * - The current page otherwise
+     *
+     * @return whether the layout is different from the current {@link #mDragTargetLayout}.
+     */
+    private boolean setDropLayoutForDragObject(DragObject d, float centerX, float centerY) {
+        CellLayout layout = null;
+        // Test to see if we are over the hotseat first
+        if (mLauncher.getHotseat() != null) {
+            if (isPointInSelfOverHotseat(d.x, d.y)) {
+                layout = mLauncher.getHotseat().getLayout();
+            }
+        }
+
+        int nextPage = getNextPage();
+        if (layout == null && !isPageInTransition()) {
+            // Check if the item is dragged over left page
+            mTempTouchCoordinates[0] = Math.min(centerX, d.x);
+            mTempTouchCoordinates[1] = d.y;
+            layout = verifyInsidePage(nextPage + (mIsRtl ? 1 : -1), mTempTouchCoordinates);
+        }
+
+        if (layout == null && !isPageInTransition()) {
+            // Check if the item is dragged over right page
+            mTempTouchCoordinates[0] = Math.max(centerX, d.x);
+            mTempTouchCoordinates[1] = d.y;
+            layout = verifyInsidePage(nextPage + (mIsRtl ? -1 : 1), mTempTouchCoordinates);
+        }
+
+        // Always pick the current page.
+        if (layout == null && nextPage >= 0 && nextPage < getPageCount()) {
+            layout = (CellLayout) getChildAt(nextPage);
+        }
+        if (layout != mDragTargetLayout) {
+            setCurrentDropLayout(layout);
+            setCurrentDragOverlappingLayout(layout);
+            return true;
+        }
+        return false;
+    }
+
+    void setCurrentDropLayout(CellLayout layout) {
+        if (mDragTargetLayout != null) {
+            mDragTargetLayout.revertTempState();
+            mDragTargetLayout.onDragExit();
+        }
+        mDragTargetLayout = layout;
+        if (mDragTargetLayout != null) {
+            mDragTargetLayout.onDragEnter();
+        }
+        cleanupReorder(true);
+        cleanupFolderCreation();
+        setCurrentDropOverCell(-1, -1);
+    }
+
+    void setCurrentDragOverlappingLayout(CellLayout layout) {
+        if (mDragOverlappingLayout != null) {
+            mDragOverlappingLayout.setIsDragOverlapping(false);
+        }
+        mDragOverlappingLayout = layout;
+        if (mDragOverlappingLayout != null) {
+            mDragOverlappingLayout.setIsDragOverlapping(true);
+        }
+        // Invalidating the scrim will also force this CellLayout
+        // to be invalidated so that it is highlighted if necessary.
+        //mLauncher.getDragLayer().getScrim().invalidate();
+    }
+
+    public CellLayout getCurrentDragOverlappingLayout() {
+        return mDragOverlappingLayout;
+    }
+
+    void setCurrentDropOverCell(int x, int y) {
+        if (x != mDragOverX || y != mDragOverY) {
+            mDragOverX = x;
+            mDragOverY = y;
+            setDragMode(DRAG_MODE_NONE);
+        }
+    }
+
+    void setDragMode(int dragMode) {
+        if (dragMode != mDragMode) {
+            if (dragMode == DRAG_MODE_NONE) {
+                cleanupAddToFolder();
+                // We don't want to cancel the re-order alarm every time the target cell changes
+                // as this feels to slow / unresponsive.
+                cleanupReorder(false);
+                cleanupFolderCreation();
+            } else if (dragMode == DRAG_MODE_ADD_TO_FOLDER) {
+                cleanupReorder(true);
+                cleanupFolderCreation();
+            } else if (dragMode == DRAG_MODE_CREATE_FOLDER) {
+                cleanupAddToFolder();
+                cleanupReorder(true);
+            } else if (dragMode == DRAG_MODE_REORDER) {
+                cleanupAddToFolder();
+                cleanupFolderCreation();
+            }
+            mDragMode = dragMode;
+        }
+    }
+
+    private void cleanupFolderCreation() {
+        // TODO: Enable when supporting folder creation
+        /*if (mFolderCreateBg != null) {
+            mFolderCreateBg.animateToRest();
+        }*/
+        mFolderCreationAlarm.setOnAlarmListener(null);
+        mFolderCreationAlarm.cancelAlarm();
+    }
+
+    // Enable when supporting folder
+    private void cleanupAddToFolder() {
+        /*if (mDragOverFolderIcon != null) {
+            mDragOverFolderIcon.onDragExit();
+            mDragOverFolderIcon = null;
+        }*/
+    }
+
+    private void cleanupReorder(boolean cancelAlarm) {
+        // Any pending reorders are canceled
+        if (cancelAlarm) {
+            mReorderAlarm.cancelAlarm();
+        }
+        mLastReorderX = -1;
+        mLastReorderY = -1;
+    }
+
+    /**
+     * Returns the child CellLayout if the point is inside the page coordinates, null otherwise.
+     */
+    private CellLayout verifyInsidePage(int pageNo, float[] touchXy)  {
+        if (pageNo >= 0 && pageNo < getPageCount()) {
+            CellLayout cl = (CellLayout) getChildAt(pageNo);
+            mapPointFromSelfToChild(cl, touchXy);
+            if (touchXy[0] >= 0 && touchXy[0] <= cl.getWidth() &&
+                touchXy[1] >= 0 && touchXy[1] <= cl.getHeight()) {
+                // This point is inside the cell layout
+                return cl;
+            }
+        }
+        return null;
+    }
+
+    /*
+     *
+     * Convert the 2D coordinate xy from the parent View's coordinate space to this CellLayout's
+     * coordinate space. The argument xy is modified with the return result.
+     */
+    void mapPointFromSelfToChild(View v, float[] xy) {
+        xy[0] = xy[0] - v.getLeft();
+        xy[1] = xy[1] - v.getTop();
+    }
+    boolean isPointInSelfOverHotseat(int x, int y) {
+        mTempXY[0] = x;
+        mTempXY[1] = y;
+        mLauncher.getDragLayer().getDescendantCoordRelativeToSelf(this, mTempXY, true);
+        View hotseat = mLauncher.getHotseat();
+        return mTempXY[0] >= hotseat.getLeft() &&
+            mTempXY[0] <= hotseat.getRight() &&
+            mTempXY[1] >= hotseat.getTop() &&
+            mTempXY[1] <= hotseat.getBottom();
+    }
+
+    void mapPointFromSelfToHotseatLayout(Hotseat hotseat, float[] xy) {
+        mTempXY[0] = (int) xy[0];
+        mTempXY[1] = (int) xy[1];
+        mLauncher.getDragLayer().getDescendantCoordRelativeToSelf(this, mTempXY, true);
+        mLauncher.getDragLayer().mapCoordInSelfToDescendant(hotseat.getLayout(), mTempXY);
+
+        xy[0] = mTempXY[0];
+        xy[1] = mTempXY[1];
     }
 
     @Override
