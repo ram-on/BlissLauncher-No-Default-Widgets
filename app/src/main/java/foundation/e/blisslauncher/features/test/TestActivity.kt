@@ -166,6 +166,9 @@ class TestActivity : BaseDraggingActivity() {
         }
     }
 
+    fun isHotseatLayout(layout: View?): Boolean =
+        hotseat != null && layout != null && layout is CellLayout && layout == hotseat.layout
+
     companion object {
         const val TAG = "Launcher"
         const val LOGD = false

@@ -39,6 +39,7 @@ import foundation.e.blisslauncher.features.launcher.Hotseat;
 import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.IconTextView;
+import foundation.e.blisslauncher.features.test.OnAlarmListener;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.dragndrop.DragController;
@@ -99,8 +100,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private CellLayout mDropToLayout;
     private CellLayout mDragTargetLayout;
     private CellLayout mDragOverlappingLayout;
-    private int mDragOverX;
-    private int mDragOverY;
+    /**
+     * Target drop area calculated during last acceptDrop call.
+     */
+    int[] mTargetCell = new int[2];
+    private int mDragOverX = -1;
+    private int mDragOverY = -1;
 
     private final Alarm mFolderCreationAlarm = new Alarm();
     private final Alarm mReorderAlarm = new Alarm();
@@ -113,6 +118,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private int mDragMode = DRAG_MODE_NONE;
     int mLastReorderX = -1;
     int mLastReorderY = -1;
+    private int[] mTargetCell;
 
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -1156,8 +1162,79 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     @Override
-    public void onDragOver(DragObject dragObject) {
-        Log.d(TAG, "onDragOver() called with: dragObject = [" + dragObject + "]");
+    public void onDragOver(DragObject d) {
+        Log.d(TAG, "onDragOver() called with: dragObject = [" + d + "]");
+
+        LauncherItem item = d.dragInfo;
+        if (item == null) {
+            throw new NullPointerException("DragObject has null info");
+        }
+        // Ensure that we have proper spans for the item that we are dropping
+        if (item.cell < 0) throw new RuntimeException("Improper spans found");
+        mDragViewVisualCenter = d.getVisualCenter(mDragViewVisualCenter);
+
+        final View child = (mDragInfo == null) ? null : mDragInfo.getCell();
+        if (setDropLayoutForDragObject(d, mDragViewVisualCenter[0], mDragViewVisualCenter[1])) {
+            if (mLauncher.isHotseatLayout(mDragTargetLayout)) {
+                mSpringLoadedDragController.cancel();
+            } else {
+                mSpringLoadedDragController.setAlarm(mDragTargetLayout);
+            }
+        }
+
+        // Handle the drag over
+        if (mDragTargetLayout != null) {
+            // We want the point to be mapped to the dragTarget.
+            if (mLauncher.isHotseatLayout(mDragTargetLayout)) {
+                mapPointFromSelfToHotseatLayout(mLauncher.getHotseat(), mDragViewVisualCenter);
+            } else {
+                mapPointFromSelfToChild(mDragTargetLayout, mDragViewVisualCenter);
+            }
+
+            mTargetCell = findNearestArea((int) mDragViewVisualCenter[0],
+                (int) mDragViewVisualCenter[1],
+                mDragTargetLayout, mTargetCell);
+            int reorderX = mTargetCell[0];
+            int reorderY = mTargetCell[1];
+
+            setCurrentDropOverCell(mTargetCell[0], mTargetCell[1]);
+
+            float targetCellDistance = mDragTargetLayout.getDistanceFromCell(
+                mDragViewVisualCenter[0], mDragViewVisualCenter[1], mTargetCell);
+
+            manageFolderFeedback(mDragTargetLayout, mTargetCell, targetCellDistance, d);
+
+            boolean nearestDropOccupied = mDragTargetLayout.isNearestDropLocationOccupied((int)
+                    mDragViewVisualCenter[0], (int) mDragViewVisualCenter[1], item.spanX,
+                item.spanY, child, mTargetCell);
+
+            if (!nearestDropOccupied) {
+                mDragTargetLayout.visualizeDropLocation(child, mOutlineProvider,
+                    mTargetCell[0], mTargetCell[1], item.spanX, item.spanY, false, d);
+            } else if ((mDragMode == DRAG_MODE_NONE || mDragMode == DRAG_MODE_REORDER)
+                && !mReorderAlarm.alarmPending() && (mLastReorderX != reorderX ||
+                mLastReorderY != reorderY)) {
+
+                int[] resultSpan = new int[2];
+                mDragTargetLayout.performReorder((int) mDragViewVisualCenter[0],
+                    (int) mDragViewVisualCenter[1], minSpanX, minSpanY, item.spanX, item.spanY,
+                    child, mTargetCell, resultSpan, CellLayout.MODE_SHOW_REORDER_HINT);
+
+                // Otherwise, if we aren't adding to or creating a folder and there's no pending
+                // reorder, then we schedule a reorder
+                ReorderAlarmListener listener = new ReorderAlarmListener(mDragViewVisualCenter,
+                    minSpanX, minSpanY, item.spanX, item.spanY, d, child);
+                mReorderAlarm.setOnAlarmListener(listener);
+                mReorderAlarm.setAlarm(REORDER_TIMEOUT);
+            }
+
+            if (mDragMode == DRAG_MODE_CREATE_FOLDER || mDragMode == DRAG_MODE_ADD_TO_FOLDER ||
+                !nearestDropOccupied) {
+                if (mDragTargetLayout != null) {
+                    mDragTargetLayout.revertTempState();
+                }
+            }
+        }
     }
 
     @Override
@@ -1178,7 +1255,9 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void getHitRectRelativeToDragLayer(Rect outRect) {
-
+        // We want the workspace to have the whole area of the display (it will find the correct
+        // cell layout to drop to in the existing drag/drop logic.
+        mLauncher.getDragLayer().getDescendantRectRelativeToSelf(this, outRect);
     }
 
     public void startDrag(CellLayout.CellInfo cellInfo, DragOptions dragOptions) {
@@ -1255,4 +1334,48 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         dv.setIntrinsicIconScaleFactor(dragOptions.intrinsicIconScaleFactor);
         return dv;
     }
+
+    /**
+     * Calculate the nearest cell where the given object would be dropped.
+     *
+     * pixelX and pixelY should be in the coordinate system of layout
+     */
+    int[] findNearestArea(int pixelX, int pixelY, CellLayout layout, int[] recycle) {
+        return layout.findNearestArea(
+            pixelX, pixelY,recycle);
+    }
+
+    class ReorderAlarmListener implements OnAlarmListener {
+        final float[] dragViewCenter;
+        final DragObject dragObject;
+        final View child;
+
+        public ReorderAlarmListener(float[] dragViewCenter, DragObject dragObject, View child) {
+            this.dragViewCenter = dragViewCenter;
+            this.child = child;
+            this.dragObject = dragObject;
+        }
+
+        public void onAlarm(Alarm alarm) {
+            int[] resultSpan = new int[2];
+            mTargetCell = findNearestArea((int) mDragViewVisualCenter[0],
+                (int) mDragViewVisualCenter[1],mDragTargetLayout,
+                mTargetCell);
+            mLastReorderX = mTargetCell[0];
+            mLastReorderY = mTargetCell[1];
+
+            mTargetCell = mDragTargetLayout.performReorder((int) mDragViewVisualCenter[0],
+                (int) mDragViewVisualCenter[1], minSpanX, minSpanY, spanX, spanY,
+                child, mTargetCell, resultSpan, CellLayout.MODE_DRAG_OVER);
+
+            if (mTargetCell[0] < 0 || mTargetCell[1] < 0) {
+                mDragTargetLayout.revertTempState();
+            } else {
+                setDragMode(DRAG_MODE_REORDER);
+            }
+            mDragTargetLayout.visualizeDropLocation(child, mOutlineProvider,
+                mTargetCell[0], mTargetCell[1], resultSpan[0], resultSpan[1], dragObject);
+        }
+    }
+
 }

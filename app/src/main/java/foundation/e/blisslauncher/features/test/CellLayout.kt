@@ -2,6 +2,7 @@ package foundation.e.blisslauncher.features.test
 
 import android.R
 import android.content.Context
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
@@ -9,6 +10,8 @@ import android.widget.GridLayout
 import foundation.e.blisslauncher.core.database.model.LauncherItem
 import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.features.launcher.Hotseat
+import java.lang.Double.MAX_VALUE
+import java.util.Stack
 
 open class CellLayout @JvmOverloads constructor(
     context: Context,
@@ -174,6 +177,163 @@ open class CellLayout @JvmOverloads constructor(
             child.requestLayout()
             //markCellsAsOccupiedForView(child)
         }
+    }
+
+    /**
+     * Find a starting cell position that will fit the given bounds nearest the requested
+     * cell location. Uses Euclidean distance to score multiple vacant areas.
+     *
+     * @param pixelX The X location at which you want to search for a vacant area.
+     * @param pixelY The Y location at which you want to search for a vacant area.
+     * @param result Previously returned value to possibly recycle.
+     * @return The X, Y cell of a vacant area that can contain this object,
+     * nearest the requested location.
+     */
+    open fun findNearestArea(
+        pixelX: Int,
+        pixelY: Int,
+        spanX: Int,
+        spanY: Int,
+        result: IntArray?
+    ): IntArray? {
+        return findNearestArea(pixelX, pixelY, spanX, spanY, spanX, spanY, false, result, null)
+    }
+
+    /**
+     * Find a vacant area that will fit the given bounds nearest the requested
+     * cell location. Uses Euclidean distance to score multiple vacant areas.
+     *
+     * @param pixelX The X location at which you want to search for a vacant area.
+     * @param pixelY The Y location at which you want to search for a vacant area.
+     * @param minSpanX The minimum horizontal span required
+     * @param minSpanY The minimum vertical span required
+     * @param spanX Horizontal span of the object.
+     * @param spanY Vertical span of the object.
+     * @param ignoreOccupied If true, the result can be an occupied cell
+     * @param result Array in which to place the result, or null (in which case a new array will
+     * be allocated)
+     * @return The X, Y cell of a vacant area that can contain this object,
+     * nearest the requested location.
+     */
+    private fun findNearestArea(
+        pixelX: Int, pixelY: Int, ignoreOccupied: Boolean, result: IntArray?, resultSpan: IntArray?
+    ): IntArray? {
+        var pixelX = pixelX
+        var pixelY = pixelY
+        lazyInitTempRectStack()
+
+        // For items with a spanX / spanY > 1, the passed in point (pixelX, pixelY) corresponds
+        // to the center of the item, but we are searching based on the top-left cell, so
+        // we translate the point over to correspond to the top-left.
+        pixelX -= (mCellWidth * (spanX - 1) / 2f).toInt()
+        pixelY -= (mCellHeight * (spanY - 1) / 2f).toInt()
+
+        // Keep track of best-scoring drop area
+        val bestXY = result ?: IntArray(2)
+        var bestDistance: Double = MAX_VALUE
+        val bestRect = Rect(-1, -1, -1, -1)
+        val validRegions = Stack<Rect>()
+        val countX: Int = mCountX
+        val countY: Int = mCountY
+        if (minSpanX <= 0 || minSpanY <= 0 || spanX <= 0 || spanY <= 0 || spanX < minSpanX || spanY < minSpanY) {
+            return bestXY
+        }
+        for (y in 0 until countY - (minSpanY - 1)) {
+            inner@ for (x in 0 until countX - (minSpanX - 1)) {
+                var ySize = -1
+                var xSize = -1
+                if (ignoreOccupied) {
+                    // First, let's see if this thing fits anywhere
+                    for (i in 0 until minSpanX) {
+                        for (j in 0 until minSpanY) {
+                            if (mOccupied.cells.get(x + i).get(y + j)) {
+                                continue@inner
+                            }
+                        }
+                    }
+                    xSize = minSpanX
+                    ySize = minSpanY
+
+                    // We know that the item will fit at _some_ acceptable size, now let's see
+                    // how big we can make it. We'll alternate between incrementing x and y spans
+                    // until we hit a limit.
+                    var incX = true
+                    var hitMaxX = xSize >= spanX
+                    var hitMaxY = ySize >= spanY
+                    while (!(hitMaxX && hitMaxY)) {
+                        if (incX && !hitMaxX) {
+                            for (j in 0 until ySize) {
+                                if (x + xSize > countX - 1 || mOccupied.cells.get(x + xSize)
+                                        .get(y + j)
+                                ) {
+                                    // We can't move out horizontally
+                                    hitMaxX = true
+                                }
+                            }
+                            if (!hitMaxX) {
+                                xSize++
+                            }
+                        } else if (!hitMaxY) {
+                            for (i in 0 until xSize) {
+                                if (y + ySize > countY - 1 || mOccupied.cells.get(x + i)
+                                        .get(y + ySize)
+                                ) {
+                                    // We can't move out vertically
+                                    hitMaxY = true
+                                }
+                            }
+                            if (!hitMaxY) {
+                                ySize++
+                            }
+                        }
+                        hitMaxX = hitMaxX or (xSize >= spanX)
+                        hitMaxY = hitMaxY or (ySize >= spanY)
+                        incX = !incX
+                    }
+                    incX = true
+                    hitMaxX = xSize >= spanX
+                    hitMaxY = ySize >= spanY
+                }
+                val cellXY = mTmpPoint
+                cellToCenterPoint(x, y, cellXY)
+
+                // We verify that the current rect is not a sub-rect of any of our previous
+                // candidates. In this case, the current rect is disqualified in favour of the
+                // containing rect.
+                val currentRect: Rect = mTempRectStack.pop()
+                currentRect[x, y, x + xSize] = y + ySize
+                var contained = false
+                for (r in validRegions) {
+                    if (r.contains(currentRect)) {
+                        contained = true
+                        break
+                    }
+                }
+                validRegions.push(currentRect)
+                val distance =
+                    Math.hypot((cellXY[0] - pixelX).toDouble(), (cellXY[1] - pixelY).toDouble())
+                if (distance <= bestDistance && !contained ||
+                    currentRect.contains(bestRect)
+                ) {
+                    bestDistance = distance
+                    bestXY[0] = x
+                    bestXY[1] = y
+                    if (resultSpan != null) {
+                        resultSpan[0] = xSize
+                        resultSpan[1] = ySize
+                    }
+                    bestRect.set(currentRect)
+                }
+            }
+        }
+
+        // Return -1, -1 if no suitable location found
+        if (bestDistance == MAX_VALUE) {
+            bestXY[0] = -1
+            bestXY[1] = -1
+        }
+        recycleTempRects(validRegions)
+        return bestXY
     }
 
     // This class stores info for two purposes:
