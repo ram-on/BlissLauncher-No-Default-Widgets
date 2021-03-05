@@ -465,7 +465,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         return newId;
     }
 
-    public GridLayout getScreenWithId(long screenId) {
+    public CellLayout getScreenWithId(long screenId) {
         return mWorkspaceScreens.get(screenId);
     }
 
@@ -886,23 +886,67 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     ) {
         if (success) {
             if (target != this && mDragInfo != null) {
-                removeWorkspaceItem(mDragInfo.cell);
+                removeWorkspaceItem(mDragInfo.getCell());
             }
         } else if (mDragInfo != null) {
             final CellLayout cellLayout = mLauncher.getCellLayout(
                 mDragInfo.getContainer(), mDragInfo.getScreenId());
             if (cellLayout != null) {
-                cellLayout.onDropChild(mDragInfo.cell);
-            } else if (FeatureFlags.IS_DOGFOOD_BUILD) {
+                cellLayout.onDropChild(mDragInfo.getCell());
+            } else {
+                // TODO: Don't throw this exception in release build.
                 throw new RuntimeException("Invalid state: cellLayout == null in "
                     + "Workspace#onDropCompleted. Please file a bug. ");
             }
         }
-        View cell = getHomescreenIconByItemId(d.originalDragInfo.id);
-        if (d.cancelled && cell != null) {
-            cell.setVisibility(VISIBLE);
-        }
         mDragInfo = null;
+    }
+
+    /**
+     * For opposite operation. See {@link #addInScreen}.
+     */
+    public void removeWorkspaceItem(View v) {
+        CellLayout parentCell = getParentCellLayoutForView(v);
+        if (parentCell != null) {
+            parentCell.removeView(v);
+        } else {
+            // When an app is uninstalled using the drop target, we wait until resume to remove
+            // the icon. We also remove all the corresponding items from the workspace at
+            // {@link Launcher#bindComponentsRemoved}. That call can come before or after
+            // {@link Launcher#mOnResumeCallbacks} depending on how busy the worker thread is.
+            Log.e(TAG, "mDragInfo.cell has null parent");
+        }
+        if (v instanceof DropTarget) {
+            mDragController.removeDropTarget((DropTarget) v);
+        }
+    }
+
+    /**
+     * Returns a specific CellLayout
+     */
+    CellLayout getParentCellLayoutForView(View v) {
+        ArrayList<CellLayout> layouts = getWorkspaceAndHotseatCellLayouts();
+        for (CellLayout layout : layouts) {
+            if (layout.indexOfChild(v) > -1) {
+                return layout;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns a list of all the CellLayouts in the workspace.
+     */
+    ArrayList<CellLayout> getWorkspaceAndHotseatCellLayouts() {
+        ArrayList<CellLayout> layouts = new ArrayList<>();
+        int screenCount = getChildCount();
+        for (int screen = 0; screen < screenCount; screen++) {
+            layouts.add(((CellLayout) getChildAt(screen)));
+        }
+        if (mLauncher.getHotseat() != null) {
+            layouts.add(mLauncher.getHotseat().getLayout());
+        }
+        return layouts;
     }
 
     @Override

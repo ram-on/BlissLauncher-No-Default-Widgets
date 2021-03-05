@@ -13,6 +13,7 @@ import foundation.e.blisslauncher.BlissLauncher
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.customviews.LauncherPagedView
 import foundation.e.blisslauncher.core.database.model.LauncherItem
+import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.features.launcher.Hotseat
 import foundation.e.blisslauncher.features.test.dragndrop.DragController
 import foundation.e.blisslauncher.features.test.dragndrop.DragLayer
@@ -151,6 +152,18 @@ class TestActivity : BaseDraggingActivity() {
 
     private fun showApps(launcherItems: List<LauncherItem?>) {
         workspace.bindItems(launcherItems)
+    }
+
+    fun getCellLayout(container: Long, screenId: Long): CellLayout? {
+        return if (container == Constants.CONTAINER_HOTSEAT) {
+            if (hotseat != null) {
+                hotseat.getLayout()
+            } else {
+                null
+            }
+        } else {
+            workspace.getScreenWithId(screenId)
+        }
     }
 
     companion object {

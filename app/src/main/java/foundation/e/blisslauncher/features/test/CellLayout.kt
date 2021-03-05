@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.features.test
 
+import android.R
 import android.content.Context
 import android.util.AttributeSet
 import android.util.Log
@@ -14,6 +15,21 @@ open class CellLayout @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : GridLayout(context, attrs, defStyleAttr) {
+
+    private var mIsDragOverlapping: Boolean = false
+
+    // When a drag operation is in progress, holds the nearest cell to the touch point
+    private val mDragCell = IntArray(2)
+    private val BACKGROUND_STATE_ACTIVE = intArrayOf(R.attr.state_active)
+    private val BACKGROUND_STATE_DEFAULT = EMPTY_STATE_SET
+    private var mDragging: Boolean = false
+
+    private var mDropPending = false
+
+    // These are temporary variables to prevent having to allocate a new object just to
+    // return an (x, y) value from helper functions. Do NOT use them to maintain other state.
+    val mTmpPoint = IntArray(2)
+    val mTempLocation = IntArray(2)
 
     private val TAG = "CellLayout"
 
@@ -94,6 +110,70 @@ open class CellLayout @JvmOverloads constructor(
     }
 
     fun addViewToCellLayout(child: View, index: Int, childId: Int, params: LayoutParams) {
+    }
+
+    open fun setDropPending(pending: Boolean) {
+        mDropPending = pending
+    }
+
+    open fun isDropPending(): Boolean {
+        return mDropPending
+    }
+
+    open fun setIsDragOverlapping(isDragOverlapping: Boolean) {
+        if (mIsDragOverlapping != isDragOverlapping) {
+            mIsDragOverlapping = isDragOverlapping
+            //mBackground.setState(if (mIsDragOverlapping) BACKGROUND_STATE_ACTIVE else BACKGROUND_STATE_DEFAULT)
+            invalidate()
+        }
+    }
+
+    /**
+     * A drag event has begun over this layout.
+     * It may have begun over this layout (in which case onDragChild is called first),
+     * or it may have begun on another layout.
+     */
+    open fun onDragEnter() {
+        mDragging = true
+    }
+
+    /**
+     * Called when drag has left this CellLayout or has been completed (successfully or not)
+     */
+    open fun onDragExit() {
+        // This can actually be called when we aren't in a drag, e.g. when adding a new
+        // item to this layout via the customize drawer.
+        // Guard against that case.
+        if (mDragging) {
+            mDragging = false
+        }
+
+        // Invalidate the drag data
+        mDragCell[1] = -1
+        mDragCell[0] = -1
+        /* mDragOutlineAnims.get(mDragOutlineCurrent).animateOut()
+         mDragOutlineCurrent = (mDragOutlineCurrent + 1) % mDragOutlineAnims.size
+         revertTempState()*/
+        setIsDragOverlapping(false)
+    }
+
+    fun revertTempState() {
+    }
+
+    /**
+     * Mark a child as having been dropped.
+     * At the beginning of the drag operation, the child may have been on another
+     * screen, but it is re-parented before this method is called.
+     *
+     * @param child The child that is being dropped
+     */
+    fun onDropChild(child: View) {
+        if (child != null) {
+            val lp: LayoutParams =
+                child.layoutParams as LayoutParams
+            child.requestLayout()
+            //markCellsAsOccupiedForView(child)
+        }
     }
 
     // This class stores info for two purposes:
