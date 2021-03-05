@@ -60,7 +60,7 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
     // Variables relating to animation of views after drop
     private ValueAnimator mDropAnim = null;
     private final TimeInterpolator mCubicEaseOutInterpolator = Interpolators.DEACCEL_1_5;
-    View mDropView = null;
+    DragView mDropView = null;
     int mAnchorViewInitialScrollX = 0;
 
     View mAnchorView = null;
@@ -182,7 +182,7 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
     }
 
     public void animateViewIntoPosition(
-        View dragView, final int[] pos, float alpha,
+        DragView dragView, final int[] pos, float alpha,
         float scaleX, float scaleY, int animationEndStyle, Runnable onFinishRunnable,
         int duration
     ) {
@@ -265,7 +265,7 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
     }
 
     public void animateViewIntoPosition(
-        final View view, final int fromX, final int fromY,
+        final DragView view, final int fromX, final int fromY,
         final int toX, final int toY, float finalAlpha, float initScaleX, float initScaleY,
         float finalScaleX, float finalScaleY, Runnable onCompleteRunnable,
         int animationEndStyle, int duration, View anchorView
@@ -313,7 +313,7 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
      *                           only used for the X dimension for the case of the workspace.
      */
     public void animateView(
-        final View view, final Rect from, final Rect to,
+        final DragView view, final Rect from, final Rect to,
         final float finalAlpha, final float initScaleX, final float initScaleY,
         final float finalScaleX, final float finalScaleY, int duration,
         final Interpolator motionInterpolator, final Interpolator alphaInterpolator,
@@ -386,7 +386,7 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
     }
 
     public void animateView(
-        final View view, AnimatorUpdateListener updateCb, int duration,
+        final DragView view, AnimatorUpdateListener updateCb, int duration,
         TimeInterpolator interpolator, final Runnable onCompleteRunnable,
         final int animationEndStyle, View anchorView
     ) {

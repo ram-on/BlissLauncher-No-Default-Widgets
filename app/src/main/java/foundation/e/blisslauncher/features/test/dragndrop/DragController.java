@@ -318,8 +318,8 @@ public class DragController implements DragDriver.EventListener, TouchController
     /**
      * This only gets called as a result of drag view cleanup being deferred in endDrag();
      */
-    void onDeferredEndDrag(View dragView) {
-        //dragView.remove();
+    void onDeferredEndDrag(DragView dragView) {
+        dragView.remove();
 
         if (mDragObject.deferDragViewCleanupPostAnimation) {
             // If we skipped calling onDragEnd() before, do it now
@@ -428,7 +428,7 @@ public class DragController implements DragDriver.EventListener, TouchController
     }
 
     private void handleMoveEvent(int x, int y) {
-        //mDragObject.dragView.move(x, y);
+        mDragObject.dragView.move(x, y);
 
         // Drop on someone?
         final int[] coordinates = mCoordinatesTemp;

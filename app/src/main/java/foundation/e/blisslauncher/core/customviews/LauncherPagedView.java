@@ -772,23 +772,31 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     public void onDragStart(
         DragObject dragObject, DragOptions options
     ) {
+        Log.d(
+            TAG,
+            "onDragStart() called with: dragObject = [" + dragObject + "], options = [" + options + "]"
+        );
 
     }
 
     @Override
     public void onDragEnd() {
-
+        Log.d(TAG, "onDragEnd() called");
     }
 
     @Override
     public void onDropCompleted(
         View target, DragObject d, boolean success
     ) {
-
+        Log.d(
+            TAG,
+            "onDropCompleted() called with: target = [" + target + "], d = [" + d + "], success = [" + success + "]"
+        );
     }
 
     @Override
     public boolean isDropEnabled() {
+        Log.d(TAG, "isDropEnabled() called");
         return false;
     }
 
@@ -796,32 +804,36 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     public void onDrop(
         DragObject dragObject, DragOptions options
     ) {
-
+        Log.d(
+            TAG,
+            "onDrop() called with: dragObject = [" + dragObject + "], options = [" + options + "]"
+        );
     }
 
     @Override
     public void onDragEnter(DragObject dragObject) {
-
+        Log.d(TAG, "onDragEnter() called with: dragObject = [" + dragObject + "]");
     }
 
     @Override
     public void onDragOver(DragObject dragObject) {
-
+        Log.d(TAG, "onDragOver() called with: dragObject = [" + dragObject + "]");
     }
 
     @Override
     public void onDragExit(DragObject dragObject) {
-
+        Log.d(TAG, "onDragExit() called with: dragObject = [" + dragObject + "]");
     }
 
     @Override
     public boolean acceptDrop(DragObject dragObject) {
+        Log.d(TAG, "acceptDrop() called with: dragObject = [" + dragObject + "]");
         return false;
     }
 
     @Override
     public void prepareAccessibilityDrop() {
-
+        Log.d(TAG, "prepareAccessibilityDrop() called");
     }
 
     @Override
