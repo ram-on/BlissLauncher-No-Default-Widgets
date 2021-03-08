@@ -1,17 +1,32 @@
 package foundation.e.blisslauncher.features.test
 
 import android.R
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.TimeInterpolator
+import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Point
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
 import android.widget.GridLayout
+import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.database.model.LauncherItem
 import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.features.launcher.Hotseat
+import foundation.e.blisslauncher.features.test.anim.Interpolators
+import foundation.e.blisslauncher.features.test.dragndrop.DropTarget
+import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider
 import java.lang.Double.MAX_VALUE
+import java.util.ArrayList
+import java.util.Arrays
 import java.util.Stack
+import kotlin.math.hypot
 
 open class CellLayout @JvmOverloads constructor(
     context: Context,
@@ -27,6 +42,9 @@ open class CellLayout @JvmOverloads constructor(
     private val BACKGROUND_STATE_DEFAULT = EMPTY_STATE_SET
     private var mDragging: Boolean = false
 
+    private val DESTRUCTIVE_REORDER = false
+    private val DEBUG_VISUALIZE_OCCUPIED = false
+
     private var mDropPending = false
 
     // These are temporary variables to prevent having to allocate a new object just to
@@ -38,17 +56,104 @@ open class CellLayout @JvmOverloads constructor(
 
     private val launcher: TestActivity = TestActivity.getLauncher(context)
     private val dp = launcher.deviceProfile
-    val countX = dp.inv.numColumns
-    val countY = dp.inv.numRows
+    val mCountX = dp.inv.numColumns
+    val mCountY = dp.inv.numRows
+    val mOccupied = GridOccupancy(mCountX, mCountY)
+    val mTmpOccupied = GridOccupancy(mCountX, mCountY)
+
+    private val mIntersectingViews = ArrayList<View>()
+
+    // These arrays are used to implement the drag visualization on x-large screens.
+    // They are used as circular arrays, indexed by mDragOutlineCurrent.
+    val mDragOutlines = arrayOfNulls<Rect>(4)
+
+    val mDragOutlineAlphas = FloatArray(mDragOutlines.size)
+    private val mDragOutlineAnims: Array<InterruptibleInOutAnimator?> =
+        arrayOfNulls<InterruptibleInOutAnimator>(mDragOutlines.size)
+
+    // Used as an index into the above 3 arrays; indicates which is the most current value.
+    private var mDragOutlineCurrent = 0
+    private val mDragOutlinePaint = Paint()
+    private var mEaseOutInterpolator: TimeInterpolator? = null
 
     open var containerType = Constants.CONTAINER_DESKTOP
 
     private var cellWidth: Int = 0
     private var cellHeight: Int = 0
 
+    companion object {
+        const val MODE_SHOW_REORDER_HINT = 0
+        const val MODE_DRAG_OVER = 1
+        const val MODE_ON_DROP = 2
+        const val MODE_ON_DROP_EXTERNAL = 3
+        const val MODE_ACCEPT_DROP = 4
+    }
+
     init {
         setWillNotDraw(false)
         clipToPadding = false
+
+        // Initialize the data structures used for the drag visualization.
+
+        // Initialize the data structures used for the drag visualization.
+        mEaseOutInterpolator = Interpolators.DEACCEL_2_5 // Quint ease out
+
+        for (i in mDragOutlines.indices) {
+            mDragOutlines[i] = Rect(-1, -1, -1, -1)
+        }
+        mDragOutlinePaint.color = Color.RED
+
+        // When dragging things around the home screens, we show a green outline of
+        // where the item will land. The outlines gradually fade out, leaving a trail
+        // behind the drag path.
+        // Set up all the animations that are used to implement this fading.
+
+        // When dragging things around the home screens, we show a green outline of
+        // where the item will land. The outlines gradually fade out, leaving a trail
+        // behind the drag path.
+        // Set up all the animations that are used to implement this fading.
+        val duration: Int = 900
+        val fromAlphaValue = 0f
+        val toAlphaValue = 128f as Float
+
+        Arrays.fill(mDragOutlineAlphas, fromAlphaValue)
+
+        for (i in mDragOutlineAnims.indices) {
+            val anim = InterruptibleInOutAnimator(
+                this,
+                duration.toLong(), fromAlphaValue, toAlphaValue
+            )
+            anim.animator.interpolator = mEaseOutInterpolator
+            anim.animator.addUpdateListener { animation ->
+                val outline = anim.tag as Bitmap?
+
+                // If an animation is started and then stopped very quickly, we can still
+                // get spurious updates we've cleared the tag. Guard against this.
+                if (outline == null) {
+
+                    val `val` = animation.animatedValue
+                    Log.d(
+                        TAG, "anim " + i + " update: " + `val` +
+                            ", isStopped " + anim.isStopped
+                    )
+                    // Try to prevent it from continuing to run
+                    animation.cancel()
+                } else {
+                    mDragOutlineAlphas[i] = animation.animatedValue as Float
+                    this@CellLayout.invalidate(mDragOutlines[i])
+                }
+            }
+            // The animation holds a reference to the drag outline bitmap as long is it's
+            // running. This way the bitmap can be GCed when the animations are complete.
+            anim.animator.addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if ((animation as ValueAnimator).animatedValue as Float == 0f) {
+                        anim.tag = null
+                    }
+                }
+            })
+            mDragOutlineAnims[i] = anim
+        }
     }
 
     override fun onMeasure(widthSpec: Int, heightSpec: Int) {
@@ -65,8 +170,8 @@ open class CellLayout @JvmOverloads constructor(
         val childHeightSize = heightSize - (paddingTop + paddingBottom)
         val hotseat = parent is Hotseat
         Log.i("CellLayout", "$hotseat $heightSize $paddingTop $paddingBottom")
-        cellWidth = VariantDeviceProfile.calculateCellWidth(childWidthSize, countX)
-        cellHeight = VariantDeviceProfile.calculateCellHeight(childHeightSize, countY)
+        cellWidth = VariantDeviceProfile.calculateCellWidth(childWidthSize, mCountX)
+        cellHeight = VariantDeviceProfile.calculateCellHeight(childHeightSize, mCountY)
         Log.d(TAG, "cellWidth: $cellWidth")
         setMeasuredDimension(widthSize, heightSize)
         for (i in 0 until childCount) {
@@ -179,6 +284,130 @@ open class CellLayout @JvmOverloads constructor(
         }
     }
 
+    open fun visualizeDropLocation(
+        v: View?,
+        outlineProvider: DragPreviewProvider?,
+        cellX: Int,
+        cellY: Int,
+        resize: Boolean,
+        dragObject: DropTarget.DragObject
+    ) {
+        val oldDragCellX = mDragCell[0]
+        val oldDragCellY = mDragCell[1]
+        if (outlineProvider?.generatedDragOutline == null) {
+            return
+        }
+        val dragOutline: Bitmap = outlineProvider.generatedDragOutline
+        if (cellX != oldDragCellX || cellY != oldDragCellY) {
+            val dragOffset: Point = dragObject.dragView.dragVisualizeOffset
+            val dragRegion: Rect = dragObject.dragView.dragRegion
+            mDragCell[0] = cellX
+            mDragCell[1] = cellY
+            val oldIndex: Int = mDragOutlineCurrent
+            mDragOutlineAnims[oldIndex]?.animateOut()
+            mDragOutlineCurrent = (oldIndex + 1) % mDragOutlines.size
+            val r: Rect = mDragOutlines[mDragOutlineCurrent]!!
+
+            // Find the top left corner of the rect the object will occupy
+            val topLeft = mTmpPoint
+            cellToPoint(cellX, cellY, topLeft)
+            var left = topLeft[0]
+            var top = topLeft[1]
+            if (v != null && dragOffset == null) {
+                // When drawing the drag outline, it did not account for margin offsets
+                // added by the view's parent.
+                val lp = v.layoutParams as MarginLayoutParams
+                left += lp.leftMargin
+                top += lp.topMargin
+
+                // Offsets due to the size difference between the View and the dragOutline.
+                // There is a size difference to account for the outer blur, which may lie
+                // outside the bounds of the view.
+                top += (cellHeight * 1 - dragOutline.height) / 2
+                // We center about the x axis
+                left += (cellWidth * 1 - dragOutline.width) / 2
+            } else {
+                if (dragOffset != null && dragRegion != null) {
+                    // Center the drag region *horizontally* in the cell and apply a drag
+                    // outline offset
+                    left += dragOffset.x + (cellWidth * 1 - dragRegion.width()) / 2
+                    val cHeight: Int = getCellContentHeight()
+                    val cellPaddingY =
+                        Math.max(0f, (cellHeight - cHeight) / 2f).toInt()
+                    top += dragOffset.y + cellPaddingY
+                } else {
+                    // Center the drag outline in the cell
+                    left += (cellWidth * 1 - dragOutline.width) / 2
+                    top += (cellHeight * 1 - dragOutline.height) / 2
+                }
+            }
+            r[left, top, left + dragOutline.width] = top + dragOutline.height
+            Utilities.scaleRectAboutCenter(r, 1f)
+            mDragOutlineAnims[mDragOutlineCurrent]?.setTag(dragOutline)
+            mDragOutlineAnims[mDragOutlineCurrent]?.animateIn()
+        }
+    }
+
+    /**
+     * Given a cell coordinate, return the point that represents the upper left corner of that cell
+     *
+     * @param cellX X coordinate of the cell
+     * @param cellY Y coordinate of the cell
+     *
+     * @param result Array of 2 ints to hold the x and y coordinate of the point
+     */
+    open fun cellToPoint(cellX: Int, cellY: Int, result: IntArray) {
+        val hStartPadding = paddingLeft
+        val vStartPadding = paddingTop
+        result[0] = hStartPadding + cellX * cellWidth
+        result[1] = vStartPadding + cellY * cellHeight
+    }
+
+    fun getDistanceFromCell(x: Float, y: Float, cell: IntArray): Float {
+        cellToCenterPoint(cell[0], cell[1], mTmpPoint)
+        return Math.hypot((x - mTmpPoint[0]).toDouble(), (y - mTmpPoint[1]).toDouble())
+            .toFloat()
+    }
+
+    // For a given cell and span, fetch the set of views intersecting the region.
+    private fun getViewsIntersectingRegion(
+        cellX: Int,
+        cellY: Int,
+        dragView: View,
+        boundingRect: Rect?,
+        intersectingViews: ArrayList<View>
+    ) {
+        boundingRect?.set(cellX, cellY, cellX + 1, cellY + 1)
+        intersectingViews.clear()
+        val r0 = Rect(cellX, cellY, cellX + 1, cellY + 1)
+        val r1 = Rect()
+        val count: Int = childCount
+        for (i in 0 until count) {
+            val child: View = getChildAt(i)
+            if (child === dragView) continue
+            r1[i % mCountX, i % mCountY, i % mCountX + 1] = i % mCountY + 1
+            if (Rect.intersects(r0, r1)) {
+                mIntersectingViews.add(child)
+                boundingRect?.union(r1)
+            }
+        }
+    }
+
+    open fun isNearestDropLocationOccupied(
+        pixelX: Int,
+        pixelY: Int,
+        dragView: View,
+        result: IntArray?
+    ): Boolean {
+        var result = result
+        result = findNearestArea(pixelX, pixelY, result)
+        getViewsIntersectingRegion(
+            result!![0], result!![1], dragView, null,
+            mIntersectingViews
+        )
+        return !mIntersectingViews.isEmpty()
+    }
+
     /**
      * Find a starting cell position that will fit the given bounds nearest the requested
      * cell location. Uses Euclidean distance to score multiple vacant areas.
@@ -192,11 +421,9 @@ open class CellLayout @JvmOverloads constructor(
     open fun findNearestArea(
         pixelX: Int,
         pixelY: Int,
-        spanX: Int,
-        spanY: Int,
         result: IntArray?
     ): IntArray? {
-        return findNearestArea(pixelX, pixelY, spanX, spanY, spanX, spanY, false, result, null)
+        return findNearestArea(pixelX, pixelY, false, result, null)
     }
 
     /**
@@ -205,10 +432,6 @@ open class CellLayout @JvmOverloads constructor(
      *
      * @param pixelX The X location at which you want to search for a vacant area.
      * @param pixelY The Y location at which you want to search for a vacant area.
-     * @param minSpanX The minimum horizontal span required
-     * @param minSpanY The minimum vertical span required
-     * @param spanX Horizontal span of the object.
-     * @param spanY Vertical span of the object.
      * @param ignoreOccupied If true, the result can be an occupied cell
      * @param result Array in which to place the result, or null (in which case a new array will
      * be allocated)
@@ -216,17 +439,15 @@ open class CellLayout @JvmOverloads constructor(
      * nearest the requested location.
      */
     private fun findNearestArea(
-        pixelX: Int, pixelY: Int, ignoreOccupied: Boolean, result: IntArray?, resultSpan: IntArray?
+        pixelX: Int,
+        pixelY: Int,
+        ignoreOccupied: Boolean,
+        result: IntArray?,
+        resultSpan: IntArray?
     ): IntArray? {
         var pixelX = pixelX
         var pixelY = pixelY
         lazyInitTempRectStack()
-
-        // For items with a spanX / spanY > 1, the passed in point (pixelX, pixelY) corresponds
-        // to the center of the item, but we are searching based on the top-left cell, so
-        // we translate the point over to correspond to the top-left.
-        pixelX -= (mCellWidth * (spanX - 1) / 2f).toInt()
-        pixelY -= (mCellHeight * (spanY - 1) / 2f).toInt()
 
         // Keep track of best-scoring drop area
         val bestXY = result ?: IntArray(2)
@@ -235,9 +456,12 @@ open class CellLayout @JvmOverloads constructor(
         val validRegions = Stack<Rect>()
         val countX: Int = mCountX
         val countY: Int = mCountY
-        if (minSpanX <= 0 || minSpanY <= 0 || spanX <= 0 || spanY <= 0 || spanX < minSpanX || spanY < minSpanY) {
-            return bestXY
-        }
+
+        val minSpanX = 1
+        val minSpanY = 1
+        val spanX = 1
+        val spanY = 1
+
         for (y in 0 until countY - (minSpanY - 1)) {
             inner@ for (x in 0 until countX - (minSpanX - 1)) {
                 var ySize = -1
@@ -246,7 +470,7 @@ open class CellLayout @JvmOverloads constructor(
                     // First, let's see if this thing fits anywhere
                     for (i in 0 until minSpanX) {
                         for (j in 0 until minSpanY) {
-                            if (mOccupied.cells.get(x + i).get(y + j)) {
+                            if (mOccupied.cells[x + i][y + j]) {
                                 continue@inner
                             }
                         }
@@ -263,8 +487,7 @@ open class CellLayout @JvmOverloads constructor(
                     while (!(hitMaxX && hitMaxY)) {
                         if (incX && !hitMaxX) {
                             for (j in 0 until ySize) {
-                                if (x + xSize > countX - 1 || mOccupied.cells.get(x + xSize)
-                                        .get(y + j)
+                                if (x + xSize > countX - 1 || mOccupied.cells[x + xSize][y + j]
                                 ) {
                                     // We can't move out horizontally
                                     hitMaxX = true
@@ -275,8 +498,7 @@ open class CellLayout @JvmOverloads constructor(
                             }
                         } else if (!hitMaxY) {
                             for (i in 0 until xSize) {
-                                if (y + ySize > countY - 1 || mOccupied.cells.get(x + i)
-                                        .get(y + ySize)
+                                if (y + ySize > countY - 1 || mOccupied.cells[x + i][y + ySize]
                                 ) {
                                     // We can't move out vertically
                                     hitMaxY = true
@@ -311,7 +533,7 @@ open class CellLayout @JvmOverloads constructor(
                 }
                 validRegions.push(currentRect)
                 val distance =
-                    Math.hypot((cellXY[0] - pixelX).toDouble(), (cellXY[1] - pixelY).toDouble())
+                    hypot((cellXY[0] - pixelX).toDouble(), (cellXY[1] - pixelY).toDouble())
                 if (distance <= bestDistance && !contained ||
                     currentRect.contains(bestRect)
                 ) {
@@ -334,6 +556,188 @@ open class CellLayout @JvmOverloads constructor(
         }
         recycleTempRects(validRegions)
         return bestXY
+    }
+
+    /**
+     * Given a cell coordinate, return the point that represents the center of the cell
+     *
+     * @param cellX X coordinate of the cell
+     * @param cellY Y coordinate of the cell
+     *
+     * @param result Array of 2 ints to hold the x and y coordinate of the point
+     */
+    open fun cellToCenterPoint(cellX: Int, cellY: Int, result: IntArray) {
+        regionToCenterPoint(cellX, cellY, 1, 1, result)
+    }
+
+    /**
+     * Given a cell coordinate and span return the point that represents the center of the regio
+     *
+     * @param cellX X coordinate of the cell
+     * @param cellY Y coordinate of the cell
+     *
+     * @param result Array of 2 ints to hold the x and y coordinate of the point
+     */
+    open fun regionToCenterPoint(cellX: Int, cellY: Int, spanX: Int, spanY: Int, result: IntArray) {
+        val hStartPadding = paddingLeft
+        val vStartPadding = paddingTop
+        result[0] = hStartPadding + cellX * cellWidth + spanX * cellWidth / 2
+        result[1] = vStartPadding + cellY * cellHeight + spanY * cellHeight / 2
+    }
+
+    private val mTempRectStack = Stack<Rect>()
+    private fun lazyInitTempRectStack() {
+        if (mTempRectStack.isEmpty()) {
+            for (i in 0 until mCountX * mCountY) {
+                mTempRectStack.push(Rect())
+            }
+        }
+    }
+
+    private fun recycleTempRects(used: Stack<Rect>) {
+        while (!used.isEmpty()) {
+            mTempRectStack.push(used.pop())
+        }
+    }
+
+    open fun performReorder(
+        pixelX: Int,
+        pixelY: Int,
+        minSpanX: Int,
+        minSpanY: Int,
+        spanX: Int,
+        spanY: Int,
+        dragView: View?,
+        result: IntArray?,
+        resultSpan: IntArray?,
+        mode: Int
+    ): IntArray? {
+/*        // First we determine if things have moved enough to cause a different layout
+        var result = result
+        var resultSpan = resultSpan
+        result = findNearestArea(pixelX, pixelY, spanX, spanY, result)
+        if (resultSpan == null) {
+            resultSpan = IntArray(2)
+        }
+
+        // When we are checking drop validity or actually dropping, we don't recompute the
+        // direction vector, since we want the solution to match the preview, and it's possible
+        // that the exact position of the item has changed to result in a new reordering outcome.
+        if ((mode == CellLayout.MODE_ON_DROP || mode == CellLayout.MODE_ON_DROP_EXTERNAL || mode == CellLayout.MODE_ACCEPT_DROP)
+            && mPreviousReorderDirection.get(0) != CellLayout.INVALID_DIRECTION
+        ) {
+            mDirectionVector.get(0) = mPreviousReorderDirection.get(0)
+            mDirectionVector.get(1) = mPreviousReorderDirection.get(1)
+            // We reset this vector after drop
+            if (mode == CellLayout.MODE_ON_DROP || mode == CellLayout.MODE_ON_DROP_EXTERNAL) {
+                mPreviousReorderDirection.get(0) = CellLayout.INVALID_DIRECTION
+                mPreviousReorderDirection.get(1) = CellLayout.INVALID_DIRECTION
+            }
+        } else {
+            getDirectionVectorForDrop(pixelX, pixelY, spanX, spanY, dragView, mDirectionVector)
+            mPreviousReorderDirection.get(0) = mDirectionVector.get(0)
+            mPreviousReorderDirection.get(1) = mDirectionVector.get(1)
+        }
+
+        // Find a solution involving pushing / displacing any items in the way
+        val swapSolution: com.android.launcher3.CellLayout.ItemConfiguration = findReorderSolution(
+            pixelX,
+            pixelY,
+            minSpanX,
+            minSpanY,
+            spanX,
+            spanY,
+            mDirectionVector,
+            dragView,
+            true,
+            com.android.launcher3.CellLayout.ItemConfiguration()
+        )
+
+        // We attempt the approach which doesn't shuffle views at all
+        val noShuffleSolution: com.android.launcher3.CellLayout.ItemConfiguration =
+            findConfigurationNoShuffle(
+                pixelX,
+                pixelY,
+                minSpanX,
+                minSpanY,
+                spanX,
+                spanY,
+                dragView,
+                com.android.launcher3.CellLayout.ItemConfiguration()
+            )
+        var finalSolution: com.android.launcher3.CellLayout.ItemConfiguration? = null
+
+        // If the reorder solution requires resizing (shrinking) the item being dropped, we instead
+        // favor a solution in which the item is not resized, but
+        if (swapSolution.isSolution && swapSolution.area() >= noShuffleSolution.area()) {
+            finalSolution = swapSolution
+        } else if (noShuffleSolution.isSolution) {
+            finalSolution = noShuffleSolution
+        }
+        if (mode == CellLayout.MODE_SHOW_REORDER_HINT) {
+            if (finalSolution != null) {
+                beginOrAdjustReorderPreviewAnimations(
+                    finalSolution, dragView, 0,
+                    com.android.launcher3.CellLayout.ReorderPreviewAnimation.MODE_HINT
+                )
+                result!![0] = finalSolution.cellX
+                result!![1] = finalSolution.cellY
+                resultSpan[0] = finalSolution.spanX
+                resultSpan[1] = finalSolution.spanY
+            } else {
+                resultSpan[1] = -1
+                resultSpan[0] = resultSpan[1]
+                result!![1] = resultSpan[0]
+                result!![0] = result!![1]
+            }
+            return result
+        }
+        var foundSolution = true
+        if (!CellLayout.DESTRUCTIVE_REORDER) {
+            setUseTempCoords(true)
+        }
+        if (finalSolution != null) {
+            result!![0] = finalSolution.cellX
+            result!![1] = finalSolution.cellY
+            resultSpan[0] = finalSolution.spanX
+            resultSpan[1] = finalSolution.spanY
+
+            // If we're just testing for a possible location (MODE_ACCEPT_DROP), we don't bother
+            // committing anything or animating anything as we just want to determine if a solution
+            // exists
+            if (mode == CellLayout.MODE_DRAG_OVER || mode == CellLayout.MODE_ON_DROP || mode == CellLayout.MODE_ON_DROP_EXTERNAL) {
+                if (!CellLayout.DESTRUCTIVE_REORDER) {
+                    copySolutionToTempState(finalSolution, dragView)
+                }
+                setItemPlacementDirty(true)
+                animateItemsToSolution(finalSolution, dragView, mode == CellLayout.MODE_ON_DROP)
+                if (!CellLayout.DESTRUCTIVE_REORDER &&
+                    (mode == CellLayout.MODE_ON_DROP || mode == CellLayout.MODE_ON_DROP_EXTERNAL)
+                ) {
+                    commitTempPlacement()
+                    completeAndClearReorderPreviewAnimations()
+                    setItemPlacementDirty(false)
+                } else {
+                    beginOrAdjustReorderPreviewAnimations(
+                        finalSolution,
+                        dragView,
+                        CellLayout.REORDER_ANIMATION_DURATION,
+                        com.android.launcher3.CellLayout.ReorderPreviewAnimation.MODE_PREVIEW
+                    )
+                }
+            }
+        } else {
+            foundSolution = false
+            resultSpan[1] = -1
+            resultSpan[0] = resultSpan[1]
+            result!![1] = resultSpan[0]
+            result!![0] = result!![1]
+        }
+        if ((mode == CellLayout.MODE_ON_DROP || !foundSolution) && !CellLayout.DESTRUCTIVE_REORDER) {
+            setUseTempCoords(false)
+        }
+        mShortcutsAndWidgets.requestLayout()*/
+        return result
     }
 
     // This class stores info for two purposes:

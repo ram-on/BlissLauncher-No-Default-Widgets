@@ -107,6 +107,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private int mDragOverX = -1;
     private int mDragOverY = -1;
 
+    public static final int REORDER_TIMEOUT = 650;
     private final Alarm mFolderCreationAlarm = new Alarm();
     private final Alarm mReorderAlarm = new Alarm();
 
@@ -118,7 +119,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private int mDragMode = DRAG_MODE_NONE;
     int mLastReorderX = -1;
     int mLastReorderY = -1;
-    private int[] mTargetCell;
 
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -1202,28 +1202,27 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             float targetCellDistance = mDragTargetLayout.getDistanceFromCell(
                 mDragViewVisualCenter[0], mDragViewVisualCenter[1], mTargetCell);
 
-            manageFolderFeedback(mDragTargetLayout, mTargetCell, targetCellDistance, d);
+            //TODO: Enable when supporting foler
+            //manageFolderFeedback(mDragTargetLayout, mTargetCell, targetCellDistance, d);
 
             boolean nearestDropOccupied = mDragTargetLayout.isNearestDropLocationOccupied((int)
-                    mDragViewVisualCenter[0], (int) mDragViewVisualCenter[1], item.spanX,
-                item.spanY, child, mTargetCell);
+                    mDragViewVisualCenter[0], (int) mDragViewVisualCenter[1], child, mTargetCell);
 
             if (!nearestDropOccupied) {
                 mDragTargetLayout.visualizeDropLocation(child, mOutlineProvider,
-                    mTargetCell[0], mTargetCell[1], item.spanX, item.spanY, false, d);
+                    mTargetCell[0], mTargetCell[1], false, d);
             } else if ((mDragMode == DRAG_MODE_NONE || mDragMode == DRAG_MODE_REORDER)
                 && !mReorderAlarm.alarmPending() && (mLastReorderX != reorderX ||
                 mLastReorderY != reorderY)) {
 
                 int[] resultSpan = new int[2];
                 mDragTargetLayout.performReorder((int) mDragViewVisualCenter[0],
-                    (int) mDragViewVisualCenter[1], minSpanX, minSpanY, item.spanX, item.spanY,
+                    (int) mDragViewVisualCenter[1], 1, 1, 1, 1,
                     child, mTargetCell, resultSpan, CellLayout.MODE_SHOW_REORDER_HINT);
 
                 // Otherwise, if we aren't adding to or creating a folder and there's no pending
                 // reorder, then we schedule a reorder
-                ReorderAlarmListener listener = new ReorderAlarmListener(mDragViewVisualCenter,
-                    minSpanX, minSpanY, item.spanX, item.spanY, d, child);
+                ReorderAlarmListener listener = new ReorderAlarmListener(mDragViewVisualCenter, d, child);
                 mReorderAlarm.setOnAlarmListener(listener);
                 mReorderAlarm.setAlarm(REORDER_TIMEOUT);
             }
@@ -1365,7 +1364,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             mLastReorderY = mTargetCell[1];
 
             mTargetCell = mDragTargetLayout.performReorder((int) mDragViewVisualCenter[0],
-                (int) mDragViewVisualCenter[1], minSpanX, minSpanY, spanX, spanY,
+                (int) mDragViewVisualCenter[1], 1, 1, 1, 1,
                 child, mTargetCell, resultSpan, CellLayout.MODE_DRAG_OVER);
 
             if (mTargetCell[0] < 0 || mTargetCell[1] < 0) {
@@ -1374,7 +1373,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 setDragMode(DRAG_MODE_REORDER);
             }
             mDragTargetLayout.visualizeDropLocation(child, mOutlineProvider,
-                mTargetCell[0], mTargetCell[1], resultSpan[0], resultSpan[1], dragObject);
+                mTargetCell[0], mTargetCell[1], false, dragObject);
         }
     }
 

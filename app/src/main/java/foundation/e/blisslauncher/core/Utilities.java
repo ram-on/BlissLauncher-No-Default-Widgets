@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
@@ -342,5 +343,24 @@ public class Utilities {
     public static boolean pointInView(View v, float localX, float localY, float slop) {
         return localX >= -slop && localY >= -slop && localX < (v.getWidth() + slop) &&
             localY < (v.getHeight() + slop);
+    }
+
+    public static void scaleRectAboutCenter(Rect r, float scale) {
+        if (scale != 1.0f) {
+            int cx = r.centerX();
+            int cy = r.centerY();
+            r.offset(-cx, -cy);
+            scaleRect(r, scale);
+            r.offset(cx, cy);
+        }
+    }
+
+    public static void scaleRect(Rect r, float scale) {
+        if (scale != 1.0f) {
+            r.left = (int) (r.left * scale + 0.5f);
+            r.top = (int) (r.top * scale + 0.5f);
+            r.right = (int) (r.right * scale + 0.5f);
+            r.bottom = (int) (r.bottom * scale + 0.5f);
+        }
     }
 }
