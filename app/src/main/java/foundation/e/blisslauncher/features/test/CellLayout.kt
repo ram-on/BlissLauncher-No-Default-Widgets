@@ -11,6 +11,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Point
 import android.graphics.Rect
+import android.util.ArrayMap
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
@@ -259,9 +260,9 @@ open class CellLayout @JvmOverloads constructor(
         // Invalidate the drag data
         mDragCell[1] = -1
         mDragCell[0] = -1
-         mDragOutlineAnims[mDragOutlineCurrent]?.animateOut()
-         mDragOutlineCurrent = (mDragOutlineCurrent + 1) % mDragOutlineAnims.size
-         revertTempState()
+        mDragOutlineAnims[mDragOutlineCurrent]?.animateOut()
+        mDragOutlineCurrent = (mDragOutlineCurrent + 1) % mDragOutlineAnims.size
+        revertTempState()
         setIsDragOverlapping(false)
     }
 
@@ -585,6 +586,31 @@ open class CellLayout @JvmOverloads constructor(
         result[1] = vStartPadding + cellY * cellHeight + spanY * cellHeight / 2
     }
 
+    /**
+     * Find a vacant area that will fit the given bounds nearest the requested
+     * cell location. Uses Euclidean distance to score multiple vacant areas.
+     *
+     * @param pixelX The X location at which you want to search for a vacant area.
+     * @param pixelY The Y location at which you want to search for a vacant area.
+     * @param minSpanX The minimum horizontal span required
+     * @param minSpanY The minimum vertical span required
+     * @param spanX Horizontal span of the object.
+     * @param spanY Vertical span of the object.
+     * @param result Array in which to place the result, or null (in which case a new array will
+     * be allocated)
+     * @return The X, Y cell of a vacant area that can contain this object,
+     * nearest the requested location.
+     */
+    open fun findNearestVacantArea(
+        pixelX: Int, pixelY: Int, minSpanX: Int, minSpanY: Int, spanX: Int,
+        spanY: Int, result: IntArray?, resultSpan: IntArray?
+    ): IntArray? {
+        return findNearestArea(
+            pixelX, pixelY, true,
+            result, resultSpan
+        )
+    }
+
     private val mTempRectStack = Stack<Rect>()
     private fun lazyInitTempRectStack() {
         if (mTempRectStack.isEmpty()) {
@@ -616,49 +642,29 @@ open class CellLayout @JvmOverloads constructor(
             TAG,
             "performReorder() called with: pixelX = $pixelX, pixelY = $pixelY, minSpanX = $minSpanX, minSpanY = $minSpanY, spanX = $spanX, spanY = $spanY, dragView = $dragView, result = $result, resultSpan = $resultSpan, mode = $mode"
         )
-/*        // First we determine if things have moved enough to cause a different layout
+        // First we determine if things have moved enough to cause a different layout
         var result = result
         var resultSpan = resultSpan
-        result = findNearestArea(pixelX, pixelY, spanX, spanY, result)
+        result = findNearestArea(pixelX, pixelY, result)
         if (resultSpan == null) {
             resultSpan = IntArray(2)
         }
 
-        // When we are checking drop validity or actually dropping, we don't recompute the
-        // direction vector, since we want the solution to match the preview, and it's possible
-        // that the exact position of the item has changed to result in a new reordering outcome.
-        if ((mode == CellLayout.MODE_ON_DROP || mode == CellLayout.MODE_ON_DROP_EXTERNAL || mode == CellLayout.MODE_ACCEPT_DROP)
-            && mPreviousReorderDirection.get(0) != CellLayout.INVALID_DIRECTION
-        ) {
-            mDirectionVector.get(0) = mPreviousReorderDirection.get(0)
-            mDirectionVector.get(1) = mPreviousReorderDirection.get(1)
-            // We reset this vector after drop
-            if (mode == CellLayout.MODE_ON_DROP || mode == CellLayout.MODE_ON_DROP_EXTERNAL) {
-                mPreviousReorderDirection.get(0) = CellLayout.INVALID_DIRECTION
-                mPreviousReorderDirection.get(1) = CellLayout.INVALID_DIRECTION
-            }
-        } else {
-            getDirectionVectorForDrop(pixelX, pixelY, spanX, spanY, dragView, mDirectionVector)
-            mPreviousReorderDirection.get(0) = mDirectionVector.get(0)
-            mPreviousReorderDirection.get(1) = mDirectionVector.get(1)
-        }
-
         // Find a solution involving pushing / displacing any items in the way
-        val swapSolution: com.android.launcher3.CellLayout.ItemConfiguration = findReorderSolution(
+        val swapSolution: ItemConfiguration = findReorderSolution(
             pixelX,
             pixelY,
             minSpanX,
             minSpanY,
             spanX,
             spanY,
-            mDirectionVector,
             dragView,
             true,
-            com.android.launcher3.CellLayout.ItemConfiguration()
+            ItemConfiguration()
         )
 
         // We attempt the approach which doesn't shuffle views at all
-        val noShuffleSolution: com.android.launcher3.CellLayout.ItemConfiguration =
+        val noShuffleSolution: ItemConfiguration =
             findConfigurationNoShuffle(
                 pixelX,
                 pixelY,
@@ -667,9 +673,9 @@ open class CellLayout @JvmOverloads constructor(
                 spanX,
                 spanY,
                 dragView,
-                com.android.launcher3.CellLayout.ItemConfiguration()
+                ItemConfiguration()
             )
-        var finalSolution: com.android.launcher3.CellLayout.ItemConfiguration? = null
+        var finalSolution: ItemConfiguration? = null
 
         // If the reorder solution requires resizing (shrinking) the item being dropped, we instead
         // favor a solution in which the item is not resized, but
@@ -678,45 +684,29 @@ open class CellLayout @JvmOverloads constructor(
         } else if (noShuffleSolution.isSolution) {
             finalSolution = noShuffleSolution
         }
-        if (mode == CellLayout.MODE_SHOW_REORDER_HINT) {
-            if (finalSolution != null) {
-                beginOrAdjustReorderPreviewAnimations(
-                    finalSolution, dragView, 0,
-                    com.android.launcher3.CellLayout.ReorderPreviewAnimation.MODE_HINT
-                )
-                result!![0] = finalSolution.cellX
-                result!![1] = finalSolution.cellY
-                resultSpan[0] = finalSolution.spanX
-                resultSpan[1] = finalSolution.spanY
-            } else {
-                resultSpan[1] = -1
-                resultSpan[0] = resultSpan[1]
-                result!![1] = resultSpan[0]
-                result!![0] = result!![1]
-            }
-            return result
-        }
+
         var foundSolution = true
-        if (!CellLayout.DESTRUCTIVE_REORDER) {
+        // May consider later
+        /*if (!CellLayout.DESTRUCTIVE_REORDER) {
             setUseTempCoords(true)
-        }
+        }*/
         if (finalSolution != null) {
             result!![0] = finalSolution.cellX
             result!![1] = finalSolution.cellY
-            resultSpan[0] = finalSolution.spanX
-            resultSpan[1] = finalSolution.spanY
+            resultSpan[0] = 1
+            resultSpan[1] = 1
 
             // If we're just testing for a possible location (MODE_ACCEPT_DROP), we don't bother
             // committing anything or animating anything as we just want to determine if a solution
             // exists
-            if (mode == CellLayout.MODE_DRAG_OVER || mode == CellLayout.MODE_ON_DROP || mode == CellLayout.MODE_ON_DROP_EXTERNAL) {
+            if (mode == MODE_DRAG_OVER || mode == MODE_ON_DROP || mode == MODE_ON_DROP_EXTERNAL) {
                 if (!CellLayout.DESTRUCTIVE_REORDER) {
                     copySolutionToTempState(finalSolution, dragView)
                 }
                 setItemPlacementDirty(true)
-                animateItemsToSolution(finalSolution, dragView, mode == CellLayout.MODE_ON_DROP)
+                animateItemsToSolution(finalSolution, dragView, mode == MODE_ON_DROP)
                 if (!CellLayout.DESTRUCTIVE_REORDER &&
-                    (mode == CellLayout.MODE_ON_DROP || mode == CellLayout.MODE_ON_DROP_EXTERNAL)
+                    (mode == MODE_ON_DROP || mode == MODE_ON_DROP_EXTERNAL)
                 ) {
                     commitTempPlacement()
                     completeAndClearReorderPreviewAnimations()
@@ -726,7 +716,7 @@ open class CellLayout @JvmOverloads constructor(
                         finalSolution,
                         dragView,
                         CellLayout.REORDER_ANIMATION_DURATION,
-                        com.android.launcher3.CellLayout.ReorderPreviewAnimation.MODE_PREVIEW
+                        ReorderPreviewAnimation.MODE_PREVIEW
                     )
                 }
             }
@@ -737,11 +727,100 @@ open class CellLayout @JvmOverloads constructor(
             result!![1] = resultSpan[0]
             result!![0] = result!![1]
         }
-        if ((mode == CellLayout.MODE_ON_DROP || !foundSolution) && !CellLayout.DESTRUCTIVE_REORDER) {
+
+        // May consider this later.
+        /*if ((mode == MODE_ON_DROP || !foundSolution) && !CellLayout.DESTRUCTIVE_REORDER) {
             setUseTempCoords(false)
-        }
-        mShortcutsAndWidgets.requestLayout()*/
+        }*/
+        requestLayout()
         return result
+    }
+
+    private fun findConfigurationNoShuffle(
+        pixelX: Int,
+        pixelY: Int,
+        minSpanX: Int,
+        minSpanY: Int,
+        spanX: Int,
+        spanY: Int,
+        dragView: View?,
+        solution: ItemConfiguration
+    ): ItemConfiguration {
+        val result = IntArray(2)
+        val resultSpan = IntArray(2)
+        findNearestVacantArea(
+            pixelX, pixelY, minSpanX, minSpanY, spanX, spanY, result,
+            resultSpan
+        )
+        if (result[0] >= 0 && result[1] >= 0) {
+            copyCurrentStateToSolution(solution, false)
+            solution.cellX = result[0]
+            solution.cellY = result[1]
+            solution.isSolution = true
+        } else {
+            solution.isSolution = false
+        }
+        return solution
+    }
+
+    private fun copyCurrentStateToSolution(solution: ItemConfiguration, temp: Boolean) {
+        /*val childCount: Int = childCount
+        for (i in 0 until childCount) {
+            val child: View = getChildAt(i)
+            val lp: LayoutParams =
+                child.layoutParams as GridLayout.LayoutParams
+            var c: CellAndSpan?
+            if (temp) {
+                c = CellAndSpan(lp.tmpCellX, lp.tmpCellY, lp.cellHSpan, lp.cellVSpan)
+            } else {
+                c = CellAndSpan(, lp.cellY, lp.cellHSpan, lp.cellVSpan)
+            }
+            solution.add(child, c!!)
+        }*/
+    }
+
+    private class ItemConfiguration : CellAndSpan() {
+        val map = ArrayMap<View, CellAndSpan>()
+        private val savedMap = ArrayMap<View, CellAndSpan>()
+        val sortedViews = ArrayList<View>()
+        var intersectingViews: ArrayList<View>? = null
+        var isSolution = false
+        fun save() {
+            // Copy current state into savedMap
+            for (v in map.keys) {
+                savedMap[v]!!.copyFrom(map[v])
+            }
+        }
+
+        fun restore() {
+            // Restore current state from savedMap
+            for (v in savedMap.keys) {
+                map[v]!!.copyFrom(savedMap[v])
+            }
+        }
+
+        fun add(v: View, cs: CellAndSpan) {
+            map[v] = cs
+            savedMap[v] = CellAndSpan()
+            sortedViews.add(v)
+        }
+
+        fun area(): Int {
+            return 1
+        }
+
+        fun getBoundingRectForViews(views: ArrayList<View?>, outRect: Rect) {
+            var first = true
+            for (v in views) {
+                val c = map[v]
+                if (first) {
+                    outRect[c!!.cellX, c.cellY, c.cellX + 1] = c.cellY + 1
+                    first = false
+                } else {
+                    outRect.union(c!!.cellX, c.cellY, c.cellX + 1, c.cellY + 1)
+                }
+            }
+        }
     }
 
     // This class stores info for two purposes:

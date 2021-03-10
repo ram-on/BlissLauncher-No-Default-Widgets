@@ -25,6 +25,7 @@ import android.widget.GridLayout;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import foundation.e.blisslauncher.R;
@@ -1216,9 +1217,9 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 mLastReorderY != reorderY)) {
 
                 int[] resultSpan = new int[2];
-                mDragTargetLayout.performReorder((int) mDragViewVisualCenter[0],
+                /*mDragTargetLayout.performReorder((int) mDragViewVisualCenter[0],
                     (int) mDragViewVisualCenter[1], 1, 1, 1, 1,
-                    child, mTargetCell, resultSpan, CellLayout.MODE_SHOW_REORDER_HINT);
+                    child, mTargetCell, resultSpan, CellLayout.MODE_SHOW_REORDER_HINT);*/
 
                 // Otherwise, if we aren't adding to or creating a folder and there's no pending
                 // reorder, then we schedule a reorder
@@ -1366,6 +1367,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             mTargetCell = mDragTargetLayout.performReorder((int) mDragViewVisualCenter[0],
                 (int) mDragViewVisualCenter[1], 1, 1, 1, 1,
                 child, mTargetCell, resultSpan, CellLayout.MODE_DRAG_OVER);
+            Log.d(TAG, "Reorder "+ Arrays.toString(mTargetCell));
 
             if (mTargetCell[0] < 0 || mTargetCell[1] < 0) {
                 mDragTargetLayout.revertTempState();
