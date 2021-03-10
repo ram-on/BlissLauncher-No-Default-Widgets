@@ -259,9 +259,9 @@ open class CellLayout @JvmOverloads constructor(
         // Invalidate the drag data
         mDragCell[1] = -1
         mDragCell[0] = -1
-        /* mDragOutlineAnims.get(mDragOutlineCurrent).animateOut()
+         mDragOutlineAnims[mDragOutlineCurrent]?.animateOut()
          mDragOutlineCurrent = (mDragOutlineCurrent + 1) % mDragOutlineAnims.size
-         revertTempState()*/
+         revertTempState()
         setIsDragOverlapping(false)
     }
 
@@ -612,6 +612,10 @@ open class CellLayout @JvmOverloads constructor(
         resultSpan: IntArray?,
         mode: Int
     ): IntArray? {
+        Log.d(
+            TAG,
+            "performReorder() called with: pixelX = $pixelX, pixelY = $pixelY, minSpanX = $minSpanX, minSpanY = $minSpanY, spanX = $spanX, spanY = $spanY, dragView = $dragView, result = $result, resultSpan = $resultSpan, mode = $mode"
+        )
 /*        // First we determine if things have moved enough to cause a different layout
         var result = result
         var resultSpan = resultSpan

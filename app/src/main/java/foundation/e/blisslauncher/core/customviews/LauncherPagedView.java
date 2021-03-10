@@ -875,7 +875,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     @Override
     public void onDragEnd() {
         if (!mDeferRemoveExtraEmptyScreen) {
-            removeExtraEmptyScreen(true, mDragSourceInternal != null);
+            //removeExtraEmptyScreen(true, mDragSourceInternal != null);
         }
 
         updateChildrenLayersEnabled();
