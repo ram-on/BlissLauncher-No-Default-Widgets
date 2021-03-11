@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <foundation.e.blisslauncher.features.test.LauncherRootView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:launcher="http://schemas.android.com/tools"
     android:id="@+id/launcher"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -37,6 +38,7 @@
                 android:id="@+id/dockLayout"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                launcher:containerType="hotseat"
                 android:layout_gravity="center" />
         </foundation.e.blisslauncher.features.launcher.Hotseat>
 

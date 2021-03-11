@@ -169,6 +169,14 @@ class TestActivity : BaseDraggingActivity() {
     fun isHotseatLayout(layout: View?): Boolean =
         hotseat != null && layout != null && layout is CellLayout && layout == hotseat.layout
 
+    fun getViewIdForItem(info: LauncherItem): Int {
+        // aapt-generated IDs have the high byte nonzero; clamp to the range under that.
+        // This cast is safe as long as the id < 0x00FFFFFF
+        // Since we jail all the dynamically generated views, there should be no clashes
+        // with any other views.
+        return info.keyId
+    }
+
     companion object {
         const val TAG = "Launcher"
         const val LOGD = false

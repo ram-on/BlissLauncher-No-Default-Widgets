@@ -3,6 +3,8 @@ package foundation.e.blisslauncher.features.test
 import android.R
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.text.TextUtils.TruncateAt
@@ -10,6 +12,7 @@ import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.widget.TextView
+import androidx.core.graphics.ColorUtils
 import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.database.model.LauncherItem
 import kotlin.math.ceil
@@ -39,12 +42,15 @@ class IconTextView @JvmOverloads constructor(context: Context) : TextView(contex
     private val dp = launcher.deviceProfile
     private val defaultIconSize = dp.iconSizePx
 
+    private var mTextAlpha = 1f
+    private var mTextColor = Color.WHITE
+
     private var disableRelayout = false
     private var mIcon: Drawable? = null
     private val slop =
         ViewConfiguration.get(getContext()).scaledTouchSlop.toFloat()
 
-    private lateinit var longPressHelper: CheckLongPressHelper
+    private var longPressHelper: CheckLongPressHelper
 
     init {
         setTextSize(TypedValue.COMPLEX_UNIT_PX, dp.iconTextSizePx.toFloat())
@@ -64,6 +70,20 @@ class IconTextView @JvmOverloads constructor(context: Context) : TextView(contex
     }
 
     fun reset() {}
+
+    override fun setTextColor(color: Int) {
+        mTextColor = color
+        super.setTextColor(getModifiedColor())
+    }
+
+    override fun setTextColor(colors: ColorStateList) {
+        mTextColor = colors.defaultColor
+        if (java.lang.Float.compare(mTextAlpha, 1f) == 0) {
+            super.setTextColor(colors)
+        } else {
+            super.setTextColor(getModifiedColor())
+        }
+    }
 
     fun applyFromShortcutItem(item: LauncherItem) {
         applyIconAndLabel(item)
@@ -121,6 +141,24 @@ class IconTextView @JvmOverloads constructor(context: Context) : TextView(contex
         if (!disableRelayout) {
             super.requestLayout()
         }
+    }
+
+    fun setTextVisibility(visible: Boolean) {
+        setTextAlpha(if (visible) 1f else 0.toFloat())
+    }
+
+    private fun setTextAlpha(alpha: Float) {
+        mTextAlpha = alpha
+        super.setTextColor(getModifiedColor())
+    }
+
+    private fun getModifiedColor(): Int {
+        return if (mTextAlpha == 0f) {
+            // Special case to prevent text shadows in high contrast mode
+            Color.TRANSPARENT
+        } else ColorUtils.setAlphaComponent(
+            mTextColor, Math.round(Color.alpha(mTextColor) * mTextAlpha)
+        )
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

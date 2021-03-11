@@ -1,6 +1,5 @@
 package foundation.e.blisslauncher.features.test
 
-import android.R
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.TimeInterpolator
@@ -15,8 +14,9 @@ import android.util.ArrayMap
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
-import android.view.ViewGroup
 import android.widget.GridLayout
+import androidx.annotation.IntDef
+import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.database.model.LauncherItem
 import foundation.e.blisslauncher.core.utils.Constants
@@ -25,6 +25,8 @@ import foundation.e.blisslauncher.features.test.anim.Interpolators
 import foundation.e.blisslauncher.features.test.dragndrop.DropTarget
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider
 import java.lang.Double.MAX_VALUE
+import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
 import java.util.ArrayList
 import java.util.Arrays
 import java.util.Stack
@@ -41,7 +43,7 @@ open class CellLayout @JvmOverloads constructor(
 
     // When a drag operation is in progress, holds the nearest cell to the touch point
     private val mDragCell = IntArray(2)
-    private val BACKGROUND_STATE_ACTIVE = intArrayOf(R.attr.state_active)
+    private val BACKGROUND_STATE_ACTIVE = intArrayOf(android.R.attr.state_active)
     private val BACKGROUND_STATE_DEFAULT = EMPTY_STATE_SET
     private var mDragging: Boolean = false
 
@@ -54,6 +56,13 @@ open class CellLayout @JvmOverloads constructor(
     // return an (x, y) value from helper functions. Do NOT use them to maintain other state.
     val mTmpPoint = IntArray(2)
     val mTempLocation = IntArray(2)
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(WORKSPACE, HOTSEAT)
+    annotation class ContainerType
+
+    @ContainerType
+    private var mContainerType = 0
 
     private val TAG = "CellLayout"
 
@@ -90,9 +99,16 @@ open class CellLayout @JvmOverloads constructor(
         const val MODE_ON_DROP = 2
         const val MODE_ON_DROP_EXTERNAL = 3
         const val MODE_ACCEPT_DROP = 4
+
+        const val WORKSPACE = 0
+        const val HOTSEAT = 1
     }
 
     init {
+        val a = context.obtainStyledAttributes(attrs, R.styleable.CellLayout, defStyleAttr, 0)
+        mContainerType = a.getInteger(R.styleable.CellLayout_containerType, CellLayout.WORKSPACE)
+        a.recycle()
+
         setWillNotDraw(false)
         clipToPadding = false
 
@@ -220,7 +236,27 @@ open class CellLayout @JvmOverloads constructor(
         Log.d(TAG, "onViewAdded() called with: child = $child")
     }
 
-    fun addViewToCellLayout(child: View, index: Int, childId: Int, params: LayoutParams) {
+    fun addViewToCellLayout(child: View, index: Int, childId: Int, params: LayoutParams, markCells: Boolean): Boolean {
+        val lp: LayoutParams = params
+
+        // Hotseat icons - remove text
+        if (child is IconTextView) {
+            val bubbleChild: IconTextView = child
+            bubbleChild.setTextVisibility(mContainerType != HOTSEAT)
+        }
+
+        child.scaleX = 1f
+        child.scaleY = 1f
+
+        // Generate an id for each view, this assumes we have at most 256x256 cells
+        // per workspace screen
+        if (index >= 0 && index <= mCountX * mCountY - 1) {
+            addView(child, index, lp)
+
+            //if (markCells) markCellsAsOccupiedForView(child)
+            return true
+        }
+        return false
     }
 
     open fun setDropPending(pending: Boolean) {
@@ -444,7 +480,7 @@ open class CellLayout @JvmOverloads constructor(
         pixelY: Int,
         result: IntArray?
     ): IntArray? {
-        return findNearestArea(pixelX, pixelY, true, result, null)
+        return findNearestArea(pixelX, pixelY, false, result, null)
     }
 
     /**
@@ -622,8 +658,14 @@ open class CellLayout @JvmOverloads constructor(
      * nearest the requested location.
      */
     open fun findNearestVacantArea(
-        pixelX: Int, pixelY: Int, minSpanX: Int, minSpanY: Int, spanX: Int,
-        spanY: Int, result: IntArray?, resultSpan: IntArray?
+        pixelX: Int,
+        pixelY: Int,
+        minSpanX: Int,
+        minSpanY: Int,
+        spanX: Int,
+        spanY: Int,
+        result: IntArray?,
+        resultSpan: IntArray?
     ): IntArray? {
         return findNearestArea(
             pixelX, pixelY, true,
