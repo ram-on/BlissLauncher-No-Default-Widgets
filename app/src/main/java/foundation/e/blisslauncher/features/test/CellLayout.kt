@@ -209,7 +209,7 @@ open class CellLayout @JvmOverloads constructor(
         )
     }
 
-    private fun measureChild(child: View) {
+    fun measureChild(child: View) {
         val lp = child.layoutParams as LayoutParams
         lp.rowSpec = spec(UNDEFINED)
         lp.columnSpec = spec(UNDEFINED)

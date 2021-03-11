@@ -33,10 +33,13 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.animation.Interpolator;
+import android.widget.GridLayout;
+import android.widget.TextView;
 
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.customviews.LauncherPagedView;
 import foundation.e.blisslauncher.features.test.BaseDragLayer;
+import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.TouchController;
 import foundation.e.blisslauncher.features.test.anim.Interpolators;
@@ -196,26 +199,25 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
         );
     }
 
-    public void animateViewIntoPosition(View dragView, final View child, View anchorView) {
+    public void animateViewIntoPosition(DragView dragView, final View child, View anchorView) {
         animateViewIntoPosition(dragView, child, -1, anchorView);
     }
 
     public void animateViewIntoPosition(
-        View dragView, final View child, int duration,
+        DragView dragView, final View child, int duration,
         View anchorView
     ) {
-
-        /*ShortcutAndWidgetContainer parentChildren = (ShortcutAndWidgetContainer) child.getParent();
-        CellLayout.LayoutParams lp = (CellLayout.LayoutParams) child.getLayoutParams();
-        parentChildren.measureChild(child);
+        CellLayout cellLayout = (CellLayout) child.getParent();
+        GridLayout.LayoutParams lp = (GridLayout.LayoutParams) child.getLayoutParams();
+        cellLayout.measureChild(child);
 
         Rect r = new Rect();
         getViewRectRelativeToSelf(dragView, r);
 
         int coord[] = new int[2];
         float childScale = child.getScaleX();
-        coord[0] = lp.x + (int) (child.getMeasuredWidth() * (1 - childScale) / 2);
-        coord[1] = lp.y + (int) (child.getMeasuredHeight() * (1 - childScale) / 2);
+        coord[0] = (int) (child.getX() + (int) (child.getMeasuredWidth() * (1 - childScale) / 2));
+        coord[1] = (int) (child.getY() + (int) (child.getMeasuredHeight() * (1 - childScale) / 2));
 
         // Since the child hasn't necessarily been laid out, we force the lp to be updated with
         // the correct coordinates (above) and use these to determine the final location
@@ -242,14 +244,14 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
             }
 
             toX -= (dragView.getMeasuredWidth() - Math.round(scale * child.getMeasuredWidth())) / 2;
-        } else if (child instanceof FolderIcon) {
+        } /*else if (child instanceof FolderIcon) {
             // Account for holographic blur padding on the drag view
             toY += Math.round(scale * (child.getPaddingTop() - dragView.getDragRegionTop()));
             toY -= scale * dragView.getBlurSizeOutline() / 2;
             toY -= (1 - scale) * dragView.getMeasuredHeight() / 2;
             // Center in the x coordinate about the target's drawable
             toX -= (dragView.getMeasuredWidth() - Math.round(scale * child.getMeasuredWidth())) / 2;
-        } else {
+        } */else {
             toY -= (Math.round(scale * (dragView.getHeight() - child.getMeasuredHeight()))) / 2;
             toX -= (Math.round(scale * (dragView.getMeasuredWidth()
                 - child.getMeasuredWidth()))) / 2;
@@ -261,7 +263,7 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
         Runnable onCompleteRunnable = () -> child.setVisibility(VISIBLE);
         animateViewIntoPosition(dragView, fromX, fromY, toX, toY, 1, 1, 1, toScale, toScale,
             onCompleteRunnable, ANIMATION_END_DISAPPEAR, duration, anchorView
-        );*/
+        );
     }
 
     public void animateViewIntoPosition(
