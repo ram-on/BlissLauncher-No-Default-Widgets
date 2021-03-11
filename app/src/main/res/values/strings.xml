@@ -177,4 +177,9 @@
     <string name="uninstall_shortcut_dialog">Do you want to uninstall this shortcut?</string>
     <string name="ok">ok</string>
     <string name="safemode_shortcut_error">Downloaded app disabled in safe mode</string>
+
+    <!-- Error message when user has filled a home screen -->
+    <string name="out_of_space">No more room on this Home screen.</string>
+    <!-- Error message when user has filled the hotseat -->
+    <string name="hotseat_out_of_space">No more room in the Favorites tray</string>
 </resources>

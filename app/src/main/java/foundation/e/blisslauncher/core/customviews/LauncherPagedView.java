@@ -7,6 +7,8 @@ import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.annotation.SuppressLint;
 import android.app.WallpaperManager;
+import android.appwidget.AppWidgetHostView;
+import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
@@ -21,6 +23,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowInsets;
 import android.widget.GridLayout;
+import android.widget.Toast;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -870,7 +873,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 }
             }*/
         }
-
     }
 
     @Override
@@ -963,13 +965,224 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     @Override
-    public void onDrop(
-        DragObject dragObject, DragOptions options
-    ) {
+    public void onDrop(DragObject d, DragOptions options) {
         Log.d(
             TAG,
-            "onDrop() called with: dragObject = [" + dragObject + "], options = [" + options + "]"
+            "onDrop() called with: dragObject = [" + d + "], options = [" + options + "]"
         );
+        mDragViewVisualCenter = d.getVisualCenter(mDragViewVisualCenter);
+        CellLayout dropTargetLayout = mDropToLayout;
+
+        // We want the point to be mapped to the dragTarget.
+        if (dropTargetLayout != null) {
+            if (mLauncher.isHotseatLayout(dropTargetLayout)) {
+                mapPointFromSelfToHotseatLayout(mLauncher.getHotseat(), mDragViewVisualCenter);
+            } else {
+                mapPointFromSelfToChild(dropTargetLayout, mDragViewVisualCenter);
+            }
+        }
+
+        boolean droppedOnOriginalCell = false;
+
+        int snapScreen = -1;
+        boolean resizeOnDrop = false;
+        if (d.dragSource != this || mDragInfo == null) {
+            final int[] touchXY = new int[]{(int) mDragViewVisualCenter[0],
+                (int) mDragViewVisualCenter[1]};
+            onDropExternal(touchXY, dropTargetLayout, d);
+        } else {
+            final View cell = mDragInfo.cell;
+            boolean droppedOnOriginalCellDuringTransition = false;
+            Runnable onCompleteRunnable = null;
+
+            if (dropTargetLayout != null && !d.cancelled) {
+                // Move internally
+                boolean hasMovedLayouts = (getParentCellLayoutForView(cell) != dropTargetLayout);
+                boolean hasMovedIntoHotseat = mLauncher.isHotseatLayout(dropTargetLayout);
+                long container = hasMovedIntoHotseat ?
+                    LauncherSettings.Favorites.CONTAINER_HOTSEAT :
+                    LauncherSettings.Favorites.CONTAINER_DESKTOP;
+                long screenId = (mTargetCell[0] < 0) ?
+                    mDragInfo.screenId : getIdForScreen(dropTargetLayout);
+                int spanX = mDragInfo != null ? mDragInfo.spanX : 1;
+                int spanY = mDragInfo != null ? mDragInfo.spanY : 1;
+                // First we find the cell nearest to point at which the item is
+                // dropped, without any consideration to whether there is an item there.
+
+                mTargetCell = findNearestArea((int) mDragViewVisualCenter[0], (int)
+                    mDragViewVisualCenter[1], spanX, spanY, dropTargetLayout, mTargetCell);
+                float distance = dropTargetLayout.getDistanceFromCell(mDragViewVisualCenter[0],
+                    mDragViewVisualCenter[1], mTargetCell
+                );
+
+                // If the item being dropped is a shortcut and the nearest drop
+                // cell also contains a shortcut, then create a folder with the two shortcuts.
+                if (createUserFolderIfNecessary(cell, container,
+                    dropTargetLayout, mTargetCell, distance, false, d.dragView
+                ) ||
+                    addToExistingFolderIfNecessary(cell, dropTargetLayout, mTargetCell,
+                        distance, d, false
+                    )) {
+                    mLauncher.getStateManager().goToState(NORMAL, SPRING_LOADED_EXIT_DELAY);
+                    return;
+                }
+
+                // Aside from the special case where we're dropping a shortcut onto a shortcut,
+                // we need to find the nearest cell location that is vacant
+                ItemInfo item = d.dragInfo;
+                int minSpanX = item.spanX;
+                int minSpanY = item.spanY;
+                if (item.minSpanX > 0 && item.minSpanY > 0) {
+                    minSpanX = item.minSpanX;
+                    minSpanY = item.minSpanY;
+                }
+
+                droppedOnOriginalCell = item.screenId == screenId && item.container == container
+                    && item.cellX == mTargetCell[0] && item.cellY == mTargetCell[1];
+                droppedOnOriginalCellDuringTransition = droppedOnOriginalCell && mIsSwitchingState;
+
+                // When quickly moving an item, a user may accidentally rearrange their
+                // workspace. So instead we move the icon back safely to its original position.
+                boolean returnToOriginalCellToPreventShuffling = !isFinishedSwitchingState()
+                    && !droppedOnOriginalCellDuringTransition && !dropTargetLayout
+                    .isRegionVacant(mTargetCell[0], mTargetCell[1], spanX, spanY);
+                int[] resultSpan = new int[2];
+                if (returnToOriginalCellToPreventShuffling) {
+                    mTargetCell[0] = mTargetCell[1] = -1;
+                } else {
+                    mTargetCell = dropTargetLayout.performReorder((int) mDragViewVisualCenter[0],
+                        (int) mDragViewVisualCenter[1], minSpanX, minSpanY, spanX, spanY, cell,
+                        mTargetCell, resultSpan, CellLayout.MODE_ON_DROP
+                    );
+                }
+
+                boolean foundCell = mTargetCell[0] >= 0 && mTargetCell[1] >= 0;
+
+                // if the widget resizes on drop
+                if (foundCell && (cell instanceof AppWidgetHostView) &&
+                    (resultSpan[0] != item.spanX || resultSpan[1] != item.spanY)) {
+                    resizeOnDrop = true;
+                    item.spanX = resultSpan[0];
+                    item.spanY = resultSpan[1];
+                    AppWidgetHostView awhv = (AppWidgetHostView) cell;
+                    AppWidgetResizeFrame.updateWidgetSizeRanges(awhv, mLauncher, resultSpan[0],
+                        resultSpan[1]
+                    );
+                }
+
+                if (foundCell) {
+                    if (getScreenIdForPageIndex(mCurrentPage) != screenId && !hasMovedIntoHotseat) {
+                        snapScreen = getPageIndexForScreenId(screenId);
+                        snapToPage(snapScreen);
+                    }
+
+                    final ItemInfo info = (ItemInfo) cell.getTag();
+                    if (hasMovedLayouts) {
+                        // Reparent the view
+                        CellLayout parentCell = getParentCellLayoutForView(cell);
+                        if (parentCell != null) {
+                            parentCell.removeView(cell);
+                        } else if (FeatureFlags.IS_DOGFOOD_BUILD) {
+                            throw new NullPointerException("mDragInfo.cell has null parent");
+                        }
+                        addInScreen(cell, container, screenId, mTargetCell[0], mTargetCell[1],
+                            info.spanX, info.spanY
+                        );
+                    }
+
+                    // update the item's position after drop
+                    CellLayout.LayoutParams lp = (CellLayout.LayoutParams) cell.getLayoutParams();
+                    lp.cellX = lp.tmpCellX = mTargetCell[0];
+                    lp.cellY = lp.tmpCellY = mTargetCell[1];
+                    lp.cellHSpan = item.spanX;
+                    lp.cellVSpan = item.spanY;
+                    lp.isLockedToGrid = true;
+
+                    if (container != LauncherSettings.Favorites.CONTAINER_HOTSEAT &&
+                        cell instanceof LauncherAppWidgetHostView) {
+                        final CellLayout cellLayout = dropTargetLayout;
+                        // We post this call so that the widget has a chance to be placed
+                        // in its final location
+
+                        final LauncherAppWidgetHostView hostView = (LauncherAppWidgetHostView) cell;
+                        AppWidgetProviderInfo pInfo = hostView.getAppWidgetInfo();
+                        if (pInfo != null && pInfo.resizeMode != AppWidgetProviderInfo.RESIZE_NONE
+                            && !d.accessibleDrag) {
+                            onCompleteRunnable = new Runnable() {
+                                public void run() {
+                                    if (!isPageInTransition()) {
+                                        AppWidgetResizeFrame.showForWidget(hostView, cellLayout);
+                                    }
+                                }
+                            };
+                        }
+                    }
+
+                    mLauncher.getModelWriter().modifyItemInDatabase(info, container, screenId,
+                        lp.cellX, lp.cellY, item.spanX, item.spanY
+                    );
+                } else {
+                    if (!returnToOriginalCellToPreventShuffling) {
+                        onNoCellFound(dropTargetLayout);
+                    }
+
+                    // If we can't find a drop location, we return the item to its original position
+                    CellLayout.LayoutParams lp = (CellLayout.LayoutParams) cell.getLayoutParams();
+                    mTargetCell[0] = lp.cellX;
+                    mTargetCell[1] = lp.cellY;
+                    CellLayout layout = (CellLayout) cell.getParent().getParent();
+                    layout.markCellsAsOccupiedForView(cell);
+                }
+            }
+
+            final CellLayout parent = (CellLayout) cell.getParent().getParent();
+            if (d.dragView.hasDrawn()) {
+                if (droppedOnOriginalCellDuringTransition) {
+                    // Animate the item to its original position, while simultaneously exiting
+                    // spring-loaded mode so the page meets the icon where it was picked up.
+                    mLauncher.getDragController().animateDragViewToOriginalPosition(
+                        onCompleteRunnable, cell, SPRING_LOADED_TRANSITION_MS);
+                    mLauncher.getStateManager().goToState(NORMAL);
+                    mLauncher.getDropTargetBar().onDragEnd();
+                    parent.onDropChild(cell);
+                    return;
+                }
+                final ItemInfo info = (ItemInfo) cell.getTag();
+                boolean isWidget = info.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPWIDGET
+                    || info.itemType == LauncherSettings.Favorites.ITEM_TYPE_CUSTOM_APPWIDGET;
+                if (isWidget) {
+                    int animationType = resizeOnDrop ? ANIMATE_INTO_POSITION_AND_RESIZE :
+                        ANIMATE_INTO_POSITION_AND_DISAPPEAR;
+                    animateWidgetDrop(info, parent, d.dragView, null, animationType, cell, false);
+                } else {
+                    int duration = snapScreen < 0 ? -1 : ADJACENT_SCREEN_DROP_DURATION;
+                    mLauncher.getDragLayer().animateViewIntoPosition(d.dragView, cell, duration,
+                        this
+                    );
+                }
+            } else {
+                d.deferDragViewCleanupPostAnimation = false;
+                cell.setVisibility(VISIBLE);
+            }
+            parent.onDropChild(cell);
+
+            mLauncher.getStateManager().goToState(
+                NORMAL, SPRING_LOADED_EXIT_DELAY, onCompleteRunnable);
+        }
+    }
+
+    public void onNoCellFound(View dropTargetLayout) {
+        if (mLauncher.isHotseatLayout(dropTargetLayout)) {
+            Hotseat hotseat = mLauncher.getHotseat();
+            showOutOfSpaceMessage(true);
+        } else {
+            showOutOfSpaceMessage(false);
+        }
+    }
+
+    private void showOutOfSpaceMessage(boolean isHotseatLayout) {
+        int strId = (isHotseatLayout ? R.string.hotseat_out_of_space : R.string.out_of_space);
+        Toast.makeText(mLauncher, mLauncher.getString(strId), Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -985,7 +1198,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     /**
      * Updates {@link #mDragTargetLayout} and {@link #mDragOverlappingLayout}
      * based on the DragObject's position.
-     *
+     * <p>
      * The layout will be:
      * - The Hotseat if the drag object is over it
      * - A side page if we are in spring-loaded mode and the drag object is over it
@@ -1119,7 +1332,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     /**
      * Returns the child CellLayout if the point is inside the page coordinates, null otherwise.
      */
-    private CellLayout verifyInsidePage(int pageNo, float[] touchXy)  {
+    private CellLayout verifyInsidePage(int pageNo, float[] touchXy) {
         if (pageNo >= 0 && pageNo < getPageCount()) {
             CellLayout cl = (CellLayout) getChildAt(pageNo);
             mapPointFromSelfToChild(cl, touchXy);
@@ -1141,6 +1354,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         xy[0] = xy[0] - v.getLeft();
         xy[1] = xy[1] - v.getTop();
     }
+
     boolean isPointInSelfOverHotseat(int x, int y) {
         mTempXY[0] = x;
         mTempXY[1] = y;
@@ -1185,6 +1399,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         // Handle the drag over
         if (mDragTargetLayout != null) {
+            Log.d(TAG, "Here");
             // We want the point to be mapped to the dragTarget.
             if (mLauncher.isHotseatLayout(mDragTargetLayout)) {
                 mapPointFromSelfToHotseatLayout(mLauncher.getHotseat(), mDragViewVisualCenter);
@@ -1194,7 +1409,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
             mTargetCell = findNearestArea((int) mDragViewVisualCenter[0],
                 (int) mDragViewVisualCenter[1],
-                mDragTargetLayout, mTargetCell);
+                mDragTargetLayout, mTargetCell
+            );
             int reorderX = mTargetCell[0];
             int reorderY = mTargetCell[1];
 
@@ -1207,15 +1423,28 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             //manageFolderFeedback(mDragTargetLayout, mTargetCell, targetCellDistance, d);
 
             boolean nearestDropOccupied = mDragTargetLayout.isNearestDropLocationOccupied((int)
-                    mDragViewVisualCenter[0], (int) mDragViewVisualCenter[1], child, mTargetCell);
+                mDragViewVisualCenter[0], (int) mDragViewVisualCenter[1], child, mTargetCell);
+
+            Log.d(
+                TAG,
+                "Reorder [" + mLastReorderX + ", " + mLastReorderY + "] [" + reorderX + ", " + reorderY + "] "
+            );
+            Log.d(
+                TAG,
+                "Reorder " + mDragMode + " " + mReorderAlarm.alarmPending()
+            );
 
             if (!nearestDropOccupied) {
                 mDragTargetLayout.visualizeDropLocation(child, mOutlineProvider,
-                    mTargetCell[0], mTargetCell[1], false, d);
+                    mTargetCell[0], mTargetCell[1], false, d
+                );
             } else if ((mDragMode == DRAG_MODE_NONE || mDragMode == DRAG_MODE_REORDER)
-                && !mReorderAlarm.alarmPending() && (mLastReorderX != reorderX ||
+                && (mLastReorderX != reorderX ||
                 mLastReorderY != reorderY)) {
-
+                Log.d(
+                    TAG,
+                    "Reorder  Setting reorder now"
+                );
                 int[] resultSpan = new int[2];
                 /*mDragTargetLayout.performReorder((int) mDragViewVisualCenter[0],
                     (int) mDragViewVisualCenter[1], 1, 1, 1, 1,
@@ -1223,7 +1452,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
                 // Otherwise, if we aren't adding to or creating a folder and there's no pending
                 // reorder, then we schedule a reorder
-                ReorderAlarmListener listener = new ReorderAlarmListener(mDragViewVisualCenter, d, child);
+                ReorderAlarmListener listener =
+                    new ReorderAlarmListener(mDragViewVisualCenter, d, child);
                 mReorderAlarm.setOnAlarmListener(listener);
                 mReorderAlarm.setAlarm(REORDER_TIMEOUT);
             }
@@ -1239,7 +1469,20 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void onDragExit(DragObject dragObject) {
-        Log.d(TAG, "onDragExit() called with: dragObject = [" + dragObject + "]");
+        // Here we store the final page that will be dropped to, if the workspace in fact
+        // receives the drop
+        mDropToLayout = mDragTargetLayout;
+        if (mDragMode == DRAG_MODE_CREATE_FOLDER) {
+            mCreateUserFolderOnDrop = true;
+        } else if (mDragMode == DRAG_MODE_ADD_TO_FOLDER) {
+            mAddToExistingFolderOnDrop = true;
+        }
+
+        // Reset the previous drag target
+        setCurrentDropLayout(null);
+        setCurrentDragOverlappingLayout(null);
+
+        mSpringLoadedDragController.cancel();
     }
 
     @Override
@@ -1273,14 +1516,20 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     public void beginDragShared(View child, DragSource source, DragOptions options) {
         Object dragObject = child.getTag();
-        if(!(dragObject instanceof LauncherItem)) {
+        if (!(dragObject instanceof LauncherItem)) {
             String msg = "Drag started with a view that has no tag set. This "
                 + "will cause a crash (issue 11627249) down the line. "
                 + "View: " + child + "  tag: " + child.getTag();
             throw new IllegalStateException(msg);
         }
 
-        beginDragShared(child, source, (LauncherItem) dragObject, new DragPreviewProvider(child), options);
+        beginDragShared(
+            child,
+            source,
+            (LauncherItem) dragObject,
+            new DragPreviewProvider(child),
+            options
+        );
     }
 
     private DragView beginDragShared(
@@ -1291,7 +1540,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         DragOptions dragOptions
     ) {
         float iconScale = 1f;
-        if (child instanceof  IconTextView) {
+        if (child instanceof IconTextView) {
             Drawable icon = ((IconTextView) child).getIcon();
         }
 
@@ -1312,11 +1561,11 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         Rect dragRect = null;
         if (child instanceof IconTextView) {
             dragRect =
-            ((IconTextView) child).getIconBounds();
+                ((IconTextView) child).getIconBounds();
             dragLayerY += dragRect.top;
             // Note: The dragRect is used to calculate drag layer offsets, but the
             // dragVisualizeOffset in addition to the dragRect (the size) to position the outline.
-            dragVisualizeOffset = new Point(- halfPadding, halfPadding);
+            dragVisualizeOffset = new Point(-halfPadding, halfPadding);
         }
 
         // Clear the pressed state if necessary
@@ -1330,19 +1579,20 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
 
         DragView dv = mDragController.startDrag(b, dragLayerX, dragLayerY, source,
-            dragObject, dragVisualizeOffset, dragRect, scale * iconScale, scale, dragOptions);
+            dragObject, dragVisualizeOffset, dragRect, scale * iconScale, scale, dragOptions
+        );
         dv.setIntrinsicIconScaleFactor(dragOptions.intrinsicIconScaleFactor);
         return dv;
     }
 
     /**
      * Calculate the nearest cell where the given object would be dropped.
-     *
+     * <p>
      * pixelX and pixelY should be in the coordinate system of layout
      */
     int[] findNearestArea(int pixelX, int pixelY, CellLayout layout, int[] recycle) {
         return layout.findNearestArea(
-            pixelX, pixelY,recycle);
+            pixelX, pixelY, recycle);
     }
 
     class ReorderAlarmListener implements OnAlarmListener {
@@ -1357,17 +1607,20 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
 
         public void onAlarm(Alarm alarm) {
+            Log.d(TAG, "onAlarm() called with: alarm = [" + alarm + "]");
             int[] resultSpan = new int[2];
             mTargetCell = findNearestArea((int) mDragViewVisualCenter[0],
-                (int) mDragViewVisualCenter[1],mDragTargetLayout,
-                mTargetCell);
+                (int) mDragViewVisualCenter[1], mDragTargetLayout,
+                mTargetCell
+            );
             mLastReorderX = mTargetCell[0];
             mLastReorderY = mTargetCell[1];
 
             mTargetCell = mDragTargetLayout.performReorder((int) mDragViewVisualCenter[0],
                 (int) mDragViewVisualCenter[1], 1, 1, 1, 1,
-                child, mTargetCell, resultSpan, CellLayout.MODE_DRAG_OVER);
-            Log.d(TAG, "Reorder "+ Arrays.toString(mTargetCell));
+                child, mTargetCell, resultSpan, CellLayout.MODE_DRAG_OVER
+            );
+            Log.d(TAG, "Reorder " + Arrays.toString(mTargetCell));
 
             if (mTargetCell[0] < 0 || mTargetCell[1] < 0) {
                 mDragTargetLayout.revertTempState();
@@ -1375,8 +1628,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 setDragMode(DRAG_MODE_REORDER);
             }
             mDragTargetLayout.visualizeDropLocation(child, mOutlineProvider,
-                mTargetCell[0], mTargetCell[1], false, dragObject);
+                mTargetCell[0], mTargetCell[1], false, dragObject
+            );
         }
     }
-
 }

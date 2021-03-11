@@ -15,6 +15,7 @@ import android.util.ArrayMap
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.GridLayout
 import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.database.model.LauncherItem
@@ -35,6 +36,7 @@ open class CellLayout @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : GridLayout(context, attrs, defStyleAttr) {
 
+    private var mItemPlacementDirty: Boolean = false
     private var mIsDragOverlapping: Boolean = false
 
     // When a drag operation is in progress, holds the nearest cell to the touch point
@@ -267,6 +269,24 @@ open class CellLayout @JvmOverloads constructor(
     }
 
     fun revertTempState() {
+/*        completeAndClearReorderPreviewAnimations()
+        if (isItemPlacementDirty()) {
+            val count: Int = getChildCount()
+            for (i in 0 until count) {
+                val child: View = getChildAt(i)
+                val lp: com.android.launcher3.CellLayout.LayoutParams =
+                    child.layoutParams as com.android.launcher3.CellLayout.LayoutParams
+                if (lp.tmpCellX != lp.cellX || lp.tmpCellY != lp.cellY) {
+                    lp.tmpCellX = lp.cellX
+                    lp.tmpCellY = lp.cellY
+                    animateChildToPosition(
+                        child, lp.cellX, lp.cellY, CellLayout.REORDER_ANIMATION_DURATION,
+                        0, false, false
+                    )
+                }
+            }
+            setItemPlacementDirty(false)
+        }*/
     }
 
     /**
@@ -424,7 +444,7 @@ open class CellLayout @JvmOverloads constructor(
         pixelY: Int,
         result: IntArray?
     ): IntArray? {
-        return findNearestArea(pixelX, pixelY, false, result, null)
+        return findNearestArea(pixelX, pixelY, true, result, null)
     }
 
     /**
@@ -638,98 +658,47 @@ open class CellLayout @JvmOverloads constructor(
         resultSpan: IntArray?,
         mode: Int
     ): IntArray? {
-        Log.d(
-            TAG,
-            "performReorder() called with: pixelX = $pixelX, pixelY = $pixelY, minSpanX = $minSpanX, minSpanY = $minSpanY, spanX = $spanX, spanY = $spanY, dragView = $dragView, result = $result, resultSpan = $resultSpan, mode = $mode"
-        )
+
         // First we determine if things have moved enough to cause a different layout
         var result = result
         var resultSpan = resultSpan
         result = findNearestArea(pixelX, pixelY, result)
+        Log.d(
+            TAG,
+            "performReorder() called with: resultX = ${result!![0]} ${result!![1]} mode = $mode"
+        )
         if (resultSpan == null) {
             resultSpan = IntArray(2)
         }
 
-        // Find a solution involving pushing / displacing any items in the way
-        val swapSolution: ItemConfiguration = findReorderSolution(
-            pixelX,
-            pixelY,
-            minSpanX,
-            minSpanY,
-            spanX,
-            spanY,
-            dragView,
-            true,
-            ItemConfiguration()
-        )
+        resultSpan[0] = 1
+        resultSpan[1] = 1
 
-        // We attempt the approach which doesn't shuffle views at all
-        val noShuffleSolution: ItemConfiguration =
-            findConfigurationNoShuffle(
-                pixelX,
-                pixelY,
-                minSpanX,
-                minSpanY,
-                spanX,
-                spanY,
-                dragView,
-                ItemConfiguration()
-            )
-        var finalSolution: ItemConfiguration? = null
-
-        // If the reorder solution requires resizing (shrinking) the item being dropped, we instead
-        // favor a solution in which the item is not resized, but
-        if (swapSolution.isSolution && swapSolution.area() >= noShuffleSolution.area()) {
-            finalSolution = swapSolution
-        } else if (noShuffleSolution.isSolution) {
-            finalSolution = noShuffleSolution
-        }
-
-        var foundSolution = true
-        // May consider later
-        /*if (!CellLayout.DESTRUCTIVE_REORDER) {
-            setUseTempCoords(true)
-        }*/
-        if (finalSolution != null) {
-            result!![0] = finalSolution.cellX
-            result!![1] = finalSolution.cellY
-            resultSpan[0] = 1
-            resultSpan[1] = 1
-
-            // If we're just testing for a possible location (MODE_ACCEPT_DROP), we don't bother
-            // committing anything or animating anything as we just want to determine if a solution
-            // exists
-            if (mode == MODE_DRAG_OVER || mode == MODE_ON_DROP || mode == MODE_ON_DROP_EXTERNAL) {
-                if (!CellLayout.DESTRUCTIVE_REORDER) {
-                    copySolutionToTempState(finalSolution, dragView)
-                }
-                setItemPlacementDirty(true)
-                animateItemsToSolution(finalSolution, dragView, mode == MODE_ON_DROP)
-                if (!CellLayout.DESTRUCTIVE_REORDER &&
-                    (mode == MODE_ON_DROP || mode == MODE_ON_DROP_EXTERNAL)
-                ) {
-                    commitTempPlacement()
-                    completeAndClearReorderPreviewAnimations()
-                    setItemPlacementDirty(false)
-                } else {
-                    beginOrAdjustReorderPreviewAnimations(
-                        finalSolution,
-                        dragView,
-                        CellLayout.REORDER_ANIMATION_DURATION,
-                        ReorderPreviewAnimation.MODE_PREVIEW
-                    )
-                }
-            }
-        } else {
-            foundSolution = false
-            resultSpan[1] = -1
-            resultSpan[0] = resultSpan[1]
-            result!![1] = resultSpan[0]
-            result!![0] = result!![1]
+        // If we're just testing for a possible location (MODE_ACCEPT_DROP), we don't bother
+        // committing anything or animating anything as we just want to determine if a solution
+        // exists
+        if (mode == MODE_DRAG_OVER || mode == MODE_ON_DROP || mode == MODE_ON_DROP_EXTERNAL) {
+            /*copySolutionToTempState(finalSolution, dragView)
+            setItemPlacementDirty(true)
+            animateItemsToSolution(finalSolution, dragView!!, mode == MODE_ON_DROP)
+            if ((mode == MODE_ON_DROP || mode == MODE_ON_DROP_EXTERNAL)) {
+                commitTempPlacement()
+                completeAndClearReorderPreviewAnimations()
+                setItemPlacementDirty(false)
+            } else {
+                beginOrAdjustReorderPreviewAnimations(
+                    finalSolution,
+                    dragView!!,
+                    CellLayout.REORDER_ANIMATION_DURATION,
+                    ReorderPreviewAnimation.MODE_PREVIEW
+                )
+            }*/
+            Log.d(TAG, "Add view")
+            //(dragView!!.parent as ViewGroup).removeView(dragView)
         }
 
         // May consider this later.
-        /*if ((mode == MODE_ON_DROP || !foundSolution) && !CellLayout.DESTRUCTIVE_REORDER) {
+        /*if ((mode == MODE_ON_DROP || !foundSolution)) {
             setUseTempCoords(false)
         }*/
         requestLayout()
@@ -779,6 +748,14 @@ open class CellLayout @JvmOverloads constructor(
         }*/
     }
 
+    open fun setItemPlacementDirty(dirty: Boolean) {
+        mItemPlacementDirty = dirty
+    }
+
+    open fun isItemPlacementDirty(): Boolean {
+        return mItemPlacementDirty
+    }
+
     private class ItemConfiguration : CellAndSpan() {
         val map = ArrayMap<View, CellAndSpan>()
         private val savedMap = ArrayMap<View, CellAndSpan>()
@@ -822,6 +799,101 @@ open class CellLayout @JvmOverloads constructor(
             }
         }
     }
+
+    // TODO: Add animation once drag and drop is done.
+/*    private fun animateItemsToSolution(
+        solution: ItemConfiguration,
+        dragView: View,
+        commitDragView: Boolean
+    ) {
+        val occupied = mOccupied
+        occupied.clear()
+        val childCount: Int = childCount
+        for (i in 0 until childCount) {
+            val child: View = getChildAt(i)
+            if (child === dragView) continue
+            val c = solution.map[child]
+            if (c != null) {
+                animateChildToPosition(
+                    child, c.cellX, c.cellY, CellLayout.REORDER_ANIMATION_DURATION, 0,
+                    CellLayout.DESTRUCTIVE_REORDER, false
+                )
+                occupied.markCells(c, true)
+            }
+        }
+        if (commitDragView) {
+            occupied.markCells(solution, true)
+        }
+    }*/
+
+    // TODO: Add animation once drag and drop is done.
+    /*open fun animateChildToPosition(
+        child: View, cellX: Int, cellY: Int, duration: Int,
+        delay: Int, permanent: Boolean, adjustOccupied: Boolean
+    ): Boolean {
+        val index = indexOfChild(child)
+        if (index != -1) {
+            val lp: LayoutParams =
+                child.layoutParams as GridLayout.LayoutParams
+            val info: LauncherItem = child.tag as LauncherItem
+
+            val oldX: Int = lp.x
+            val oldY: Int = lp.y
+            lp.isLockedToGrid = true
+            if (permanent) {
+                info.cellX = cellX
+                lp.cellX = info.cellX
+                info.cellY = cellY
+                lp.cellY = info.cellY
+            } else {
+                lp.tmpCellX = cellX
+                lp.tmpCellY = cellY
+            }
+            clc.setupLp(child)
+            lp.isLockedToGrid = false
+            val newX: Int = lp.x
+            val newY: Int = lp.y
+            lp.x = oldX
+            lp.y = oldY
+
+            // Exit early if we're not actually moving the view
+            if (oldX == newX && oldY == newY) {
+                lp.isLockedToGrid = true
+                return true
+            }
+            val va: ValueAnimator = LauncherAnimUtils.ofFloat(0f, 1f)
+            va.duration = duration.toLong()
+            va.addUpdateListener { animation ->
+                val r = animation.animatedValue as Float
+                lp.x = ((1 - r) * oldX + r * newX).toInt()
+                lp.y = ((1 - r) * oldY + r * newY).toInt()
+                child.requestLayout()
+            }
+            va.addListener(object : AnimatorListenerAdapter() {
+                var cancelled = false
+                override fun onAnimationEnd(animation: Animator) {
+                    // If the animation was cancelled, it means that another animation
+                    // has interrupted this one, and we don't want to lock the item into
+                    // place just yet.
+                    if (!cancelled) {
+                        lp.isLockedToGrid = true
+                        child.requestLayout()
+                    }
+                    if (mReorderAnimators.containsKey(lp)) {
+                        mReorderAnimators.remove(lp)
+                    }
+                }
+
+                override fun onAnimationCancel(animation: Animator) {
+                    cancelled = true
+                }
+            })
+            va.startDelay = delay.toLong()
+            va.start()
+            return true
+        }
+        return false
+    }*/
 
     // This class stores info for two purposes:
     // 1. When dragging items (mDragInfo in Workspace), we store the View, its cellX & cellY,
