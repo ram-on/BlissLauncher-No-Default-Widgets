@@ -14,6 +14,7 @@ import android.util.ArrayMap
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.GridLayout
 import androidx.annotation.IntDef
 import foundation.e.blisslauncher.R
@@ -236,7 +237,13 @@ open class CellLayout @JvmOverloads constructor(
         Log.d(TAG, "onViewAdded() called with: child = $child")
     }
 
-    fun addViewToCellLayout(child: View, index: Int, childId: Int, params: LayoutParams, markCells: Boolean): Boolean {
+    fun addViewToCellLayout(
+        child: View,
+        index: Int,
+        childId: Int,
+        params: LayoutParams,
+        markCells: Boolean
+    ): Boolean {
         val lp: LayoutParams = params
 
         // Hotseat icons - remove text
@@ -248,9 +255,12 @@ open class CellLayout @JvmOverloads constructor(
         child.scaleX = 1f
         child.scaleY = 1f
 
+        Log.d(TAG, "Adding view at index: ")
+
         // Generate an id for each view, this assumes we have at most 256x256 cells
         // per workspace screen
         if (index >= 0 && index <= mCountX * mCountY - 1) {
+
             addView(child, index, lp)
 
             //if (markCells) markCellsAsOccupiedForView(child)
@@ -502,6 +512,7 @@ open class CellLayout @JvmOverloads constructor(
         result: IntArray?,
         resultSpan: IntArray?
     ): IntArray? {
+
         var pixelX = pixelX
         var pixelY = pixelY
         lazyInitTempRectStack()
@@ -716,10 +727,21 @@ open class CellLayout @JvmOverloads constructor(
         resultSpan[0] = 1
         resultSpan[1] = 1
 
+        // We don't need to find for nearest area when the grid is already totally occupied.
+
         // If we're just testing for a possible location (MODE_ACCEPT_DROP), we don't bother
         // committing anything or animating anything as we just want to determine if a solution
         // exists
         if (mode == MODE_DRAG_OVER || mode == MODE_ON_DROP || mode == MODE_ON_DROP_EXTERNAL) {
+            val parent = (dragView?.parent as ViewGroup)
+            parent.removeView(dragView)
+            if (childCount == mCountX * mCountY) {
+                return intArrayOf(-1, -1)
+            }
+
+            val index = result[1] * mCountX + result[0]
+            addView(dragView, index)
+
             /*copySolutionToTempState(finalSolution, dragView)
             setItemPlacementDirty(true)
             animateItemsToSolution(finalSolution, dragView!!, mode == MODE_ON_DROP)

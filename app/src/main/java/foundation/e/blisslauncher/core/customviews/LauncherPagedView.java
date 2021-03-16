@@ -1148,6 +1148,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
                 boolean foundCell = mTargetCell[0] >= 0 && mTargetCell[1] >= 0;
 
+                Log.d(TAG, "Found cell "+foundCell+" "+mTargetCell[0]+" "+mTargetCell[0]);
+
                 if (foundCell) {
                     if (getScreenIdForPageIndex(mCurrentPage) != screenId && !hasMovedIntoHotseat) {
                         snapScreen = getPageIndexForScreenId(screenId);
