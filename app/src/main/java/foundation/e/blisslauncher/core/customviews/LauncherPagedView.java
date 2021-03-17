@@ -718,7 +718,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             child,
             y * mLauncher.getDeviceProfile().getInv().getNumColumns() + x,
             childId,
-            ((GridLayout.LayoutParams) genericLp),
+            ((CellLayout.LayoutParams) genericLp),
             markCellsAsOccupied
         )) {
             // TODO: This branch occurs when the workspace is adding views

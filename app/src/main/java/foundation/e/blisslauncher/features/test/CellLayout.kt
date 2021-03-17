@@ -14,6 +14,7 @@ import android.util.ArrayMap
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
+import android.view.ViewDebug.ExportedProperty
 import android.view.ViewGroup
 import android.widget.GridLayout
 import androidx.annotation.IntDef
@@ -346,8 +347,9 @@ open class CellLayout @JvmOverloads constructor(
         if (child != null) {
             val lp: LayoutParams =
                 child.layoutParams as LayoutParams
+            lp.dropped = true
             child.requestLayout()
-            //markCellsAsOccupiedForView(child)
+            markCellsAsOccupiedForView(child)
         }
     }
 
@@ -733,8 +735,8 @@ open class CellLayout @JvmOverloads constructor(
         // committing anything or animating anything as we just want to determine if a solution
         // exists
         if (mode == MODE_DRAG_OVER || mode == MODE_ON_DROP || mode == MODE_ON_DROP_EXTERNAL) {
-            val parent = (dragView?.parent as ViewGroup)
-            parent.removeView(dragView)
+            val parent = (dragView?.parent as ViewGroup?)
+            parent?.removeView(dragView)
             if (childCount == mCountX * mCountY) {
                 return intArrayOf(-1, -1)
             }
@@ -979,6 +981,72 @@ open class CellLayout @JvmOverloads constructor(
             rank = info.cell
             screenId = info.screenId
             container = info.container
+        }
+    }
+
+    override fun generateLayoutParams(attrs: AttributeSet?): LayoutParams =
+        LayoutParams(context, attrs)
+
+    override fun checkLayoutParams(p: ViewGroup.LayoutParams?): Boolean =
+        p != null && p is LayoutParams
+
+    override fun generateLayoutParams(lp: ViewGroup.LayoutParams?): LayoutParams = LayoutParams(lp)
+
+    class LayoutParams : GridLayout.LayoutParams {
+
+        /**
+         * Rank of item in the grid based on x and y cell index.
+         */
+        var rank = 0
+
+        /**
+         * Temporary rank of the item in the grid during reorder.
+         */
+        var tmpRank = 0
+
+
+        /**
+         * Indicates that the temporary coordinates should be used to layout the items
+         */
+        var useTmpCoords = false
+
+        /**
+         * Indicates whether the item will set its x, y, width and height parameters freely,
+         * or whether these will be computed based on cellX, cellY, cellHSpan and cellVSpan.
+         */
+        var isLockedToGrid = true
+
+        /**
+         * Indicates whether this item can be reordered. Always true except in the case of the
+         * the AllApps button and QSB place holder.
+         */
+        var canReorder = true
+
+        // X coordinate of the view in the layout.
+        @ExportedProperty
+        var x = 0
+
+        // Y coordinate of the view in the layout.
+        @ExportedProperty
+        var y = 0
+        var dropped = false
+
+        constructor(c: Context?, attrs: AttributeSet?) : super(c, attrs)
+
+        constructor(source: ViewGroup.LayoutParams?) : super(source)
+
+        constructor(source: LayoutParams) : super(source) {
+            rank = source.rank
+        }
+
+        constructor(rank: Int) : super(
+            spec(UNDEFINED), spec(UNDEFINED)
+        ) {
+            this.rank = rank
+        }
+
+        override fun toString(): String {
+            return "(${this.rank})"
         }
     }
 }
