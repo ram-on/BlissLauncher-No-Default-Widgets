@@ -6,6 +6,7 @@ import android.animation.TimeInterpolator
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Point
@@ -14,7 +15,6 @@ import android.util.ArrayMap
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
-import android.view.ViewDebug.ExportedProperty
 import android.view.ViewGroup
 import android.widget.GridLayout
 import androidx.annotation.IntDef
@@ -59,6 +59,10 @@ open class CellLayout @JvmOverloads constructor(
     val mTmpPoint = IntArray(2)
     val mTempLocation = IntArray(2)
 
+    // These are temporary variables to prevent having to allocate a new object just to
+    // return an (x, y) value from helper functions. Do NOT use them to maintain other state.
+    private val mTmpCellXY = IntArray(2)
+
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(WORKSPACE, HOTSEAT)
     annotation class ContainerType
@@ -70,10 +74,11 @@ open class CellLayout @JvmOverloads constructor(
 
     private val launcher: TestActivity = TestActivity.getLauncher(context)
     private val dp = launcher.deviceProfile
-    val mCountX = dp.inv.numColumns
-    val mCountY = dp.inv.numRows
-    val mOccupied = GridOccupancy(mCountX, mCountY)
-    val mTmpOccupied = GridOccupancy(mCountX, mCountY)
+    var mCountX = dp.inv.numColumns
+    var mCountY = dp.inv.numRows
+
+    var mOccupied = GridOccupancy(mCountX, mCountY)
+    var mTmpOccupied = GridOccupancy(mCountX, mCountY)
 
     private val mIntersectingViews = ArrayList<View>()
 
@@ -94,6 +99,8 @@ open class CellLayout @JvmOverloads constructor(
 
     private var cellWidth: Int = 0
     private var cellHeight: Int = 0
+
+    val mReorderAnimators: ArrayMap<LayoutParams, Animator> = ArrayMap<LayoutParams, Animator>()
 
     companion object {
         const val MODE_SHOW_REORDER_HINT = 0
@@ -128,14 +135,9 @@ open class CellLayout @JvmOverloads constructor(
         // where the item will land. The outlines gradually fade out, leaving a trail
         // behind the drag path.
         // Set up all the animations that are used to implement this fading.
-
-        // When dragging things around the home screens, we show a green outline of
-        // where the item will land. The outlines gradually fade out, leaving a trail
-        // behind the drag path.
-        // Set up all the animations that are used to implement this fading.
-        val duration: Int = 900
+        val duration = 900
         val fromAlphaValue = 0f
-        val toAlphaValue = 128f as Float
+        val toAlphaValue = 128f
 
         Arrays.fill(mDragOutlineAlphas, fromAlphaValue)
 
@@ -211,15 +213,27 @@ open class CellLayout @JvmOverloads constructor(
         )
     }
 
+    open fun setGridSize(x: Int, y: Int) {
+        mCountX = x
+        mCountY = y
+        setColumnCount(x)
+        setRowCount(y)
+        mOccupied = GridOccupancy(mCountX, mCountY)
+        mTmpOccupied = GridOccupancy(mCountX, mCountY)
+        mTempRectStack.clear()
+        requestLayout()
+    }
+
     fun measureChild(child: View) {
+        Log.d(TAG, "measureChild() called with: child = $child")
         val lp = child.layoutParams as LayoutParams
         lp.rowSpec = spec(UNDEFINED)
         lp.columnSpec = spec(UNDEFINED)
         lp.width = cellWidth
         lp.height = getCellContentHeight()
+
         // Center the icon/folder
         val cHeight: Int = dp.cellHeightPx
-        Log.i("CellLayout", "Height: ${lp.height}, cellHeight: $cHeight")
         val cellPaddingY = 0f.coerceAtLeast((lp.height - cHeight) / 2f).toInt()
         var cellPaddingX: Int
         if (containerType == Constants.CONTAINER_DESKTOP) {
@@ -231,6 +245,33 @@ open class CellLayout @JvmOverloads constructor(
         val childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY)
         val childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY)
         child.measure(childWidthMeasureSpec, childHeightMeasureSpec)
+    }
+
+    override fun onDraw(canvas: Canvas?) {
+        val paint = mDragOutlinePaint
+        for (i in mDragOutlines.indices) {
+            val alpha = mDragOutlineAlphas[i]
+            if (alpha > 0) {
+                val b = mDragOutlineAnims[i]!!.tag as Bitmap
+                paint.alpha = (alpha + .5f).toInt()
+                canvas!!.drawBitmap(b, null, mDragOutlines[i]!!, paint)
+            }
+        }
+        super.onDraw(canvas)
+    }
+
+    override fun shouldDelayChildPressedState(): Boolean {
+        return false
+    }
+
+    override fun cancelLongPress() {
+        super.cancelLongPress()
+        // Cancel long press for all children
+        val count = childCount
+        for (i in 0 until count) {
+            val child = getChildAt(i)
+            child.cancelLongPress()
+        }
     }
 
     override fun onViewAdded(child: View?) {
@@ -262,12 +303,60 @@ open class CellLayout @JvmOverloads constructor(
         // per workspace screen
         if (index >= 0 && index <= mCountX * mCountY - 1) {
 
+            child.id = childId
             addView(child, index, lp)
 
-            //if (markCells) markCellsAsOccupiedForView(child)
+            if (markCells) markCellsAsOccupiedForView(child)
             return true
         }
         return false
+    }
+
+    override fun removeAllViews() {
+        mOccupied.clear()
+        super.removeAllViews()
+    }
+
+    override fun removeView(view: View) {
+        markCellsAsUnoccupiedForView(view)
+        super.removeView(view)
+    }
+
+    override fun removeViewAt(index: Int) {
+        markCellsAsUnoccupiedForView(getChildAt(index))
+        super.removeViewAt(index)
+    }
+
+    override fun removeViews(start: Int, count: Int) {
+        for (i in start until start + count) {
+            markCellsAsUnoccupiedForView(getChildAt(i))
+        }
+        super.removeViews(start, count)
+    }
+
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        /*val count = childCount
+        for (i in 0 until count) {
+            val child = getChildAt(i)
+            if (child.visibility != GONE) {
+                val lp = child.layoutParams as LayoutParams
+                val childLeft = lp.x
+                val childTop = lp.y
+                child.layout(childLeft, childTop, childLeft + lp.width, childTop + lp.height)
+                if (lp.dropped) {
+                    lp.dropped = false
+                    val cellXY: IntArray = mTmpCellXY
+                    getLocationOnScreen(cellXY)
+                    *//*mWallpaperManager.sendWallpaperCommand(
+                        windowToken,
+                        WallpaperManager.COMMAND_DROP,
+                        cellXY[0] + childLeft + lp.width / 2,
+                        cellXY[1] + childTop + lp.height / 2, 0, null
+                    )*//*
+                }
+            }
+        }*/
     }
 
     open fun setDropPending(pending: Boolean) {
@@ -343,14 +432,25 @@ open class CellLayout @JvmOverloads constructor(
      *
      * @param child The child that is being dropped
      */
-    fun onDropChild(child: View) {
-        if (child != null) {
-            val lp: LayoutParams =
-                child.layoutParams as LayoutParams
-            lp.dropped = true
+    fun onDropChild(child: View?) {
+        child?.also {
+            val lp: LayoutParams = it.layoutParams as LayoutParams
+            //lp.dropped = true
             child.requestLayout()
             markCellsAsOccupiedForView(child)
         }
+    }
+
+    open fun markCellsAsOccupiedForView(view: View?) {
+        if (view == null || view.parent == null) return
+        val parent = view.parent as ViewGroup
+        mOccupied.markCells(parent.indexOfChild(view), true)
+    }
+
+    open fun markCellsAsUnoccupiedForView(view: View?) {
+        if (view == null || view.parent == null) return
+        val parent = view.parent as ViewGroup
+        mOccupied.markCells(parent.indexOfChild(view), false)
     }
 
     open fun visualizeDropLocation(
@@ -540,7 +640,7 @@ open class CellLayout @JvmOverloads constructor(
                     // First, let's see if this thing fits anywhere
                     for (i in 0 until minSpanX) {
                         for (j in 0 until minSpanY) {
-                            if (mOccupied.cells[x + i][y + j]) {
+                            if (mOccupied.cells[(x + i) * countY + (y + j)]) {
                                 continue@inner
                             }
                         }
@@ -557,7 +657,7 @@ open class CellLayout @JvmOverloads constructor(
                     while (!(hitMaxX && hitMaxY)) {
                         if (incX && !hitMaxX) {
                             for (j in 0 until ySize) {
-                                if (x + xSize > countX - 1 || mOccupied.cells[x + xSize][y + j]
+                                if (x + xSize > countX - 1 || mOccupied.cells[(x + xSize) * countY + (y + j)]
                                 ) {
                                     // We can't move out horizontally
                                     hitMaxX = true
@@ -568,7 +668,7 @@ open class CellLayout @JvmOverloads constructor(
                             }
                         } else if (!hitMaxY) {
                             for (i in 0 until xSize) {
-                                if (y + ySize > countY - 1 || mOccupied.cells[x + i][y + ySize]
+                                if (y + ySize > countY - 1 || mOccupied.cells[(x + i) * countY + (y + ySize)]
                                 ) {
                                     // We can't move out vertically
                                     hitMaxY = true
@@ -740,8 +840,8 @@ open class CellLayout @JvmOverloads constructor(
             if (childCount == mCountX * mCountY) {
                 return intArrayOf(-1, -1)
             }
-
             val index = result[1] * mCountX + result[0]
+            Log.d("REORDER","Index: "+ index+" "+rowCount+" "+columnCount)
             addView(dragView, index)
 
             /*copySolutionToTempState(finalSolution, dragView)
@@ -759,8 +859,6 @@ open class CellLayout @JvmOverloads constructor(
                     ReorderPreviewAnimation.MODE_PREVIEW
                 )
             }*/
-            Log.d(TAG, "Add view")
-            //(dragView!!.parent as ViewGroup).removeView(dragView)
         }
 
         // May consider this later.
@@ -771,49 +869,6 @@ open class CellLayout @JvmOverloads constructor(
         return result
     }
 
-    private fun findConfigurationNoShuffle(
-        pixelX: Int,
-        pixelY: Int,
-        minSpanX: Int,
-        minSpanY: Int,
-        spanX: Int,
-        spanY: Int,
-        dragView: View?,
-        solution: ItemConfiguration
-    ): ItemConfiguration {
-        val result = IntArray(2)
-        val resultSpan = IntArray(2)
-        findNearestVacantArea(
-            pixelX, pixelY, minSpanX, minSpanY, spanX, spanY, result,
-            resultSpan
-        )
-        if (result[0] >= 0 && result[1] >= 0) {
-            copyCurrentStateToSolution(solution, false)
-            solution.cellX = result[0]
-            solution.cellY = result[1]
-            solution.isSolution = true
-        } else {
-            solution.isSolution = false
-        }
-        return solution
-    }
-
-    private fun copyCurrentStateToSolution(solution: ItemConfiguration, temp: Boolean) {
-        /*val childCount: Int = childCount
-        for (i in 0 until childCount) {
-            val child: View = getChildAt(i)
-            val lp: LayoutParams =
-                child.layoutParams as GridLayout.LayoutParams
-            var c: CellAndSpan?
-            if (temp) {
-                c = CellAndSpan(lp.tmpCellX, lp.tmpCellY, lp.cellHSpan, lp.cellVSpan)
-            } else {
-                c = CellAndSpan(, lp.cellY, lp.cellHSpan, lp.cellVSpan)
-            }
-            solution.add(child, c!!)
-        }*/
-    }
-
     open fun setItemPlacementDirty(dirty: Boolean) {
         mItemPlacementDirty = dirty
     }
@@ -822,144 +877,26 @@ open class CellLayout @JvmOverloads constructor(
         return mItemPlacementDirty
     }
 
-    private class ItemConfiguration : CellAndSpan() {
-        val map = ArrayMap<View, CellAndSpan>()
-        private val savedMap = ArrayMap<View, CellAndSpan>()
-        val sortedViews = ArrayList<View>()
-        var intersectingViews: ArrayList<View>? = null
-        var isSolution = false
-        fun save() {
-            // Copy current state into savedMap
-            for (v in map.keys) {
-                savedMap[v]!!.copyFrom(map[v])
-            }
-        }
-
-        fun restore() {
-            // Restore current state from savedMap
-            for (v in savedMap.keys) {
-                map[v]!!.copyFrom(savedMap[v])
-            }
-        }
-
-        fun add(v: View, cs: CellAndSpan) {
-            map[v] = cs
-            savedMap[v] = CellAndSpan()
-            sortedViews.add(v)
-        }
-
-        fun area(): Int {
-            return 1
-        }
-
-        fun getBoundingRectForViews(views: ArrayList<View?>, outRect: Rect) {
-            var first = true
-            for (v in views) {
-                val c = map[v]
-                if (first) {
-                    outRect[c!!.cellX, c.cellY, c.cellX + 1] = c.cellY + 1
-                    first = false
-                } else {
-                    outRect.union(c!!.cellX, c.cellY, c.cellX + 1, c.cellY + 1)
-                }
-            }
-        }
+    /**
+     * Computes a bounding rectangle for a range of cells
+     *
+     * @param cellX X coordinate of upper left corner expressed as a cell position
+     * @param cellY Y coordinate of upper left corner expressed as a cell position
+     * @param cellHSpan Width in cells
+     * @param cellVSpan Height in cells
+     * @param resultRect Rect into which to put the results
+     */
+    fun cellToRect(cellX: Int, cellY: Int, cellHSpan: Int, cellVSpan: Int, resultRect: Rect) {
+        val cellWidth: Int = cellWidth
+        val cellHeight: Int = cellHeight
+        val hStartPadding = paddingLeft
+        val vStartPadding = paddingTop
+        val width = cellHSpan * cellWidth
+        val height = cellVSpan * cellHeight
+        val x = hStartPadding + cellX * cellWidth
+        val y = vStartPadding + cellY * cellHeight
+        resultRect[x, y, x + width] = y + height
     }
-
-    // TODO: Add animation once drag and drop is done.
-/*    private fun animateItemsToSolution(
-        solution: ItemConfiguration,
-        dragView: View,
-        commitDragView: Boolean
-    ) {
-        val occupied = mOccupied
-        occupied.clear()
-        val childCount: Int = childCount
-        for (i in 0 until childCount) {
-            val child: View = getChildAt(i)
-            if (child === dragView) continue
-            val c = solution.map[child]
-            if (c != null) {
-                animateChildToPosition(
-                    child, c.cellX, c.cellY, CellLayout.REORDER_ANIMATION_DURATION, 0,
-                    CellLayout.DESTRUCTIVE_REORDER, false
-                )
-                occupied.markCells(c, true)
-            }
-        }
-        if (commitDragView) {
-            occupied.markCells(solution, true)
-        }
-    }*/
-
-    // TODO: Add animation once drag and drop is done.
-    /*open fun animateChildToPosition(
-        child: View, cellX: Int, cellY: Int, duration: Int,
-        delay: Int, permanent: Boolean, adjustOccupied: Boolean
-    ): Boolean {
-        val index = indexOfChild(child)
-        if (index != -1) {
-            val lp: LayoutParams =
-                child.layoutParams as GridLayout.LayoutParams
-            val info: LauncherItem = child.tag as LauncherItem
-
-            val oldX: Int = lp.x
-            val oldY: Int = lp.y
-            lp.isLockedToGrid = true
-            if (permanent) {
-                info.cellX = cellX
-                lp.cellX = info.cellX
-                info.cellY = cellY
-                lp.cellY = info.cellY
-            } else {
-                lp.tmpCellX = cellX
-                lp.tmpCellY = cellY
-            }
-            clc.setupLp(child)
-            lp.isLockedToGrid = false
-            val newX: Int = lp.x
-            val newY: Int = lp.y
-            lp.x = oldX
-            lp.y = oldY
-
-            // Exit early if we're not actually moving the view
-            if (oldX == newX && oldY == newY) {
-                lp.isLockedToGrid = true
-                return true
-            }
-            val va: ValueAnimator = LauncherAnimUtils.ofFloat(0f, 1f)
-            va.duration = duration.toLong()
-            va.addUpdateListener { animation ->
-                val r = animation.animatedValue as Float
-                lp.x = ((1 - r) * oldX + r * newX).toInt()
-                lp.y = ((1 - r) * oldY + r * newY).toInt()
-                child.requestLayout()
-            }
-            va.addListener(object : AnimatorListenerAdapter() {
-                var cancelled = false
-                override fun onAnimationEnd(animation: Animator) {
-                    // If the animation was cancelled, it means that another animation
-                    // has interrupted this one, and we don't want to lock the item into
-                    // place just yet.
-                    if (!cancelled) {
-                        lp.isLockedToGrid = true
-                        child.requestLayout()
-                    }
-                    if (mReorderAnimators.containsKey(lp)) {
-                        mReorderAnimators.remove(lp)
-                    }
-                }
-
-                override fun onAnimationCancel(animation: Animator) {
-                    cancelled = true
-                }
-            })
-            va.startDelay = delay.toLong()
-            va.start()
-            return true
-        }
-        return false
-    }*/
 
     // This class stores info for two purposes:
     // 1. When dragging items (mDragInfo in Workspace), we store the View, its cellX & cellY,
@@ -984,69 +921,11 @@ open class CellLayout @JvmOverloads constructor(
         }
     }
 
-    override fun generateLayoutParams(attrs: AttributeSet?): LayoutParams =
-        LayoutParams(context, attrs)
-
-    override fun checkLayoutParams(p: ViewGroup.LayoutParams?): Boolean =
-        p != null && p is LayoutParams
-
-    override fun generateLayoutParams(lp: ViewGroup.LayoutParams?): LayoutParams = LayoutParams(lp)
-
-    class LayoutParams : GridLayout.LayoutParams {
-
-        /**
-         * Rank of item in the grid based on x and y cell index.
-         */
-        var rank = 0
-
-        /**
-         * Temporary rank of the item in the grid during reorder.
-         */
-        var tmpRank = 0
-
-
-        /**
-         * Indicates that the temporary coordinates should be used to layout the items
-         */
-        var useTmpCoords = false
-
-        /**
-         * Indicates whether the item will set its x, y, width and height parameters freely,
-         * or whether these will be computed based on cellX, cellY, cellHSpan and cellVSpan.
-         */
-        var isLockedToGrid = true
-
-        /**
-         * Indicates whether this item can be reordered. Always true except in the case of the
-         * the AllApps button and QSB place holder.
-         */
-        var canReorder = true
-
-        // X coordinate of the view in the layout.
-        @ExportedProperty
-        var x = 0
-
-        // Y coordinate of the view in the layout.
-        @ExportedProperty
-        var y = 0
-        var dropped = false
-
-        constructor(c: Context?, attrs: AttributeSet?) : super(c, attrs)
-
-        constructor(source: ViewGroup.LayoutParams?) : super(source)
-
-        constructor(source: LayoutParams) : super(source) {
-            rank = source.rank
-        }
-
-        constructor(rank: Int) : super(
-            spec(UNDEFINED), spec(UNDEFINED)
-        ) {
-            this.rank = rank
-        }
-
-        override fun toString(): String {
-            return "(${this.rank})"
+    fun isOccupied(x: Int, y: Int): Boolean {
+        return if (x < mCountX && y < mCountY) {
+            mOccupied.cells[x * mCountY + y]
+        } else {
+            throw RuntimeException("Position exceeds the bound of this CellLayout")
         }
     }
 }

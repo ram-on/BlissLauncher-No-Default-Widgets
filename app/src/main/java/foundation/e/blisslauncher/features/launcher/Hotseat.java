@@ -67,12 +67,11 @@ public class Hotseat extends FrameLayout implements Insettable {
         setBackgroundColor(Color.RED);
     }
 
-    void resetLayout(boolean hasVerticalHotseat) {
+    public void resetLayout(boolean hasVerticalHotseat) {
         mContent.removeAllViewsInLayout();
         mHasVerticalHotseat = hasVerticalHotseat;
         VariantDeviceProfile idp = mLauncher.getDeviceProfile();
-        mContent.setColumnCount(idp.getInv().getNumHotseatIcons());
-        mContent.setRowCount(1);
+        mContent.setGridSize(idp.getInv().getNumHotseatIcons(), 1);
     }
 
     @Override

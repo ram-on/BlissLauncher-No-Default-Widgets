@@ -19,7 +19,6 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.widget.GridLayout;
 import android.widget.Toast;
@@ -254,16 +253,18 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 }
                 launcherItem.screenId = mScreenOrder.size() - 1;
                 launcherItem.cell = workspaceScreen.getChildCount();
+                Log.d(TAG, "launcherItemCell "+launcherItem.cell % mLauncher.getDeviceProfile().getInv().getNumColumns()+" "+launcherItem.cell % mLauncher.getDeviceProfile().getInv().getNumRows()+" "+launcherItem.cell);
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.LayoutParams iconLayoutParams =
                     new GridLayout.LayoutParams(rowSpec, colSpec);
                 iconLayoutParams.height = mLauncher.getDeviceProfile().getCellHeightPx();
                 iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
+                iconLayoutParams.setGravity(Gravity.CENTER);
+                appView.setLayoutParams(iconLayoutParams);
                 appView.setTextVisibility(true);
-                //appView.findViewById(R.id.app_label).setVisibility(View.VISIBLE);
-                //appView.setLayoutParams(iconLayoutParams);
                 //appView.setWithText(true);
+                Log.i(TAG, "bindItems: "+appView);
                 workspaceScreen.addView(appView);
             } else if (launcherItem.container == Constants.CONTAINER_HOTSEAT) {
                 //appView.findViewById(R.id.app_label).setVisibility(GONE);
@@ -272,6 +273,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 GridLayout.LayoutParams iconLayoutParams =
                     new GridLayout.LayoutParams(rowSpec, colSpec);
                 iconLayoutParams.setGravity(Gravity.CENTER);
+                iconLayoutParams.height = mLauncher.getDeviceProfile().getCellHeightPx();
+                iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
                 appView.setLayoutParams(iconLayoutParams);
                 //appView.setWithText(false);
                 mLauncher.getHotseat().getLayout().addView(appView);
@@ -434,7 +437,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     stripEmptyScreens();
                 }
                 // Update the page indicator to reflect the removed page.
-                //TODO: showPageIndicatorAtCurrentScroll();
+                showPageIndicatorAtCurrentScroll();
             }
         };
 
@@ -698,15 +701,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             layout = getScreenWithId(screenId);
         }
 
-        ViewGroup.LayoutParams genericLp = child.getLayoutParams();
+        CellLayout.LayoutParams genericLp = (CellLayout.LayoutParams) child.getLayoutParams();
         GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
         GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
-        if (genericLp == null || !(genericLp instanceof ViewGroup.LayoutParams)) {
+        if (genericLp == null || !(genericLp instanceof CellLayout.LayoutParams)) {
             genericLp = new GridLayout.LayoutParams(rowSpec, colSpec);
         }
-
-        genericLp.height = mLauncher.getDeviceProfile().getCellHeightPx();
-        genericLp.width = mLauncher.getDeviceProfile().getCellWidthPx();
 
         // Get the canonical child id to uniquely represent this view in this screen
         LauncherItem info = (LauncherItem) child.getTag();
@@ -818,14 +818,13 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         super.onPageEndTransition();
         updateChildrenLayersEnabled();
 
-        //TODO:
-        /*if (mDragController.isDragging()) {
-            if (workspaceInModalState()) {
+        if (mDragController.isDragging()) {
+            /*if (workspaceInModalState()) {
                 // If we are in springloaded mode, then force an event to check if the current touch
                 // is under a new page (to scroll to)
                 mDragController.forceTouchMove();
-            }
-        }*/
+            }*/
+        }
 
         if (mStripScreensOnPageStopMoving) {
             stripEmptyScreens();
@@ -908,13 +907,49 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     @Override
+    protected void snapToDestination() {
+        // If we're overscrolling the overlay, we make sure to immediately reset the PagedView
+        // to it's baseline position instead of letting the overscroll settle. The overlay handles
+        // it's own settling, and every gesture to the overlay should be self-contained and start
+        // from 0, so we zero it out here.
+        /*if (isScrollingOverlay()) {
+            // We reset mWasInOverscroll so that PagedView doesn't zero out the overscroll
+            // interaction when we call snapToPageImmediately.
+            mWasInOverscroll = false;
+            snapToPageImmediately(0);
+        } else {
+
+        }*/
+        super.snapToDestination();
+    }
+
+    @Override
+    protected void onScrollChanged(int l, int t, int oldl, int oldt) {
+        super.onScrollChanged(l, t, oldl, oldt);
+
+        // Update the page indicator progress.
+        boolean isTransitioning = (getLayoutTransition() != null && getLayoutTransition().isRunning());
+        if (!isTransitioning) {
+            showPageIndicatorAtCurrentScroll();
+        }
+
+        //updatePageAlphaValues();
+        enableHwLayersOnVisiblePages();
+    }
+
+    public void showPageIndicatorAtCurrentScroll() {
+        if (mPageIndicator != null) {
+            mPageIndicator.setScroll(getScrollX(), computeMaxScrollX());
+        }
+    }
+
+    @Override
     public void onDragStart(
         DragObject dragObject, DragOptions options
     ) {
         if (mDragInfo != null && mDragInfo.getCell() != null) {
             CellLayout layout = (CellLayout) mDragInfo.getCell().getParent();
-            //TODO: Mark the current cell as unoccupied.
-            // layout.markCellsAsUnoccupiedForView(mDragInfo.getCell());
+            layout.markCellsAsUnoccupiedForView(mDragInfo.getCell());
         }
 
         if (mOutlineProvider != null) {
@@ -939,24 +974,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (addNewPage) {
             mDeferRemoveExtraEmptyScreen = false;
             addExtraEmptyScreenOnDrag();
-
-            // [BlissLauncher] We don't need this as we don't support widgets on workspace grid.
-            /*if (dragObject.dragInfo.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPWIDGET
-                && dragObject.dragSource != this) {
-                // When dragging a widget from different source, move to a page which has
-                // enough space to place this widget (after rearranging/resizing). We special case
-                // widgets as they cannot be placed inside a folder.
-                // Start at the current page and search right (on LTR) until finding a page with
-                // enough space. Since an empty screen is the furthest right, a page must be found.
-                int currentPage = getPageNearestToCenterOfScreen();
-                for (int pageIndex = currentPage; pageIndex < getPageCount(); pageIndex++) {
-                    CellLayout page = (CellLayout) getPageAt(pageIndex);
-                    if (page.hasReorderSolution(dragObject.dragInfo)) {
-                        setCurrentPage(pageIndex);
-                        break;
-                    }
-                }
-            }*/
         }
     }
 
@@ -1217,6 +1234,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     public void onNoCellFound(View dropTargetLayout) {
+        Log.d(TAG, "onNoCellFound() called with: dropTargetLayout = [" + dropTargetLayout + "]");
         if (mLauncher.isHotseatLayout(dropTargetLayout)) {
             showOutOfSpaceMessage(true);
         } else {
