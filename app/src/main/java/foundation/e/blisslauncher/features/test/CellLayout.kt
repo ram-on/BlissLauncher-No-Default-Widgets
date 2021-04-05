@@ -237,7 +237,7 @@ open class CellLayout @JvmOverloads constructor(
         } else {
             cellPaddingX = (dp.edgeMarginPx / 2f).toInt()
         }
-        Log.d(TAG, "Hotseat cellPaddingY: $cellPaddingY ${lp.height} ${cHeight}")
+        Log.d(TAG, "Hotseat cellPaddingY: $cellPaddingY ${lp.height} $cHeight")
         child.setPadding(cellPaddingX, cellPaddingY, cellPaddingX, 0)
         val childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY)
         val childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY)
@@ -838,7 +838,7 @@ open class CellLayout @JvmOverloads constructor(
                 return intArrayOf(-1, -1)
             }
             val index = result[1] * mCountX + result[0]
-            Log.d("REORDER","Index: "+ index+" "+rowCount+" "+columnCount)
+            Log.d("REORDER", "Index: " + index + " " + rowCount + " " + columnCount)
             addView(dragView, index)
 
             /*copySolutionToTempState(finalSolution, dragView)

@@ -186,10 +186,10 @@ class VariantDeviceProfile(
             // in portrait mode closer together by adding more height to the hotseat.
             // Note: This calculation was created after noticing a pattern in the design spec.
             val extraSpace =
-                cellSize.y - iconSizePx - iconDrawablePaddingPx * 2 - workspacePageIndicatorHeight;
+                cellSize.y - iconSizePx - iconDrawablePaddingPx * 2 - workspacePageIndicatorHeight
 
             Log.d("DeviceProfile", "$hotseatBarSizePx $extraSpace")
-            val incrementHeight = extraSpace / (inv.numRows+1);
+            val incrementHeight = extraSpace / (inv.numRows + 1)
             hotseatBarSizePx += incrementHeight
             cellHeightPx += incrementHeight
             // Recalculate the available dimensions using the new hotseat size.
