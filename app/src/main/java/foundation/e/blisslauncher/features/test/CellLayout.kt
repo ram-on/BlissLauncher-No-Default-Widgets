@@ -122,8 +122,6 @@ open class CellLayout @JvmOverloads constructor(
         clipToPadding = false
 
         // Initialize the data structures used for the drag visualization.
-
-        // Initialize the data structures used for the drag visualization.
         mEaseOutInterpolator = Interpolators.DEACCEL_2_5 // Quint ease out
 
         for (i in mDragOutlines.indices) {
@@ -191,8 +189,6 @@ open class CellLayout @JvmOverloads constructor(
         val heightSize = MeasureSpec.getSize(heightSpec)
         val childWidthSize = widthSize - (paddingLeft + paddingRight)
         val childHeightSize = heightSize - (paddingTop + paddingBottom)
-        val hotseat = parent is Hotseat
-        Log.i("CellLayout", "$hotseat $heightSize $paddingTop $paddingBottom")
         cellWidth = VariantDeviceProfile.calculateCellWidth(childWidthSize, mCountX)
         cellHeight = VariantDeviceProfile.calculateCellHeight(childHeightSize, mCountY)
         Log.d(TAG, "cellWidth: $cellWidth")
@@ -216,8 +212,8 @@ open class CellLayout @JvmOverloads constructor(
     open fun setGridSize(x: Int, y: Int) {
         mCountX = x
         mCountY = y
-        setColumnCount(x)
-        setRowCount(y)
+        columnCount = x
+        rowCount = y
         mOccupied = GridOccupancy(mCountX, mCountY)
         mTmpOccupied = GridOccupancy(mCountX, mCountY)
         mTempRectStack.clear()
@@ -230,10 +226,10 @@ open class CellLayout @JvmOverloads constructor(
         lp.rowSpec = spec(UNDEFINED)
         lp.columnSpec = spec(UNDEFINED)
         lp.width = cellWidth
-        lp.height = getCellContentHeight()
+        lp.height = cellHeight
 
         // Center the icon/folder
-        val cHeight: Int = dp.cellHeightPx
+        val cHeight: Int = getCellContentHeight()
         val cellPaddingY = 0f.coerceAtLeast((lp.height - cHeight) / 2f).toInt()
         var cellPaddingX: Int
         if (containerType == Constants.CONTAINER_DESKTOP) {
@@ -241,6 +237,7 @@ open class CellLayout @JvmOverloads constructor(
         } else {
             cellPaddingX = (dp.edgeMarginPx / 2f).toInt()
         }
+        Log.d(TAG, "Hotseat cellPaddingY: $cellPaddingY ${lp.height} ${cHeight}")
         child.setPadding(cellPaddingX, cellPaddingY, cellPaddingX, 0)
         val childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY)
         val childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY)

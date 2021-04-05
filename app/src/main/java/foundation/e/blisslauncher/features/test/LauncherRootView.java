@@ -1,8 +1,5 @@
 package foundation.e.blisslauncher.features.test;
 
-import static foundation.e.blisslauncher.features.test.SystemUiController.FLAG_DARK_NAV;
-import static foundation.e.blisslauncher.features.test.SystemUiController.UI_STATE_NORMAL;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,8 +9,13 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewDebug;
 import android.view.WindowInsets;
-import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
+
 import org.jetbrains.annotations.Nullable;
+
+import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
+
+import static foundation.e.blisslauncher.features.test.SystemUiController.FLAG_DARK_NAV;
+import static foundation.e.blisslauncher.features.test.SystemUiController.UI_STATE_NORMAL;
 
 public class LauncherRootView extends InsettableFrameLayout {
 

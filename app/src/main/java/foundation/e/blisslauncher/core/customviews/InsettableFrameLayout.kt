@@ -39,10 +39,6 @@ open class InsettableFrameLayout(private val mContext: Context, attrs: Attribute
 
     override fun setInsets(insets: WindowInsets?) {
         if (insets == null) return
-        setPadding(
-            paddingLeft, paddingTop,
-            paddingRight, paddingBottom + insets.systemWindowInsetBottom
-        )
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             var oldInsets = Rect()

@@ -68,6 +68,7 @@ class VariantDeviceProfile(
     var cellWidthPx = 0
     var cellHeightPx = 0
     var workspaceCellPaddingXPx: Int
+    var workspacePageIndicatorHeight: Int
 
     // Folder
     var folderIconSizePx = 0
@@ -88,7 +89,7 @@ class VariantDeviceProfile(
     // In portrait: size = height, in landscape: size = width
     var hotseatBarSizePx: Int
     val hotseatBarTopPaddingPx: Int
-    val hotseatBarBottomPaddingPx: Int
+    var hotseatBarBottomPaddingPx: Int
     val hotseatBarSidePaddingPx: Int
 
     // Widgets
@@ -117,18 +118,101 @@ class VariantDeviceProfile(
     var fullScreenProfile: VariantDeviceProfile? = null
         get() = inv.portraitProfile
 
+    init {
+        var context = context
+        var res = context.resources
+        val dm = res.displayMetrics
+        // Constants from resources
+        isTablet = res.getBoolean(
+            R.bool.is_tablet
+        )
+        isLargeTablet = res.getBoolean(R.bool.is_large_tablet)
+        isPhone = !isTablet && !isLargeTablet
+        // Some more constants
+        transposeLayoutWithOrientation =
+            res.getBoolean(R.bool.hotseat_transpose_layout_with_orientation)
+        context =
+            getContext(
+                context, Configuration.ORIENTATION_PORTRAIT
+            )
+        res = context.resources
+        val cn = ComponentName(
+            context.packageName,
+            this.javaClass.name
+        )
+        defaultWidgetPadding = AppWidgetHostView.getDefaultPaddingForWidget(context, cn, null)
+        edgeMarginPx =
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_edge_margin)
+        desiredWorkspaceLeftRightMarginPx = edgeMarginPx
+        cellLayoutPaddingLeftRightPx =
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_layout_padding)
+        cellLayoutBottomPaddingPx =
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_layout_bottom_padding)
+        defaultPageSpacingPx =
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_workspace_page_spacing)
+        topWorkspacePadding =
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_workspace_top_padding)
+        iconDrawablePaddingOriginalPx =
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_icon_drawable_padding)
+        workspaceCellPaddingXPx =
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_padding_x)
+        hotseatBarTopPaddingPx =
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_top_padding)
+        hotseatBarBottomPaddingPx =
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_bottom_padding)
+        hotseatBarSidePaddingPx =
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_side_padding)
+        hotseatBarSizePx =
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_size) + hotseatBarTopPaddingPx + hotseatBarBottomPaddingPx
+        workspacePageIndicatorHeight =
+            res.getDimensionPixelSize(R.dimen.dotSize) * 2 + res.getDimensionPixelSize(R.dimen.dotPadding) * 2
+        // Determine sizes.
+        widthPx = width
+        heightPx = height
+        availableWidthPx = minSize.x
+        availableHeightPx = maxSize.y
+        // Calculate all of the remaining variables.
+        updateAvailableDimensions(dm, res)
+        // Now that we have all of the variables calculated, we can tune certain sizes.
+        val aspectRatio =
+            max(widthPx, heightPx).toFloat() / min(
+                widthPx,
+                heightPx
+            )
+        val isTallDevice = aspectRatio.compareTo(TALL_DEVICE_ASPECT_RATIO_THRESHOLD) >= 0
+        if (isPhone && isTallDevice) {
+            // We increase the hotseat size when there is extra space.
+            // ie. For a display with a large aspect ratio, we can keep the icons on the workspace
+            // in portrait mode closer together by adding more height to the hotseat.
+            // Note: This calculation was created after noticing a pattern in the design spec.
+            val extraSpace =
+                cellSize.y - iconSizePx - iconDrawablePaddingPx * 2 - workspacePageIndicatorHeight;
+
+            Log.d("DeviceProfile", "$hotseatBarSizePx $extraSpace")
+            val incrementHeight = extraSpace / (inv.numRows+1);
+            hotseatBarSizePx += incrementHeight
+            cellHeightPx += incrementHeight
+            // Recalculate the available dimensions using the new hotseat size.
+            updateAvailableDimensions(dm, res)
+        }
+        updateWorkspacePadding()
+        // This is done last, after iconSizePx is calculated above.
+        //TODO: mBadgeRenderer = BadgeRenderer(iconSizePx)
+    }
+
     private fun updateAvailableDimensions(
         dm: DisplayMetrics,
         res: Resources
     ) {
         updateIconSize(1f, res, dm)
         // Check to see if the icons fit within the available height.  If not, then scale down.
-        val usedHeight = (cellHeightPx * inv.numRows).toFloat()
+        val usedHeight = (cellHeightPx * inv.numRows)
         val maxHeight = availableHeightPx - totalWorkspacePadding.y
         if (usedHeight > maxHeight) {
-            val scale = maxHeight / usedHeight
+            val scale = maxHeight / usedHeight.toFloat()
             updateIconSize(scale, res, dm)
         }
+
         updateAvailableFolderCellDimensions(dm, res)
     }
 
@@ -149,9 +233,9 @@ class VariantDeviceProfile(
         ) * scale).toInt()
         Log.i("Iconsizepx", "" + iconSizePx + " " + invIconSizePx)
         iconDrawablePaddingPx =
-            (availableWidthPx - iconSizePx * inv.numColumns) / (inv.numColumns + 1)
+            res.getDimensionPixelSize(R.dimen.dynamic_grid_icon_drawable_padding)
         cellHeightPx = (iconSizePx + iconDrawablePaddingPx +
-            Utilities.calculateTextHeight(iconTextSizePx.toFloat()) * 2)
+            Utilities.calculateTextHeight(iconTextSizePx.toFloat()) * 1)
 
         val cellYPadding = (cellSize.y - cellHeightPx) / 2
         if (iconDrawablePaddingPx > cellYPadding) {
@@ -226,12 +310,12 @@ class VariantDeviceProfile(
     }
 
     fun updateInsets(windowInsets: WindowInsets) {
-        val insets = Rect(
-            windowInsets.getSystemWindowInsetLeft(),
-            windowInsets.getSystemWindowInsetTop(),
-            windowInsets.getSystemWindowInsetRight(), windowInsets.getSystemWindowInsetBottom()
+        insets.set(
+            Rect(
+                windowInsets.systemWindowInsetLeft, windowInsets.systemWindowInsetTop,
+                windowInsets.systemWindowInsetRight, windowInsets.systemWindowInsetBottom
+            )
         )
-        insets!!.set(insets)
         updateWorkspacePadding()
     }
 
@@ -269,7 +353,7 @@ class VariantDeviceProfile(
      */
     private fun updateWorkspacePadding() {
         val padding = workspacePadding
-        val paddingBottom = hotseatBarSizePx
+        val paddingBottom = hotseatBarSizePx + workspacePageIndicatorHeight
         if (isTablet) { // Pad the left and right of the workspace to ensure consistent spacing
             // between all icons
             // The amount of screen space available for left/right padding.
@@ -304,8 +388,10 @@ class VariantDeviceProfile(
             val hotseatCellWidth = widthPx.toFloat() / inv.numHotseatIcons
             val hotseatAdjustment =
                 Math.round((workspaceCellWidth - hotseatCellWidth) / 2)
+
             mHotseatPadding[hotseatAdjustment + workspacePadding.left + cellLayoutPaddingLeftRightPx, hotseatBarTopPaddingPx, hotseatAdjustment + workspacePadding.right + cellLayoutPaddingLeftRightPx] =
                 hotseatBarBottomPaddingPx + insets.bottom + cellLayoutBottomPaddingPx
+            Log.d(TAG, "Hotseat padding: $mHotseatPadding, insets: $insets")
             return mHotseatPadding
         } // Folders should only appear below the drop target bar and above the hotseat// Folders should only appear right of the drop target bar and left of the hotseat
 
@@ -367,82 +453,5 @@ class VariantDeviceProfile(
             context.orientation = orientation
             return c.createConfigurationContext(context)
         }
-    }
-
-    init {
-        var context = context
-        var res = context.resources
-        val dm = res.displayMetrics
-        // Constants from resources
-        isTablet = res.getBoolean(
-            R.bool.is_tablet
-        )
-        isLargeTablet = res.getBoolean(R.bool.is_large_tablet)
-        isPhone = !isTablet && !isLargeTablet
-        // Some more constants
-        transposeLayoutWithOrientation =
-            res.getBoolean(R.bool.hotseat_transpose_layout_with_orientation)
-        context =
-            getContext(
-                context, Configuration.ORIENTATION_PORTRAIT
-            )
-        res = context.resources
-        val cn = ComponentName(
-            context.packageName,
-            this.javaClass.name
-        )
-        defaultWidgetPadding = AppWidgetHostView.getDefaultPaddingForWidget(context, cn, null)
-        edgeMarginPx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_edge_margin)
-        desiredWorkspaceLeftRightMarginPx = edgeMarginPx
-        cellLayoutPaddingLeftRightPx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_layout_padding)
-        cellLayoutBottomPaddingPx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_layout_bottom_padding)
-        defaultPageSpacingPx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_workspace_page_spacing)
-        topWorkspacePadding =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_workspace_top_padding)
-        iconDrawablePaddingOriginalPx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_icon_drawable_padding)
-        workspaceCellPaddingXPx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_padding_x)
-        hotseatBarTopPaddingPx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_top_padding)
-        hotseatBarBottomPaddingPx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_bottom_padding)
-        hotseatBarSidePaddingPx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_side_padding)
-        hotseatBarSizePx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_size) + hotseatBarTopPaddingPx + hotseatBarBottomPaddingPx
-        Log.d("DeviceProfile", "$hotseatBarSizePx")
-        // Determine sizes.
-        widthPx = width
-        heightPx = height
-        availableWidthPx = minSize.x
-        availableHeightPx = maxSize.y
-        // Calculate all of the remaining variables.
-        updateAvailableDimensions(dm, res)
-        // Now that we have all of the variables calculated, we can tune certain sizes.
-        val aspectRatio =
-            max(widthPx, heightPx).toFloat() / min(
-                widthPx,
-                heightPx
-            )
-        val isTallDevice = aspectRatio.compareTo(TALL_DEVICE_ASPECT_RATIO_THRESHOLD) >= 0
-        if (isPhone && isTallDevice) {
-            // We increase the hotseat size when there is extra space.
-            // ie. For a display with a large aspect ratio, we can keep the icons on the workspace
-            // in portrait mode closer together by adding more height to the hotseat.
-            // Note: This calculation was created after noticing a pattern in the design spec.
-            val extraSpace = cellSize.y - cellHeightPx
-            //hotseatBarSizePx += extraSpace
-            Log.d("DeviceProfile", "$hotseatBarSizePx")
-            // Recalculate the available dimensions using the new hotseat size.
-            updateAvailableDimensions(dm, res)
-        }
-        updateWorkspacePadding()
-        // This is done last, after iconSizePx is calculated above.
-        //TODO: mBadgeRenderer = BadgeRenderer(iconSizePx)
     }
 }

@@ -320,7 +320,7 @@ class PageIndicatorDots(context: Context, attrs: AttributeSet?, defStyleAttr: In
         val lp = layoutParams as FrameLayout.LayoutParams
         lp.leftMargin = 0.also { lp.rightMargin = it }
         lp.gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
-        lp.bottomMargin = deviceProfile.hotseatBarSizePx + insets.systemWindowInsetBottom
+        lp.bottomMargin = deviceProfile.hotseatBarSizePx + resources.getDimensionPixelSize(R.dimen.dotPadding) * 2 + insets.systemWindowInsetBottom
         layoutParams = lp
     }
 }

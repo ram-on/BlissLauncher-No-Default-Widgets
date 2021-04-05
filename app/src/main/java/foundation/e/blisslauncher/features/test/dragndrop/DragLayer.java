@@ -25,7 +25,6 @@ import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
@@ -505,6 +504,5 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
     @Override
     public void setInsets(WindowInsets insets) {
         super.setInsets(insets);
-        setBackgroundColor(Color.BLUE);
     }
 }

@@ -241,7 +241,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         removeAllWorkspaceScreens();
         GridLayout workspaceScreen = insertNewWorkspaceScreen(0);
         for (LauncherItem launcherItem : launcherItems) {
-            IconTextView appView = new IconTextView(getContext());
+            IconTextView appView = (IconTextView) LayoutInflater.from(getContext())
+                .inflate(R.layout.app_icon, null, false);
             appView.applyFromShortcutItem(launcherItem);
             appView.setOnClickListener(ItemClickHandler.INSTANCE);
             appView.setOnLongClickListener(ItemLongClickListener.INSTANCE_WORKSPACE);

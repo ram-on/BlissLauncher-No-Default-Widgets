@@ -8,6 +8,7 @@
     <dimen name="dp_40">40dp</dimen>
 
     <dimen name="dotSize">@dimen/dp_8</dimen>
+    <dimen name="dotPadding">4dp</dimen>
     <dimen name="forecast_icon_size">@dimen/dp_36</dimen>
     <dimen name="forecast_item_padding_side">@dimen/dp_16</dimen>
     <dimen name="corner_radius">@dimen/dp_12</dimen>

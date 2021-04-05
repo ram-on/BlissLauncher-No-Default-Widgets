@@ -8,7 +8,10 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.text.TextUtils.TruncateAt
+import android.util.AttributeSet
+import android.util.Log
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.widget.TextView
@@ -21,7 +24,7 @@ import kotlin.math.ceil
  * A text view which displays an icon on top side of it.
  */
 @SuppressLint("AppCompatCustomView")
-class IconTextView @JvmOverloads constructor(context: Context) : TextView(context) {
+class IconTextView @JvmOverloads constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : TextView(context, attrs, defStyle) {
 
     companion object {
         private const val DISPLAY_WORKSPACE = 1
@@ -51,6 +54,10 @@ class IconTextView @JvmOverloads constructor(context: Context) : TextView(contex
         ViewConfiguration.get(getContext()).scaledTouchSlop.toFloat()
 
     private var longPressHelper: CheckLongPressHelper
+
+    constructor(context: Context): this(context, null, 0)
+
+    constructor(context: Context, attrs: AttributeSet): this(context, attrs, 0)
 
     init {
         setTextSize(TypedValue.COMPLEX_UNIT_PX, dp.iconTextSizePx.toFloat())
@@ -144,7 +151,7 @@ class IconTextView @JvmOverloads constructor(context: Context) : TextView(contex
     }
 
     fun setTextVisibility(visible: Boolean) {
-        setTextAlpha(if (visible) 1f else 0.toFloat())
+        setTextAlpha(if (visible) 1f else 0f)
     }
 
     private fun setTextAlpha(alpha: Float) {
@@ -173,18 +180,6 @@ class IconTextView @JvmOverloads constructor(context: Context) : TextView(contex
             }
         }
         return result
-    }
-
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        val fm = paint.fontMetrics
-        val cellHeightPx: Int = defaultIconSize + compoundDrawablePadding +
-            ceil(fm.bottom - fm.top.toDouble()).toInt()
-        val height = MeasureSpec.getSize(heightMeasureSpec)
-        setPadding(
-            paddingLeft, (height - cellHeightPx) / 2, paddingRight,
-            paddingBottom
-        )
     }
 
     override fun cancelLongPress() {
