@@ -629,6 +629,7 @@ open class CellLayout @JvmOverloads constructor(
         val spanX = 1
         val spanY = 1
 
+        Log.d(TAG, "FINDING START")
         for (y in 0 until countY - (minSpanY - 1)) {
             inner@ for (x in 0 until countX - (minSpanX - 1)) {
                 var ySize = -1
@@ -699,8 +700,14 @@ open class CellLayout @JvmOverloads constructor(
                     }
                 }
                 validRegions.push(currentRect)
+
+                Log.d(TAG, "Current Cell: [$x, $y] ")
+                Log.d(TAG, "Current Cell Center: ["+cellXY[0]+", "+cellXY[1]+"] ")
+                Log.d(TAG, "Pixel Center: ["+pixelX+", "+pixelY+"] ")
                 val distance =
                     hypot((cellXY[0] - pixelX).toDouble(), (cellXY[1] - pixelY).toDouble())
+                Log.d(TAG, "Distance: "+distance)
+
                 if (distance <= bestDistance && !contained ||
                     currentRect.contains(bestRect)
                 ) {
@@ -722,6 +729,7 @@ open class CellLayout @JvmOverloads constructor(
             bestXY[1] = -1
         }
         recycleTempRects(validRegions)
+        Log.d(TAG, "FINDING END")
         return bestXY
     }
 
@@ -837,8 +845,12 @@ open class CellLayout @JvmOverloads constructor(
             if (childCount == mCountX * mCountY) {
                 return intArrayOf(-1, -1)
             }
-            val index = result[1] * mCountX + result[0]
+            var index = result[1] * mCountX + result[0]
             Log.d("REORDER", "Index: " + index + " " + rowCount + " " + columnCount)
+
+            if(index > childCount) {
+                index = childCount
+            }
             addView(dragView, index)
 
             /*copySolutionToTempState(finalSolution, dragView)

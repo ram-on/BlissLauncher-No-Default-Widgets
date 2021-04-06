@@ -1462,12 +1462,13 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         // Handle the drag over
         if (mDragTargetLayout != null) {
-            Log.d(TAG, "Here");
             // We want the point to be mapped to the dragTarget.
             if (mLauncher.isHotseatLayout(mDragTargetLayout)) {
                 mapPointFromSelfToHotseatLayout(mLauncher.getHotseat(), mDragViewVisualCenter);
             } else {
+                Log.d(TAG, "Before mapping: "+mDragViewVisualCenter[0]+" "+mDragViewVisualCenter[1]);
                 mapPointFromSelfToChild(mDragTargetLayout, mDragViewVisualCenter);
+                Log.d(TAG, "After mapping: "+mDragViewVisualCenter[0]+" "+mDragViewVisualCenter[1]);
             }
 
             mTargetCell = findNearestArea((int) mDragViewVisualCenter[0],
@@ -1494,7 +1495,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             );
             Log.d(
                 TAG,
-                "Reorder " + mDragMode + " " + mReorderAlarm.alarmPending()
+                "Reorder " + mDragMode + " " + mReorderAlarm.alarmPending() +" "+nearestDropOccupied
             );
 
             if (!nearestDropOccupied) {
@@ -1502,8 +1503,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     mTargetCell[0], mTargetCell[1], false, d
                 );
             } else if ((mDragMode == DRAG_MODE_NONE || mDragMode == DRAG_MODE_REORDER)
-                && (mLastReorderX != reorderX ||
-                mLastReorderY != reorderY)) {
+                && (mLastReorderX != reorderX || mLastReorderY != reorderY)) {
                 Log.d(
                     TAG,
                     "Reorder  Setting reorder now"

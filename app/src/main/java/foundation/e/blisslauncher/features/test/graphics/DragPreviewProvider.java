@@ -160,13 +160,6 @@ public class DragPreviewProvider {
     public float getScaleAndPosition(Bitmap preview, int[] outPos) {
         float scale = TestActivity.Companion.getLauncher(mView.getContext())
                 .getDragLayer().getLocationInDragLayer(mView, outPos);
-        //TODO:
-        /*if (mView instanceof LauncherAppWidgetHostView) {
-            // App widgets are technically scaled, but are drawn at their expected size -- so the
-            // app widget scale should not affect the scale of the preview.
-            scale /= ((LauncherAppWidgetHostView) mView).getScaleToFit();
-        }*/
-
         outPos[0] = Math.round(outPos[0] -
                 (preview.getWidth() - scale * mView.getWidth() * mView.getScaleX()) / 2);
         outPos[1] = Math.round(outPos[1] - (1 - scale) * preview.getHeight() / 2

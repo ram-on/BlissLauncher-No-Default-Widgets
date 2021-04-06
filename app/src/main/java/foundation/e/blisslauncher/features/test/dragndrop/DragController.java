@@ -22,6 +22,7 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.DragEvent;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
@@ -132,6 +133,10 @@ public class DragController implements DragDriver.EventListener, TouchController
         Bitmap b, int dragLayerX, int dragLayerY,
             DragSource source, LauncherItem dragInfo, Point dragOffset, Rect dragRegion,
             float initialDragViewScale, float dragViewScaleOnDrop, DragOptions options) {
+        Log.d(
+            "DragController",
+            "startDrag() called with: b = [" + b + "], dragLayerX = [" + dragLayerX + "], dragLayerY = [" + dragLayerY + "], source = [" + source + "], dragInfo = [" + dragInfo + "], dragOffset = [" + dragOffset + "], dragRegion = [" + dragRegion + "], initialDragViewScale = [" + initialDragViewScale + "], dragViewScaleOnDrop = [" + dragViewScaleOnDrop + "], options = [" + options + "]"
+        );
         if (PROFILE_DRAWING_DURING_DRAG) {
             android.os.Debug.startMethodTracing("Launcher");
         }
@@ -332,8 +337,10 @@ public class DragController implements DragDriver.EventListener, TouchController
      */
     private int[] getClampedDragLayerPos(float x, float y) {
         mLauncher.getDragLayer().getLocalVisibleRect(mDragLayerRect);
+        Log.d("DragController", "Rect: "+mDragLayerRect);
         mTmpPoint[0] = (int) Math.max(mDragLayerRect.left, Math.min(x, mDragLayerRect.right - 1));
         mTmpPoint[1] = (int) Math.max(mDragLayerRect.top, Math.min(y, mDragLayerRect.bottom - 1));
+        Log.d("DragController", "TmpPoint: "+mTmpPoint[0]+", "+mTmpPoint[1]);
         return mTmpPoint;
     }
 
@@ -381,6 +388,7 @@ public class DragController implements DragDriver.EventListener, TouchController
      * Call this from a drag source view.
      */
     public boolean onControllerInterceptTouchEvent(MotionEvent ev) {
+        Log.d("DragController", "onControllerInterceptTouchEvent() called with: ev = [" + ev + "]");
         final int action = ev.getAction();
         final int[] dragLayerPos = getClampedDragLayerPos(ev.getX(), ev.getY());
         final int dragLayerX = dragLayerPos[0];
@@ -428,6 +436,7 @@ public class DragController implements DragDriver.EventListener, TouchController
     }
 
     private void handleMoveEvent(int x, int y) {
+        Log.d("DropTarget", "handleMoveEvent() called with: x = [" + x + "], y = [" + y + "]");
         mDragObject.dragView.move(x, y);
 
         // Drop on someone?
@@ -481,6 +490,7 @@ public class DragController implements DragDriver.EventListener, TouchController
      * Call this from a drag source view.
      */
     public boolean onControllerTouchEvent(MotionEvent ev) {
+        Log.d("DragController", "onControllerTouchEvent() called with: ev = [" + ev + "]");
         if (mDragDriver == null || mOptions == null) {
             return false;
         }

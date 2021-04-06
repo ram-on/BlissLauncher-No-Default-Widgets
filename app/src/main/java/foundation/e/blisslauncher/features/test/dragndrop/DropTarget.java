@@ -17,6 +17,7 @@
 package foundation.e.blisslauncher.features.test.dragndrop;
 
 import android.graphics.Rect;
+import android.util.Log;
 
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 
@@ -97,6 +98,8 @@ public interface DropTarget {
             // If a dragRect was not provided, then they correspond to the actual view left and
             // top, as the dragRect is in that case taken to be the entire dragView.
             // R.dimen.dragViewOffsetY.
+
+            Log.d("DropTarget", "X: "+x+", Y: "+y+", xoffset: "+xOffset+", yoffset: "+yOffset);
             int left = x - xOffset;
             int top = y - yOffset;
 
