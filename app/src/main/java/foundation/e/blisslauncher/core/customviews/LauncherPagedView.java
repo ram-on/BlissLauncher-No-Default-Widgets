@@ -1,5 +1,7 @@
 package foundation.e.blisslauncher.core.customviews;
 
+import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SPRING_LOADED_TRANSITION_MS;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.LayoutTransition;
@@ -22,13 +24,6 @@ import android.view.View;
 import android.view.WindowInsets;
 import android.widget.GridLayout;
 import android.widget.Toast;
-
-import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots;
@@ -52,8 +47,10 @@ import foundation.e.blisslauncher.features.test.dragndrop.DragView;
 import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
-
-import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SPRING_LOADED_TRANSITION_MS;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
     Insettable, DropTarget, DragSource, DragController.DragListener {

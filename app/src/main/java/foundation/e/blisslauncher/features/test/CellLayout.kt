@@ -702,11 +702,11 @@ open class CellLayout @JvmOverloads constructor(
                 validRegions.push(currentRect)
 
                 Log.d(TAG, "Current Cell: [$x, $y] ")
-                Log.d(TAG, "Current Cell Center: ["+cellXY[0]+", "+cellXY[1]+"] ")
-                Log.d(TAG, "Pixel Center: ["+pixelX+", "+pixelY+"] ")
+                Log.d(TAG, "Current Cell Center: [" + cellXY[0] + ", " + cellXY[1] + "] ")
+                Log.d(TAG, "Pixel Center: [" + pixelX + ", " + pixelY + "] ")
                 val distance =
                     hypot((cellXY[0] - pixelX).toDouble(), (cellXY[1] - pixelY).toDouble())
-                Log.d(TAG, "Distance: "+distance)
+                Log.d(TAG, "Distance: " + distance)
 
                 if (distance <= bestDistance && !contained ||
                     currentRect.contains(bestRect)
@@ -848,7 +848,7 @@ open class CellLayout @JvmOverloads constructor(
             var index = result[1] * mCountX + result[0]
             Log.d("REORDER", "Index: " + index + " " + rowCount + " " + columnCount)
 
-            if(index > childCount) {
+            if (index > childCount) {
                 index = childCount
             }
             addView(dragView, index)
