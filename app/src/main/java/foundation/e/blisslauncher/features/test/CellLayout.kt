@@ -863,7 +863,7 @@ open class CellLayout @JvmOverloads constructor(
                 dp.hotseatCellHeightPx else dp.cellHeightPx
             iconLayoutParams.width = dp.cellWidthPx
             dragView?.also {
-                if(it is IconTextView) it.setTextVisibility(mContainerType != HOTSEAT)
+                if (it is IconTextView) it.setTextVisibility(mContainerType != HOTSEAT)
             }
             dragView?.setLayoutParams(iconLayoutParams)
             addView(dragView, index)
