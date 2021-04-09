@@ -115,7 +115,8 @@ open class CellLayout @JvmOverloads constructor(
 
     init {
         val a = context.obtainStyledAttributes(attrs, R.styleable.CellLayout, defStyleAttr, 0)
-        mContainerType = a.getInteger(R.styleable.CellLayout_containerType, CellLayout.WORKSPACE)
+        mContainerType = a.getInteger(R.styleable.CellLayout_containerType, WORKSPACE)
+        Log.i(TAG, "Container type: $mContainerType")
         a.recycle()
 
         setWillNotDraw(false)
@@ -288,13 +289,14 @@ open class CellLayout @JvmOverloads constructor(
         // Hotseat icons - remove text
         if (child is IconTextView) {
             val bubbleChild: IconTextView = child
+
             bubbleChild.setTextVisibility(mContainerType != HOTSEAT)
         }
 
         child.scaleX = 1f
         child.scaleY = 1f
 
-        Log.d(TAG, "Adding view at index: ")
+        Log.d(TAG, "Adding view at index: $mContainerType")
 
         // Generate an id for each view, this assumes we have at most 256x256 cells
         // per workspace screen
@@ -700,13 +702,8 @@ open class CellLayout @JvmOverloads constructor(
                     }
                 }
                 validRegions.push(currentRect)
-
-                Log.d(TAG, "Current Cell: [$x, $y] ")
-                Log.d(TAG, "Current Cell Center: [" + cellXY[0] + ", " + cellXY[1] + "] ")
-                Log.d(TAG, "Pixel Center: [" + pixelX + ", " + pixelY + "] ")
                 val distance =
                     hypot((cellXY[0] - pixelX).toDouble(), (cellXY[1] - pixelY).toDouble())
-                Log.d(TAG, "Distance: " + distance)
 
                 if (distance <= bestDistance && !contained ||
                     currentRect.contains(bestRect)
@@ -842,15 +839,33 @@ open class CellLayout @JvmOverloads constructor(
         if (mode == MODE_DRAG_OVER || mode == MODE_ON_DROP || mode == MODE_ON_DROP_EXTERNAL) {
             val parent = (dragView?.parent as ViewGroup?)
             parent?.removeView(dragView)
+
             if (childCount == mCountX * mCountY) {
                 return intArrayOf(-1, -1)
             }
             var index = result[1] * mCountX + result[0]
-            Log.d("REORDER", "Index: " + index + " " + rowCount + " " + columnCount)
+            Log.d(
+                "REORDER",
+                "Index: $index $rowCount == $mCountX $columnCount == $mCountY ${result[0]} ${result[1]}"
+            )
 
+            // Handles the case when the icon is being dragged after the last item on the grid.
             if (index > childCount) {
                 index = childCount
             }
+
+            //appView.findViewById(R.id.app_label).setVisibility(GONE);
+            val rowSpec = spec(UNDEFINED)
+            val colSpec = spec(UNDEFINED)
+            val iconLayoutParams = LayoutParams(rowSpec, colSpec)
+            //iconLayoutParams.setGravity(Gravity.CENTER)
+            iconLayoutParams.height = if (mContainerType == HOTSEAT)
+                dp.hotseatCellHeightPx else dp.cellHeightPx
+            iconLayoutParams.width = dp.cellWidthPx
+            dragView?.also {
+                if(it is IconTextView) it.setTextVisibility(mContainerType != HOTSEAT)
+            }
+            dragView?.setLayoutParams(iconLayoutParams)
             addView(dragView, index)
 
             /*copySolutionToTempState(finalSolution, dragView)

@@ -1,7 +1,5 @@
 package foundation.e.blisslauncher.core.customviews;
 
-import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SPRING_LOADED_TRANSITION_MS;
-
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.LayoutTransition;
@@ -24,6 +22,13 @@ import android.view.View;
 import android.view.WindowInsets;
 import android.widget.GridLayout;
 import android.widget.Toast;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots;
@@ -47,10 +52,8 @@ import foundation.e.blisslauncher.features.test.dragndrop.DragView;
 import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.jetbrains.annotations.NotNull;
+
+import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SPRING_LOADED_TRANSITION_MS;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
     Insettable, DropTarget, DragSource, DragController.DragListener {
@@ -271,7 +274,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 GridLayout.LayoutParams iconLayoutParams =
                     new GridLayout.LayoutParams(rowSpec, colSpec);
                 iconLayoutParams.setGravity(Gravity.CENTER);
-                iconLayoutParams.height = mLauncher.getDeviceProfile().getCellHeightPx();
+                iconLayoutParams.height = mLauncher.getDeviceProfile().getHotseatCellHeightPx();
                 iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
                 appView.setLayoutParams(iconLayoutParams);
                 //appView.setWithText(false);
@@ -664,10 +667,18 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
      * @param y        The Y position of the child in the screen's grid.
      */
     private void addInScreen(View child, long container, long screenId, int x, int y) {
-        Log.d(
-            TAG,
-            "addInScreen() called with: child = [" + child + "], container = [" + container + "], screenId = [" + screenId + "], x = [" + x + "], y = [" + y + "]"
-        );
+        addInScreen(child, container, screenId, y * mLauncher.getDeviceProfile().getInv().getNumColumns() + x);
+    }
+
+    /**
+     * Adds the specified child in the specified screen. The position and dimension of
+     * the child are defined by x, y, spanX and spanY.
+     *
+     * @param child    The child to add in one of the workspace's screens.
+     * @param screenId The screen in which to add the child.
+     * @param index    The index of the child in grid.
+     */
+    private void addInScreen(View child, long container, long screenId, int index) {
         if (container == Constants.CONTAINER_DESKTOP) {
             if (getScreenWithId(screenId) == null) {
                 Log.e(TAG, "Skipping child, screenId " + screenId + " not found");
@@ -714,7 +725,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         boolean markCellsAsOccupied = true;
         if (!layout.addViewToCellLayout(
             child,
-            y * mLauncher.getDeviceProfile().getInv().getNumColumns() + x,
+            index,
             childId,
             ((CellLayout.LayoutParams) genericLp),
             markCellsAsOccupied
@@ -722,7 +733,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             // TODO: This branch occurs when the workspace is adding views
             // outside of the defined grid
             // maybe we should be deleting these items from the LauncherModel?
-            Log.e(TAG, "Failed to add to item at (" + x + "," + y + ") to CellLayout");
         }
 
         child.setHapticFeedbackEnabled(false);
@@ -1196,11 +1206,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     onNoCellFound(dropTargetLayout);
 
                     // If we can't find a drop location, we return the item to its original position
-                    /*CellLayout.LayoutParams lp = (CellLayout.LayoutParams) cell.getLayoutParams();
-                    mTargetCell[0] = lp.cellX;
-                    mTargetCell[1] = lp.cellY;
-                    CellLayout layout = (CellLayout) cell.getParent().getParent();
-                    layout.markCellsAsOccupiedForView(cell);*/
+                    addInScreen(cell, mDragInfo.getContainer(), mDragInfo.getScreenId(), mDragInfo.getRank());
                 }
             }
 
@@ -1247,6 +1253,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void onDragEnter(DragObject dragObject) {
+        Log.d(TAG, "onDragEnter() called with: dragObject = [" + dragObject + "]");
         mCreateUserFolderOnDrop = false;
         mAddToExistingFolderOnDrop = false;
 
