@@ -180,10 +180,6 @@ open class CellLayout @JvmOverloads constructor(
 
     override fun onMeasure(widthSpec: Int, heightSpec: Int) {
         super.onMeasure(widthSpec, heightSpec)
-        Log.d(
-            TAG,
-            "$this onMeasure() called with: widthSpec = $widthSpec, heightSpec = $heightSpec"
-        )
         val widthSpecMode = MeasureSpec.getMode(widthSpec)
         val heightSpecMode = MeasureSpec.getMode(heightSpec)
         val widthSize = MeasureSpec.getSize(widthSpec)
@@ -192,7 +188,6 @@ open class CellLayout @JvmOverloads constructor(
         val childHeightSize = heightSize - (paddingTop + paddingBottom)
         cellWidth = VariantDeviceProfile.calculateCellWidth(childWidthSize, mCountX)
         cellHeight = VariantDeviceProfile.calculateCellHeight(childHeightSize, mCountY)
-        Log.d(TAG, "cellWidth: $cellWidth")
         setMeasuredDimension(widthSize, heightSize)
         for (i in 0 until childCount) {
             val child = getChildAt(i)
@@ -222,7 +217,6 @@ open class CellLayout @JvmOverloads constructor(
     }
 
     fun measureChild(child: View) {
-        Log.d(TAG, "measureChild() called with: child = $child")
         val lp = child.layoutParams as LayoutParams
         lp.rowSpec = spec(UNDEFINED)
         lp.columnSpec = spec(UNDEFINED)
@@ -238,7 +232,6 @@ open class CellLayout @JvmOverloads constructor(
         } else {
             cellPaddingX = (dp.edgeMarginPx / 2f).toInt()
         }
-        Log.d(TAG, "Hotseat cellPaddingY: $cellPaddingY ${lp.height} $cHeight")
         child.setPadding(cellPaddingX, cellPaddingY, cellPaddingX, 0)
         val childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY)
         val childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY)
@@ -277,6 +270,15 @@ open class CellLayout @JvmOverloads constructor(
         Log.d(TAG, "onViewAdded() called with: child = $child")
     }
 
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+
+        Log.d(
+            TAG,
+            "onLayout() called with: changed = $changed, left = $left, top = $top, right = $right, bottom = $bottom"
+        )
+    }
+
     fun addViewToCellLayout(
         child: View,
         index: Int,
@@ -296,13 +298,12 @@ open class CellLayout @JvmOverloads constructor(
         child.scaleX = 1f
         child.scaleY = 1f
 
-        Log.d(TAG, "Adding view at index: $mContainerType")
-
         // Generate an id for each view, this assumes we have at most 256x256 cells
         // per workspace screen
         if (index >= 0 && index <= mCountX * mCountY - 1) {
 
             child.id = childId
+            child.layoutParams = lp
             addView(child, index, lp)
 
             if (markCells) markCellsAsOccupiedForView(child)
@@ -331,31 +332,6 @@ open class CellLayout @JvmOverloads constructor(
             markCellsAsUnoccupiedForView(getChildAt(i))
         }
         super.removeViews(start, count)
-    }
-
-    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
-        super.onLayout(changed, left, top, right, bottom)
-        /*val count = childCount
-        for (i in 0 until count) {
-            val child = getChildAt(i)
-            if (child.visibility != GONE) {
-                val lp = child.layoutParams as LayoutParams
-                val childLeft = lp.x
-                val childTop = lp.y
-                child.layout(childLeft, childTop, childLeft + lp.width, childTop + lp.height)
-                if (lp.dropped) {
-                    lp.dropped = false
-                    val cellXY: IntArray = mTmpCellXY
-                    getLocationOnScreen(cellXY)
-                    *//*mWallpaperManager.sendWallpaperCommand(
-                        windowToken,
-                        WallpaperManager.COMMAND_DROP,
-                        cellXY[0] + childLeft + lp.width / 2,
-                        cellXY[1] + childTop + lp.height / 2, 0, null
-                    )*//*
-                }
-            }
-        }*/
     }
 
     open fun setDropPending(pending: Boolean) {
@@ -844,14 +820,12 @@ open class CellLayout @JvmOverloads constructor(
                 return intArrayOf(-1, -1)
             }
             var index = result[1] * mCountX + result[0]
-            Log.d(
-                "REORDER",
-                "Index: $index $rowCount == $mCountX $columnCount == $mCountY ${result[0]} ${result[1]}"
-            )
 
             // Handles the case when the icon is being dragged after the last item on the grid.
             if (index > childCount) {
                 index = childCount
+                result[0] = index % mCountX;
+                result[1] = index / mCountX;
             }
 
             //appView.findViewById(R.id.app_label).setVisibility(GONE);
@@ -889,7 +863,7 @@ open class CellLayout @JvmOverloads constructor(
         /*if ((mode == MODE_ON_DROP || !foundSolution)) {
             setUseTempCoords(false)
         }*/
-        requestLayout()
+        //requestLayout()
         return result
     }
 

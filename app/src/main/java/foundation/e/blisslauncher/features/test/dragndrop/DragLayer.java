@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2008 The Android Open Source Project
  *
@@ -33,13 +32,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.animation.Interpolator;
-import android.widget.GridLayout;
-import android.widget.TextView;
 
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.customviews.LauncherPagedView;
 import foundation.e.blisslauncher.features.test.BaseDragLayer;
-import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.TouchController;
 import foundation.e.blisslauncher.features.test.anim.Interpolators;
@@ -208,21 +204,28 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
         DragView dragView, final View child, int duration,
         View anchorView
     ) {
-        CellLayout cellLayout = (CellLayout) child.getParent();
+
+        //TODO: Fix animation once the drag and drop is completed.
+        /*CellLayout cellLayout = (CellLayout) child.getParent();
         GridLayout.LayoutParams lp = (GridLayout.LayoutParams) child.getLayoutParams();
         cellLayout.measureChild(child);
+
+        Log.i("DragLayer", "Child index: "+cellLayout.indexOfChild(child)+" "+child.getX()+" "+child.getY());
 
         Rect r = new Rect();
         getViewRectRelativeToSelf(dragView, r);
 
         int coord[] = new int[2];
         float childScale = child.getScaleX();
-        coord[0] = (int) (child.getX() + (int) (child.getMeasuredWidth() * (1 - childScale) / 2));
+        coord[0] = (int) (lp.x + (int) (child.getMeasuredWidth() * (1 - childScale) / 2));
         coord[1] = (int) (child.getY() + (int) (child.getMeasuredHeight() * (1 - childScale) / 2));
+        Log.i("DragLayer", "animateViewIntoPosition before relative: "+coord[0]+" "+coord[1]);
 
         // Since the child hasn't necessarily been laid out, we force the lp to be updated with
         // the correct coordinates (above) and use these to determine the final location
         float scale = getDescendantCoordRelativeToSelf((View) child.getParent(), coord);
+        Log.i("DragLayer", "animateViewIntoPosition: "+coord[0]+" "+coord[1]+" "+scale);
+
         // We need to account for the scale of the child itself, as the above only accounts for
         // for the scale in parents.
         scale *= childScale;
@@ -245,26 +248,35 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
             }
 
             toX -= (dragView.getMeasuredWidth() - Math.round(scale * child.getMeasuredWidth())) / 2;
-        } /*else if (child instanceof FolderIcon) {
+        } *//*else if (child instanceof FolderIcon) {
             // Account for holographic blur padding on the drag view
             toY += Math.round(scale * (child.getPaddingTop() - dragView.getDragRegionTop()));
             toY -= scale * dragView.getBlurSizeOutline() / 2;
             toY -= (1 - scale) * dragView.getMeasuredHeight() / 2;
             // Center in the x coordinate about the target's drawable
             toX -= (dragView.getMeasuredWidth() - Math.round(scale * child.getMeasuredWidth())) / 2;
-        } */else {
+        } *//*else {
             toY -= (Math.round(scale * (dragView.getHeight() - child.getMeasuredHeight()))) / 2;
             toX -= (Math.round(scale * (dragView.getMeasuredWidth()
                 - child.getMeasuredWidth()))) / 2;
         }
 
         final int fromX = r.left;
-        final int fromY = r.top;
+        final int fromY = r.top;*/
         child.setVisibility(INVISIBLE);
         Runnable onCompleteRunnable = () -> child.setVisibility(VISIBLE);
-        animateViewIntoPosition(dragView, fromX, fromY, toX, toY, 1, 1, 1, toScale, toScale,
+        /*animateViewIntoPosition(dragView, fromX, fromY, toX, toY, 1, 1, 1, toScale, toScale,
             onCompleteRunnable, ANIMATION_END_DISAPPEAR, duration, anchorView
-        );
+        );*/
+        // Show the drop view if it was previously hidden
+        mDropView = dragView;
+        mDropView.requestLayout();
+        child.setVisibility(VISIBLE);
+        if (mDropView != null) {
+            mDragController.onDeferredEndDrag(mDropView);
+        }
+        mDropView = null;
+        invalidate();
     }
 
     public void animateViewIntoPosition(

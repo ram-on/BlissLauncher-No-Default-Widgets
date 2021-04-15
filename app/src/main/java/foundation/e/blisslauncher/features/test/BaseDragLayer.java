@@ -166,9 +166,14 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
         int x = loc[0];
         int y = loc[1];
 
+        int[] temp = new int[2];
+        getLocationOnScreen(temp);
+
+        Log.i("BaseDragLayer", "getViewRectRelativeToSelf iNWindow: "+x+" "+y);
         v.getLocationInWindow(loc);
         int vX = loc[0];
         int vY = loc[1];
+        Log.i("BaseDragLayer", "getViewRectRelativeToSelf ofView: "+vX+" "+vY);
 
         int left = vX - x;
         int top = vY - y;
@@ -289,7 +294,6 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
             final FrameLayout.LayoutParams flp = (FrameLayout.LayoutParams) child.getLayoutParams();
             if (flp instanceof LayoutParams) {
                 final LayoutParams lp = (LayoutParams) flp;
-                Log.i("BaseDragLayer","called");
                 if (lp.customPosition) {
                     child.layout(lp.x, lp.y, lp.x + lp.width, lp.y + lp.height+lp.height);
                 }

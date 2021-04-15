@@ -500,6 +500,10 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
     @SuppressLint("DrawAllocation")
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        Log.d(
+            TAG,
+            "onLayout() called with: changed = [" + changed + "], left = [" + left + "], top = [" + top + "], right = [" + right + "], bottom = [" + bottom + "]"
+        );
         mIsLayoutValid = true;
         final int childCount = getChildCount();
         boolean pageScrollChanged = false;
