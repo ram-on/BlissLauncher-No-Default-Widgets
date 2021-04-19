@@ -270,15 +270,6 @@ open class CellLayout @JvmOverloads constructor(
         Log.d(TAG, "onViewAdded() called with: child = $child")
     }
 
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        super.onLayout(changed, left, top, right, bottom)
-
-        Log.d(
-            TAG,
-            "onLayout() called with: changed = $changed, left = $left, top = $top, right = $right, bottom = $bottom"
-        )
-    }
-
     fun addViewToCellLayout(
         child: View,
         index: Int,
@@ -303,7 +294,12 @@ open class CellLayout @JvmOverloads constructor(
         if (index >= 0 && index <= mCountX * mCountY - 1) {
 
             child.id = childId
-            child.layoutParams = lp
+/*            val rowSpec = spec(UNDEFINED)
+            val colSpec = spec(UNDEFINED)
+            val iconLayoutParams = LayoutParams(rowSpec, colSpec)
+            iconLayoutParams.height = launcher.deviceProfile.cellHeightPx
+            iconLayoutParams.width = launcher.deviceProfile.cellWidthPx
+            iconLayoutParams.setGravity(Gravity.CENTER)*/
             addView(child, index, lp)
 
             if (markCells) markCellsAsOccupiedForView(child)
@@ -824,8 +820,8 @@ open class CellLayout @JvmOverloads constructor(
             // Handles the case when the icon is being dragged after the last item on the grid.
             if (index > childCount) {
                 index = childCount
-                result[0] = index % mCountX;
-                result[1] = index / mCountX;
+                result[0] = index % mCountX
+                result[1] = index / mCountX
             }
 
             //appView.findViewById(R.id.app_label).setVisibility(GONE);
