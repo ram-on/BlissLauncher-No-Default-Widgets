@@ -44,3 +44,7 @@ allprojects {
         }
     }
 }
+
+dependencies {
+    implementation project(':SystemUIShared')
+}
