@@ -775,6 +775,9 @@ open class CellLayout @JvmOverloads constructor(
         }
     }
 
+    fun getChildAt(x: Int, y: Int): View {
+        return getChildAt(y * mCountX + x)
+    }
     open fun performReorder(
         pixelX: Int,
         pixelY: Int,

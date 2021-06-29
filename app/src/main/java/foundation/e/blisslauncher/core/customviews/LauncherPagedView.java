@@ -29,7 +29,9 @@ import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots;
 import foundation.e.blisslauncher.core.database.model.ApplicationItem;
+import foundation.e.blisslauncher.core.database.model.FolderItem;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
+import foundation.e.blisslauncher.core.database.model.ShortcutItem;
 import foundation.e.blisslauncher.core.touch.ItemClickHandler;
 import foundation.e.blisslauncher.core.touch.ItemLongClickListener;
 import foundation.e.blisslauncher.core.utils.Constants;
@@ -49,7 +51,6 @@ import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
@@ -99,8 +100,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private final int[] mTempXY = new int[2];
     float[] mDragViewVisualCenter = new float[2];
     private final float[] mTempTouchCoordinates = new float[2];
-    private boolean mAddToExistingFolderOnDrop;
-    private boolean mCreateUserFolderOnDrop;
     private CellLayout mDropToLayout;
     private CellLayout mDragTargetLayout;
     private CellLayout mDragOverlappingLayout;
@@ -111,9 +110,14 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private int mDragOverX = -1;
     private int mDragOverY = -1;
 
+    private static final int FOLDER_CREATION_TIMEOUT = 0;
     public static final int REORDER_TIMEOUT = 650;
     private final Alarm mFolderCreationAlarm = new Alarm();
     private final Alarm mReorderAlarm = new Alarm();
+    //private FolderIcon mDragOverFolderIcon = null;
+    private boolean mCreateUserFolderOnDrop = false;
+    private boolean mAddToExistingFolderOnDrop = false;
+    private float mMaxDistanceForFolderCreation;
 
     // Related to dragging, folder creation and reordering
     private static final int DRAG_MODE_NONE = 0;
@@ -123,6 +127,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private int mDragMode = DRAG_MODE_NONE;
     int mLastReorderX = -1;
     int mLastReorderY = -1;
+    private IconTextView parentFolderCell;
 
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -189,6 +194,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         );
 
         VariantDeviceProfile grid = mLauncher.getDeviceProfile();
+        mMaxDistanceForFolderCreation = (0.55f * grid.getIconSizePx());
         Rect padding = grid.getWorkspacePadding();
         setPadding(padding.left, padding.top, padding.right, padding.bottom);
         int paddingLeftRight = grid.getCellLayoutPaddingLeftRightPx();
@@ -252,7 +258,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 }
                 launcherItem.screenId = mScreenOrder.size() - 1;
                 launcherItem.cell = workspaceScreen.getChildCount();
-                Log.d(TAG, "launcherItemCell "+launcherItem.cell % mLauncher.getDeviceProfile().getInv().getNumColumns()+" "+launcherItem.cell % mLauncher.getDeviceProfile().getInv().getNumRows()+" "+launcherItem.cell);
+                Log.d(
+                    TAG,
+                    "launcherItemCell " + launcherItem.cell % mLauncher.getDeviceProfile().getInv()
+                        .getNumColumns() + " " + launcherItem.cell % mLauncher.getDeviceProfile()
+                        .getInv().getNumRows() + " " + launcherItem.cell
+                );
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.LayoutParams iconLayoutParams =
@@ -263,7 +274,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 appView.setLayoutParams(iconLayoutParams);
                 appView.setTextVisibility(true);
                 //appView.setWithText(true);
-                Log.i(TAG, "bindItems: "+appView);
+                Log.i(TAG, "bindItems: " + appView);
                 workspaceScreen.addView(appView);
             } else if (launcherItem.container == Constants.CONTAINER_HOTSEAT) {
                 //appView.findViewById(R.id.app_label).setVisibility(GONE);
@@ -669,7 +680,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             TAG,
             "addInScreen() called with: child = [" + child + "], container = [" + container + "], screenId = [" + screenId + "], x = [" + x + "], y = [" + y + "]"
         );
-        addInScreen(child, container, screenId, y * mLauncher.getDeviceProfile().getInv().getNumColumns() + x);
+        addInScreen(
+            child,
+            container,
+            screenId,
+            y * mLauncher.getDeviceProfile().getInv().getNumColumns() + x
+        );
     }
 
     /**
@@ -742,7 +758,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             // outside of the defined grid
             // maybe we should be deleting these items from the LauncherModel?
         }
-
 
         child.setHapticFeedbackEnabled(false);
         child.setOnLongClickListener(ItemLongClickListener.INSTANCE_WORKSPACE);
@@ -945,7 +960,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         super.onScrollChanged(l, t, oldl, oldt);
 
         // Update the page indicator progress.
-        boolean isTransitioning = (getLayoutTransition() != null && getLayoutTransition().isRunning());
+        boolean isTransitioning =
+            (getLayoutTransition() != null && getLayoutTransition().isRunning());
         if (!isTransitioning) {
             showPageIndicatorAtCurrentScroll();
         }
@@ -1182,7 +1198,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
                 boolean foundCell = mTargetCell[0] >= 0 && mTargetCell[1] >= 0;
 
-                Log.d(TAG, "Found cell "+foundCell+" "+mTargetCell[0]+" "+mTargetCell[0]);
+                Log.d(TAG, "Found cell " + foundCell + " " + mTargetCell[0] + " " + mTargetCell[0]);
 
                 if (foundCell) {
                     if (getScreenIdForPageIndex(mCurrentPage) != screenId && !hasMovedIntoHotseat) {
@@ -1216,7 +1232,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     onNoCellFound(dropTargetLayout);
 
                     // If we can't find a drop location, we return the item to its original position
-                    addInScreen(cell, mDragInfo.getContainer(), mDragInfo.getScreenId(), mDragInfo.getRank());
+                    addInScreen(
+                        cell,
+                        mDragInfo.getContainer(),
+                        mDragInfo.getScreenId(),
+                        mDragInfo.getRank()
+                    );
                 }
             }
 
@@ -1382,10 +1403,11 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     private void cleanupFolderCreation() {
-        // TODO: Enable when supporting folder creation
-        /*if (mFolderCreateBg != null) {
-            mFolderCreateBg.animateToRest();
-        }*/
+        if(parentFolderCell != null) {
+            parentFolderCell.setScaleX(1f);
+            parentFolderCell.setScaleY(1f);
+        }
+
         mFolderCreationAlarm.setOnAlarmListener(null);
         mFolderCreationAlarm.cancelAlarm();
     }
@@ -1481,9 +1503,15 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             if (mLauncher.isHotseatLayout(mDragTargetLayout)) {
                 mapPointFromSelfToHotseatLayout(mLauncher.getHotseat(), mDragViewVisualCenter);
             } else {
-                Log.d(TAG, "Before mapping: "+mDragViewVisualCenter[0]+" "+mDragViewVisualCenter[1]);
+                Log.d(
+                    TAG,
+                    "Before mapping: " + mDragViewVisualCenter[0] + " " + mDragViewVisualCenter[1]
+                );
                 mapPointFromSelfToChild(mDragTargetLayout, mDragViewVisualCenter);
-                Log.d(TAG, "After mapping: "+mDragViewVisualCenter[0]+" "+mDragViewVisualCenter[1]);
+                Log.d(
+                    TAG,
+                    "After mapping: " + mDragViewVisualCenter[0] + " " + mDragViewVisualCenter[1]
+                );
             }
 
             mTargetCell = findNearestArea((int) mDragViewVisualCenter[0],
@@ -1499,7 +1527,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 mDragViewVisualCenter[0], mDragViewVisualCenter[1], mTargetCell);
 
             //TODO: Enable when supporting foler
-            //manageFolderFeedback(mDragTargetLayout, mTargetCell, targetCellDistance, d);
+            manageFolderFeedback(mDragTargetLayout, mTargetCell, targetCellDistance, d);
 
             boolean nearestDropOccupied = mDragTargetLayout.isNearestDropLocationOccupied((int)
                 mDragViewVisualCenter[0], (int) mDragViewVisualCenter[1], child, mTargetCell);
@@ -1510,7 +1538,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             );
             Log.d(
                 TAG,
-                "Reorder " + mDragMode + " " + mReorderAlarm.alarmPending() +" "+nearestDropOccupied
+                "Reorder " + mDragMode + " " + mReorderAlarm
+                    .alarmPending() + " " + nearestDropOccupied
             );
 
             if (!nearestDropOccupied) {
@@ -1677,6 +1706,128 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             pixelX, pixelY, recycle);
     }
 
+    boolean willCreateUserFolder(
+        LauncherItem info, CellLayout target, int[] targetCell,
+        float distance, boolean considerTimeout
+    ) {
+        if (distance > mMaxDistanceForFolderCreation) return false;
+        View dropOverView = target.getChildAt(targetCell[0], targetCell[1]);
+        return willCreateUserFolder(info, dropOverView, considerTimeout);
+    }
+
+    boolean willCreateUserFolder(LauncherItem info, View dropOverView, boolean considerTimeout) {
+
+        boolean hasntMoved = false;
+        if (mDragInfo != null) {
+            hasntMoved = dropOverView == mDragInfo.getCell();
+        }
+
+        if (dropOverView == null || hasntMoved || (considerTimeout && !mCreateUserFolderOnDrop)) {
+            return false;
+        }
+
+        boolean aboveShortcut = (dropOverView.getTag() instanceof ShortcutItem || dropOverView
+            .getTag() instanceof ApplicationItem);
+        boolean willBecomeShortcut =
+            (info.itemType == Constants.ITEM_TYPE_APPLICATION ||
+                info.itemType == Constants.ITEM_TYPE_SHORTCUT);
+
+        return (aboveShortcut && willBecomeShortcut);
+    }
+
+    boolean willAddToExistingUserFolder(
+        LauncherItem dragInfo, CellLayout target, int[] targetCell,
+        float distance
+    ) {
+        if (distance > mMaxDistanceForFolderCreation) return false;
+        View dropOverView = target.getChildAt(targetCell[0], targetCell[1]);
+        return willAddToExistingUserFolder(dragInfo, dropOverView);
+    }
+
+    boolean willAddToExistingUserFolder(LauncherItem dragInfo, View dropOverView) {
+        if (dropOverView.getTag() instanceof FolderItem) {
+            return true;
+        }
+        return false;
+    }
+
+    private void manageFolderFeedback(
+        CellLayout targetLayout,
+        int[] targetCell, float distance, DragObject dragObject
+    ) {
+        Log.d(
+            TAG,
+            "manageFolderFeedback() called with: targetLayout = [" + targetLayout + "], targetCell = [" + targetCell + "], distance = [" + distance + "], dragObject = [" + dragObject + "]"
+        );
+        if (distance > mMaxDistanceForFolderCreation) return;
+
+        final View dragOverView = mDragTargetLayout.getChildAt(mTargetCell[1], mTargetCell[1]);
+        LauncherItem info = dragObject.dragInfo;
+        boolean userFolderPending = willCreateUserFolder(info, dragOverView, false);
+        Log.i(TAG, "manageFolderFeedback: userFolderPending: "+userFolderPending);
+        if (mDragMode == DRAG_MODE_NONE && userFolderPending &&
+            !mFolderCreationAlarm.alarmPending()) {
+
+            FolderCreationAlarmListener listener = new
+                FolderCreationAlarmListener(targetLayout, targetCell[0], targetCell[1]);
+
+            if (!dragObject.accessibleDrag) {
+                mFolderCreationAlarm.setOnAlarmListener(listener);
+                mFolderCreationAlarm.setAlarm(FOLDER_CREATION_TIMEOUT);
+            } else {
+                listener.onAlarm(mFolderCreationAlarm);
+            }
+
+            //TODO: Enable when supporting accessibility
+            /*if (dragObject.stateAnnouncer != null) {
+                dragObject.stateAnnouncer.announce(WorkspaceAccessibilityHelper
+                    .getDescriptionForDropOver(dragOverView, getContext()));
+            }*/
+            return;
+        }
+
+        boolean willAddToFolder = willAddToExistingUserFolder(info, dragOverView);
+        /*if (willAddToFolder && mDragMode == DRAG_MODE_NONE) {
+            mDragOverFolderIcon = ((FolderIcon) dragOverView);
+            mDragOverFolderIcon.onDragEnter(info);
+            if (targetLayout != null) {
+                targetLayout.clearDragOutlines();
+            }
+            setDragMode(DRAG_MODE_ADD_TO_FOLDER);
+            return;
+        }*/
+
+        if (mDragMode == DRAG_MODE_ADD_TO_FOLDER && !willAddToFolder) {
+            setDragMode(DRAG_MODE_NONE);
+        }
+        if (mDragMode == DRAG_MODE_CREATE_FOLDER && !userFolderPending) {
+            setDragMode(DRAG_MODE_NONE);
+        }
+    }
+
+    class FolderCreationAlarmListener implements OnAlarmListener {
+        final CellLayout layout;
+        final IconTextView cell;
+        final int cellX;
+        final int cellY;
+
+        public FolderCreationAlarmListener(CellLayout layout, int cellX, int cellY) {
+            this.layout = layout;
+            this.cellX = cellX;
+            this.cellY = cellY;
+
+            this.cell = (IconTextView) layout.getChildAt(cellX, cellY);
+        }
+
+        public void onAlarm(Alarm alarm) {
+            Log.d(TAG, "onAlarm() called with: alarm = [" + alarm + "]");
+            parentFolderCell = cell;
+            parentFolderCell.setScaleX(1.2f);
+            parentFolderCell.setScaleY(1.2f);
+            setDragMode(DRAG_MODE_CREATE_FOLDER);
+        }
+    }
+
     class ReorderAlarmListener implements OnAlarmListener {
         final float[] dragViewCenter;
         final DragObject dragObject;
@@ -1689,7 +1840,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
 
         public void onAlarm(Alarm alarm) {
-            Log.d(TAG, "onAlarm() called with: alarm = [" + alarm + "]");
             int[] resultSpan = new int[2];
             mTargetCell = findNearestArea((int) mDragViewVisualCenter[0],
                 (int) mDragViewVisualCenter[1], mDragTargetLayout,
@@ -1702,7 +1852,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 (int) mDragViewVisualCenter[1], 1, 1, 1, 1,
                 child, mTargetCell, resultSpan, CellLayout.MODE_DRAG_OVER
             );
-            Log.d(TAG, "Reorder " + Arrays.toString(mTargetCell));
 
             if (mTargetCell[0] < 0 || mTargetCell[1] < 0) {
                 mDragTargetLayout.revertTempState();
