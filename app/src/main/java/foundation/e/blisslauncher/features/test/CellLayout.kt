@@ -585,7 +585,6 @@ open class CellLayout @JvmOverloads constructor(
         result: IntArray?,
         resultSpan: IntArray?
     ): IntArray? {
-
         var pixelX = pixelX
         var pixelY = pixelY
         lazyInitTempRectStack()
@@ -676,7 +675,6 @@ open class CellLayout @JvmOverloads constructor(
                 validRegions.push(currentRect)
                 val distance =
                     hypot((cellXY[0] - pixelX).toDouble(), (cellXY[1] - pixelY).toDouble())
-
                 if (distance <= bestDistance && !contained ||
                     currentRect.contains(bestRect)
                 ) {
@@ -725,6 +723,7 @@ open class CellLayout @JvmOverloads constructor(
     open fun regionToCenterPoint(cellX: Int, cellY: Int, spanX: Int, spanY: Int, result: IntArray) {
         val hStartPadding = paddingLeft
         val vStartPadding = paddingTop
+        Log.i(TAG, "regionToCenterPoint: $hStartPadding $vStartPadding")
         result[0] = hStartPadding + cellX * cellWidth + spanX * cellWidth / 2
         result[1] = vStartPadding + cellY * cellHeight + spanY * cellHeight / 2
     }
@@ -778,6 +777,7 @@ open class CellLayout @JvmOverloads constructor(
     fun getChildAt(x: Int, y: Int): View {
         return getChildAt(y * mCountX + x)
     }
+
     open fun performReorder(
         pixelX: Int,
         pixelY: Int,

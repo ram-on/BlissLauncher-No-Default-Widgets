@@ -15,6 +15,7 @@
  */
 package foundation.e.blisslauncher.core.touch;
 
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnLongClickListener;
 
@@ -29,9 +30,16 @@ import foundation.e.blisslauncher.features.test.dragndrop.DragOptions;
 public class ItemLongClickListener {
 
     public static OnLongClickListener INSTANCE_WORKSPACE =
-            ItemLongClickListener::onWorkspaceItemLongClick;
+        ItemLongClickListener::onWorkspaceItemLongClick;
+
+    private static final String TAG = "ItemLongClickListener";
 
     private static boolean onWorkspaceItemLongClick(View v) {
+        int[] temp = new int[2];
+        v.getLocationOnScreen(temp);
+        Log.i(TAG,
+            "onWorkspaceItemLongClick: [" + v.getLeft() + ", " + v.getTop() + "] ["+temp[0]+", "+temp[1]+"]"
+        );
         TestActivity launcher = TestActivity.Companion.getLauncher(v.getContext());
         if (!canStartDrag(launcher)) return false;
         //if (!launcher.isInState(NORMAL) && !launcher.isInState(OVERVIEW)) return false;
@@ -44,7 +52,8 @@ public class ItemLongClickListener {
 
     public static void beginDrag(
         View v, TestActivity launcher, LauncherItem info,
-            DragOptions dragOptions) {
+        DragOptions dragOptions
+    ) {
         //TODO: Enable when supporting folders
        /* if (info.container >= 0) {
             Folder folder = Folder.getOpen(launcher);

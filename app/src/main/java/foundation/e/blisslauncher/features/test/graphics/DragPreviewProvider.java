@@ -26,6 +26,7 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 
 import java.nio.ByteBuffer;
@@ -68,6 +69,7 @@ public class DragPreviewProvider {
         } else {
             previewPadding = blurSizeOutline;
         }
+        Log.i("DragPreview", "PreviewPadding: "+previewPadding);
     }
 
     /**
@@ -123,15 +125,7 @@ public class DragPreviewProvider {
             Rect bounds = getDrawableBounds(d);
             width = bounds.width();
             height = bounds.height();
-        } /*else if (mView instanceof LauncherAppWidgetHostView) {
-            float scale = ((LauncherAppWidgetHostView) mView).getScaleToFit();
-            width = (int) (mView.getWidth() * scale);
-            height = (int) (mView.getHeight() * scale);
-
-            // Use software renderer for widgets as we know that they already work
-            return BitmapRenderer.createSoftwareBitmap(width + blurSizeOutline,
-                    height + blurSizeOutline, (c) -> drawDragView(c, scale));
-        }*/
+        }
 
         return BitmapRenderer.createHardwareBitmap(width + blurSizeOutline,
                 height + blurSizeOutline, (c) -> drawDragView(c, 1));
@@ -160,10 +154,14 @@ public class DragPreviewProvider {
     public float getScaleAndPosition(Bitmap preview, int[] outPos) {
         float scale = TestActivity.Companion.getLauncher(mView.getContext())
                 .getDragLayer().getLocationInDragLayer(mView, outPos);
+        Log.i("DragPreview", "getScaleAndPosition: "+outPos[0]+" "+outPos[1]+" "+preview.getWidth()+" "+mView.getWidth());
         outPos[0] = Math.round(outPos[0] -
                 (preview.getWidth() - scale * mView.getWidth() * mView.getScaleX()) / 2);
         outPos[1] = Math.round(outPos[1] - (1 - scale) * preview.getHeight() / 2
                 - previewPadding / 2);
+        Log.i("DragPreview", "getScaleAndPosition: "+outPos[0]+" "+outPos[1] + " "+scale);
+
+
         return scale;
     }
 

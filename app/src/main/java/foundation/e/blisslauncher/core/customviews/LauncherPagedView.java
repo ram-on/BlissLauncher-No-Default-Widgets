@@ -35,6 +35,7 @@ import foundation.e.blisslauncher.core.database.model.ShortcutItem;
 import foundation.e.blisslauncher.core.touch.ItemClickHandler;
 import foundation.e.blisslauncher.core.touch.ItemLongClickListener;
 import foundation.e.blisslauncher.core.utils.Constants;
+import foundation.e.blisslauncher.core.utils.GraphicsUtil;
 import foundation.e.blisslauncher.core.utils.LongArrayMap;
 import foundation.e.blisslauncher.features.launcher.Hotseat;
 import foundation.e.blisslauncher.features.test.Alarm;
@@ -1101,10 +1102,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void onDrop(DragObject d, DragOptions options) {
-        Log.d(
-            TAG,
-            "onDrop() called with: dragObject = [" + d + "], options = [" + options + "]"
-        );
         mDragViewVisualCenter = d.getVisualCenter(mDragViewVisualCenter);
         CellLayout dropTargetLayout = mDropToLayout;
 
@@ -1152,17 +1149,14 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
                 // If the item being dropped is a shortcut and the nearest drop
                 // cell also contains a shortcut, then create a folder with the two shortcuts.
-
-                //TODO: uncomment when adding folder support.
-                /*if (createUserFolderIfNecessary(cell, container,
+                if (createUserFolderIfNecessary(cell, container,
                     dropTargetLayout, mTargetCell, distance, false, d.dragView
                 ) ||
                     addToExistingFolderIfNecessary(cell, dropTargetLayout, mTargetCell,
                         distance, d, false
                     )) {
-                    mLauncher.getStateManager().goToState(NORMAL, SPRING_LOADED_EXIT_DELAY);
                     return;
-                }*/
+                }
 
                 // Aside from the special case where we're dropping a shortcut onto a shortcut,
                 // we need to find the nearest cell location that is vacant
@@ -1267,6 +1261,112 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             /*mLauncher.getStateManager().goToState(
                 NORMAL, SPRING_LOADED_EXIT_DELAY, onCompleteRunnable);*/
         }
+    }
+
+    boolean createUserFolderIfNecessary(
+        View newView, long container, CellLayout target,
+        int[] targetCell, float distance, boolean external, DragView dragView
+    ) {
+        if (distance > mMaxDistanceForFolderCreation) return false;
+        View v = target.getChildAt(targetCell[0], targetCell[1]);
+
+        boolean hasntMoved = false;
+        if (mDragInfo != null) {
+            CellLayout cellParent = getParentCellLayoutForView(mDragInfo.getCell());
+            hasntMoved = (mDragInfo.getRank() % cellParent.getMCountX() == targetCell[0] &&
+                mDragInfo.getRank() / cellParent
+                    .getMCountX() == targetCell[1]) && (cellParent == target);
+        }
+
+        if (v == null || hasntMoved || !mCreateUserFolderOnDrop) return false;
+        mCreateUserFolderOnDrop = false;
+        final long screenId = getIdForScreen(target);
+
+        boolean aboveShortcut =
+            (v.getTag() instanceof ApplicationItem) || (v.getTag() instanceof ShortcutItem);
+        boolean willBecomeShortcut =
+            (v.getTag() instanceof ApplicationItem) || (v.getTag() instanceof ShortcutItem);
+
+        if (aboveShortcut && willBecomeShortcut) {
+            LauncherItem sourceItem = (LauncherItem) newView.getTag();
+            LauncherItem destItem = (LauncherItem) v.getTag();
+
+            Rect folderLocation = new Rect();
+            target.removeView(v);
+            FolderItem fi = new FolderItem();
+            fi.title = getResources().getString(R.string.untitled);
+            fi.id = String.valueOf(System.currentTimeMillis());
+            fi.items = new ArrayList<>();
+            sourceItem.container = Long.parseLong(fi.id);
+            destItem.container = Long.parseLong(fi.id);
+            sourceItem.screenId = -1;
+            destItem.screenId = -1;
+            sourceItem.cell = fi.items.size();
+            fi.items.add(sourceItem);
+            destItem.cell = fi.items.size();
+            fi.items.add(destItem);
+            Drawable folderIcon = new GraphicsUtil(getContext()).generateFolderIcon(getContext(),
+                sourceItem.icon, destItem.icon
+            );
+            fi.icon = folderIcon;
+            fi.container = container;
+            fi.screenId = screenId;
+            fi.cell = targetCell[1] * mLauncher.getDeviceProfile().getInv()
+                .getNumColumns() + targetCell[0];
+            IconTextView folderView = (IconTextView) LayoutInflater.from(getContext())
+                .inflate(R.layout.app_icon, null, false);
+            folderView.applyFromShortcutItem(fi);
+            folderView.setOnClickListener(ItemClickHandler.INSTANCE);
+            folderView.setOnLongClickListener(ItemLongClickListener.INSTANCE_WORKSPACE);
+            addInScreen(folderView, fi);
+            // if the drag started here, we need to remove it from the workspace
+            if (!external) {
+                getParentCellLayoutForView(mDragInfo.getCell()).removeView(mDragInfo.getCell());
+            }
+            //Add animation here.
+            dragView.remove();
+            dragView = null;
+            invalidate();
+            return true;
+        }
+        return false;
+    }
+
+    private void addInScreen(IconTextView child, LauncherItem item) {
+        addInScreen(child, item.container, item.screenId, item.cell);
+    }
+
+    boolean addToExistingFolderIfNecessary(
+        View newView, CellLayout target, int[] targetCell,
+        float distance, DragObject d, boolean external
+    ) {
+        if (distance > mMaxDistanceForFolderCreation) return false;
+
+        View dropOverView = target.getChildAt(targetCell[0], targetCell[1]);
+        if (!mAddToExistingFolderOnDrop) return false;
+        mAddToExistingFolderOnDrop = false;
+
+        if ((dropOverView instanceof IconTextView) && (dropOverView
+            .getTag() instanceof FolderItem)) {
+            FolderItem fi = (FolderItem) dropOverView.getTag();
+            LauncherItem sourceItem = (LauncherItem) newView.getTag();
+            sourceItem.container = Long.parseLong(fi.id);
+            sourceItem.screenId = -1;
+            sourceItem.cell = fi.items.size();
+            fi.items.add(sourceItem);
+            fi.icon = new GraphicsUtil(getContext()).generateFolderIcon(getContext(), fi);
+            ((IconTextView) dropOverView).applyFromShortcutItem(fi);
+            // if the drag started here, we need to remove it from the workspace
+            if (!external) {
+                getParentCellLayoutForView(mDragInfo.getCell()).removeView(mDragInfo.getCell());
+            }
+            //Add animation here.
+            d.dragView.remove();
+            d.dragView = null;
+            invalidate();
+            return true;
+        }
+        return false;
     }
 
     public void onNoCellFound(View dropTargetLayout) {
@@ -1403,7 +1503,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     private void cleanupFolderCreation() {
-        if(parentFolderCell != null) {
+        if (parentFolderCell != null) {
             parentFolderCell.setScaleX(1f);
             parentFolderCell.setScaleY(1f);
         }
@@ -1615,10 +1715,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     public void startDrag(CellLayout.CellInfo cellInfo, DragOptions dragOptions) {
-        Log.d(
-            TAG,
-            "startDrag() called with: longClickCellInfo = [" + cellInfo + "], dragOptions = [" + dragOptions + "]"
-        );
         View child = cellInfo.getCell();
         mDragInfo = cellInfo;
         child.setVisibility(GONE);
@@ -1629,7 +1725,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         Object dragObject = child.getTag();
         if (!(dragObject instanceof LauncherItem)) {
             String msg = "Drag started with a view that has no tag set. This "
-                + "will cause a crash (issue 11627249) down the line. "
+                + "will cause a crash down the line. "
                 + "View: " + child + "  tag: " + child.getTag();
             throw new IllegalStateException(msg);
         }
@@ -1667,6 +1763,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         int dragLayerX = mTempXY[0];
         int dragLayerY = mTempXY[1];
 
+        Log.i(TAG, "beginDragShared: " + dragLayerY);
+
         VariantDeviceProfile grid = mLauncher.getDeviceProfile();
         Point dragVisualizeOffset = null;
         Rect dragRect = null;
@@ -1674,6 +1772,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             dragRect =
                 ((IconTextView) child).getIconBounds();
             dragLayerY += dragRect.top;
+            Log.i(TAG, "beginDragShared: " + dragLayerY + " " + dragRect);
+
             // Note: The dragRect is used to calculate drag layer offsets, but the
             // dragVisualizeOffset in addition to the dragRect (the size) to position the outline.
             dragVisualizeOffset = new Point(-halfPadding, halfPadding);
@@ -1761,15 +1861,15 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         );
         if (distance > mMaxDistanceForFolderCreation) return;
 
-        final View dragOverView = mDragTargetLayout.getChildAt(mTargetCell[1], mTargetCell[1]);
+        final View dragOverView = mDragTargetLayout.getChildAt(mTargetCell[0], mTargetCell[1]);
         LauncherItem info = dragObject.dragInfo;
         boolean userFolderPending = willCreateUserFolder(info, dragOverView, false);
-        Log.i(TAG, "manageFolderFeedback: userFolderPending: "+userFolderPending);
+        Log.i(TAG, "manageFolderFeedback: userFolderPending: " + userFolderPending);
         if (mDragMode == DRAG_MODE_NONE && userFolderPending &&
             !mFolderCreationAlarm.alarmPending()) {
 
             FolderCreationAlarmListener listener = new
-                FolderCreationAlarmListener(targetLayout, targetCell[0], targetCell[1]);
+                FolderCreationAlarmListener(targetLayout, targetCell[0], targetCell[1], true);
 
             if (!dragObject.accessibleDrag) {
                 mFolderCreationAlarm.setOnAlarmListener(listener);
@@ -1787,15 +1887,20 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
 
         boolean willAddToFolder = willAddToExistingUserFolder(info, dragOverView);
-        /*if (willAddToFolder && mDragMode == DRAG_MODE_NONE) {
-            mDragOverFolderIcon = ((FolderIcon) dragOverView);
-            mDragOverFolderIcon.onDragEnter(info);
-            if (targetLayout != null) {
-                targetLayout.clearDragOutlines();
+        if (willAddToFolder && mDragMode == DRAG_MODE_NONE && !mFolderCreationAlarm
+            .alarmPending()) {
+            FolderCreationAlarmListener listener = new
+                FolderCreationAlarmListener(targetLayout, targetCell[0], targetCell[1], false);
+
+            if (!dragObject.accessibleDrag) {
+                mFolderCreationAlarm.setOnAlarmListener(listener);
+                mFolderCreationAlarm.setAlarm(FOLDER_CREATION_TIMEOUT);
+            } else {
+                listener.onAlarm(mFolderCreationAlarm);
             }
             setDragMode(DRAG_MODE_ADD_TO_FOLDER);
             return;
-        }*/
+        }
 
         if (mDragMode == DRAG_MODE_ADD_TO_FOLDER && !willAddToFolder) {
             setDragMode(DRAG_MODE_NONE);
@@ -1810,13 +1915,19 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         final IconTextView cell;
         final int cellX;
         final int cellY;
+        final boolean createFolder;
 
-        public FolderCreationAlarmListener(CellLayout layout, int cellX, int cellY) {
+        public FolderCreationAlarmListener(
+            CellLayout layout,
+            int cellX,
+            int cellY,
+            boolean createFolder
+        ) {
             this.layout = layout;
             this.cellX = cellX;
             this.cellY = cellY;
-
             this.cell = (IconTextView) layout.getChildAt(cellX, cellY);
+            this.createFolder = createFolder;
         }
 
         public void onAlarm(Alarm alarm) {
@@ -1824,7 +1935,11 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             parentFolderCell = cell;
             parentFolderCell.setScaleX(1.2f);
             parentFolderCell.setScaleY(1.2f);
-            setDragMode(DRAG_MODE_CREATE_FOLDER);
+            if (createFolder) {
+                setDragMode(DRAG_MODE_CREATE_FOLDER);
+            } else {
+                setDragMode(DRAG_MODE_ADD_TO_FOLDER);
+            }
         }
     }
 
