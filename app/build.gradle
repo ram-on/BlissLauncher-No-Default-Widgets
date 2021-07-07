@@ -105,7 +105,8 @@ dependencies {
 
     apiNougatImplementation 'org.cyanogenmod:platform.sdk:6.0'
     apiOreoImplementation files('libs/lineage-sdk-oreo.jar')
-    apiQImplementation files('libs/lineage-sdk-q.jar')
+    implementation files('libs/sysui_shared.jar')
+
 
     debugImplementation 'com.amitshekhar.android:debug-db:1.0.4'
 
