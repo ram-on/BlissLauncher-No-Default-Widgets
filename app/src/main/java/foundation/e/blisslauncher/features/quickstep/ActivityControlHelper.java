@@ -546,7 +546,7 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
 
         void open();
 
-        void setHandler(com.android.quickstep.WindowTransformSwipeHandler handler);
+        void setHandler(WindowTransformSwipeHandler handler);
 
         void finish();
     }

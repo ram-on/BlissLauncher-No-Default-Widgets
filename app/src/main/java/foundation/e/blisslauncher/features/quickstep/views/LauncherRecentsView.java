@@ -27,26 +27,17 @@ import android.util.FloatProperty;
 import android.view.View;
 import android.view.ViewDebug;
 
-import com.android.launcher3.DeviceProfile;
-import com.android.launcher3.Launcher;
-import com.android.launcher3.LauncherState;
-import com.android.launcher3.R;
-import com.android.launcher3.anim.Interpolators;
-import com.android.launcher3.views.ScrimView;
-import com.android.quickstep.OverviewInteractionState;
-import com.android.quickstep.util.ClipAnimationHelper;
-import com.android.quickstep.util.LayoutUtils;
-
-import static com.android.launcher3.LauncherAppTransitionManagerImpl.ALL_APPS_PROGRESS_OFF_SCREEN;
-import static com.android.launcher3.LauncherState.ALL_APPS_HEADER_EXTRA;
-import static com.android.launcher3.LauncherState.NORMAL;
-import static com.android.launcher3.allapps.AllAppsTransitionController.ALL_APPS_PROGRESS;
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.features.quickstep.util.LayoutUtils;
+import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
+import foundation.e.blisslauncher.features.test.anim.Interpolators;
 
 /**
  * {@link RecentsView} used in Launcher activity
  */
 @TargetApi(Build.VERSION_CODES.O)
-public class LauncherRecentsView extends RecentsView<Launcher> {
+public class LauncherRecentsView extends RecentsView<TestActivity> {
 
     public static final FloatProperty<LauncherRecentsView> TRANSLATION_Y_FACTOR =
             new FloatProperty<LauncherRecentsView>("translationYFactor") {
@@ -149,7 +140,7 @@ public class LauncherRecentsView extends RecentsView<Launcher> {
     }
 
     @Override
-    protected void getTaskSize(DeviceProfile dp, Rect outRect) {
+    protected void getTaskSize(VariantDeviceProfile dp, Rect outRect) {
         LayoutUtils.calculateLauncherTaskSize(getContext(), dp, outRect);
     }
 
@@ -166,6 +157,6 @@ public class LauncherRecentsView extends RecentsView<Launcher> {
 
     @Override
     public boolean shouldUseMultiWindowTaskSizeStrategy() {
-        return mActivity.isInMultiWindowModeCompat();
+        return mActivity.isInMultiWindowMode();
     }
 }

@@ -203,4 +203,6 @@
 
     <!-- Accessibility title for the list of recent apps [CHAR_LIMIT=none] -->
     <string name="accessibility_recent_apps">Recent apps</string>
+    <string name="app_info_drop_target_label">App Info</string>
+    <string name="activity_not_available">App isn\'t available</string>
 </resources>

@@ -11,4 +11,5 @@
 
     <!-- Tag id used for view scrim -->
     <item type="id" name="view_scrim" />
+    <string name="task_overlay_factory_clas" translatable="false" />
 </resources>

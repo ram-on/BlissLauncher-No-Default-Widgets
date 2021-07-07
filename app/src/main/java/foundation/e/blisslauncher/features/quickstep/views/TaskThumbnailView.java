@@ -32,22 +32,21 @@ import android.util.FloatProperty;
 import android.util.Property;
 import android.view.View;
 
-import com.android.launcher3.BaseActivity;
-import com.android.launcher3.DeviceProfile;
-import com.android.launcher3.R;
-import com.android.launcher3.Utilities;
-import com.android.launcher3.config.FeatureFlags;
-import com.android.launcher3.util.SystemUiController;
-import com.android.launcher3.util.Themes;
-import com.android.quickstep.TaskOverlayFactory;
-import com.android.quickstep.TaskOverlayFactory.TaskOverlay;
 import com.android.systemui.shared.recents.model.Task;
 import com.android.systemui.shared.recents.model.ThumbnailData;
+
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.features.quickstep.TaskOverlayFactory;
+import foundation.e.blisslauncher.features.quickstep.util.Themes;
+import foundation.e.blisslauncher.features.test.BaseActivity;
+import foundation.e.blisslauncher.features.test.SystemUiController;
+import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 
 import static com.android.systemui.shared.system.WindowManagerWrapper.WINDOWING_MODE_FULLSCREEN;
 
 /**
- * A task in the Recents view.
+ * A thumbnail of task in the Recents view.
  */
 public class TaskThumbnailView extends View {
 
@@ -70,7 +69,7 @@ public class TaskThumbnailView extends View {
     private final float mCornerRadius;
 
     private final BaseActivity mActivity;
-    private final TaskOverlay mOverlay;
+    private final TaskOverlayFactory.TaskOverlay mOverlay;
     private final boolean mIsDarkTextTheme;
     private final Paint mPaint = new Paint();
     private final Paint mBackgroundPaint = new Paint();
@@ -101,7 +100,10 @@ public class TaskThumbnailView extends View {
         mPaint.setFilterBitmap(true);
         mBackgroundPaint.setColor(Color.WHITE);
         mActivity = BaseActivity.fromContext(context);
-        mIsDarkTextTheme = Themes.getAttrBoolean(mActivity, R.attr.isWorkspaceDarkText);
+
+        //TODO: Fix with correct theme once implementation is done.
+        //mIsDarkTextTheme = Themes.getAttrBoolean(mActivity, R.attr.isWorkspaceDarkText);
+        mIsDarkTextTheme = false;
     }
 
     public void bind() {
@@ -225,7 +227,7 @@ public class TaskThumbnailView extends View {
                     (thumbnailInsets.top + thumbnailInsets.bottom) * scale;
 
             final float thumbnailScale;
-            final DeviceProfile profile = mActivity.getDeviceProfile();
+            final VariantDeviceProfile profile = mActivity.getDeviceProfile();
 
             if (getMeasuredWidth() == 0) {
                 // If we haven't measured , skip the thumbnail drawing and only draw the background
@@ -235,9 +237,8 @@ public class TaskThumbnailView extends View {
                 final Configuration configuration =
                         getContext().getResources().getConfiguration();
                 // Rotate the screenshot if not in multi-window mode
-                rotate = FeatureFlags.OVERVIEW_USE_SCREENSHOT_ORIENTATION &&
-                        configuration.orientation != mThumbnailData.orientation &&
-                        !mActivity.isInMultiWindowModeCompat() &&
+                rotate = configuration.orientation != mThumbnailData.orientation &&
+                        !mActivity.isInMultiWindowMode() &&
                         mThumbnailData.windowingMode == WINDOWING_MODE_FULLSCREEN;
                 // Scale the screenshot to always fit the width of the card.
                 thumbnailScale = rotate
@@ -246,7 +247,9 @@ public class TaskThumbnailView extends View {
             }
 
             if (rotate) {
-                int rotationDir = profile.isVerticalBarLayout() && !profile.isSeascape() ? -1 : 1;
+                // TODO: Fix this when supporting landscape mode blisslauncher.
+                // int rotationDir = profile.isVerticalBarLayout() && !profile.isSeascape() ? -1 : 1;
+                int rotationDir = 1;
                 mMatrix.setRotate(90 * rotationDir);
                 int newLeftInset = rotationDir == 1 ? thumbnailInsets.bottom : thumbnailInsets.top;
                 int newTopInset = rotationDir == 1 ? thumbnailInsets.left : thumbnailInsets.right;

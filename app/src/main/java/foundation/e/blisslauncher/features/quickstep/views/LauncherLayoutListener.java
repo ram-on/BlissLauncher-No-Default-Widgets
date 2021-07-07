@@ -17,33 +17,33 @@ package foundation.e.blisslauncher.features.quickstep.views;
 
 import android.graphics.Rect;
 import android.view.MotionEvent;
+import android.view.WindowInsets;
 
-import com.android.launcher3.AbstractFloatingView;
-import com.android.launcher3.Insettable;
-import com.android.launcher3.Launcher;
-import com.android.quickstep.ActivityControlHelper.LayoutListener;
-import com.android.quickstep.WindowTransformSwipeHandler;
-
-import static com.android.launcher3.states.RotationHelper.REQUEST_LOCK;
-import static com.android.launcher3.states.RotationHelper.REQUEST_NONE;
+import foundation.e.blisslauncher.core.customviews.Insettable;
+import foundation.e.blisslauncher.features.quickstep.AbstractFloatingView;
+import foundation.e.blisslauncher.features.quickstep.ActivityControlHelper;
+import foundation.e.blisslauncher.features.quickstep.WindowTransformSwipeHandler;
+import foundation.e.blisslauncher.features.test.TestActivity;
 
 /**
  * Floating view which shows the task snapshot allowing it to be dragged and placed.
  */
 public class LauncherLayoutListener extends AbstractFloatingView
-        implements Insettable, LayoutListener {
+        implements Insettable, ActivityControlHelper.LayoutListener {
 
-    private final Launcher mLauncher;
+    private final TestActivity mLauncher;
     private WindowTransformSwipeHandler mHandler;
 
-    public LauncherLayoutListener(Launcher launcher) {
+    public LauncherLayoutListener(TestActivity launcher) {
         super(launcher, null);
         mLauncher = launcher;
         setVisibility(INVISIBLE);
 
         // For the duration of the gesture, lock the screen orientation to ensure that we do not
         // rotate mid-quickscrub
-        launcher.getRotationHelper().setStateHandlerRequest(REQUEST_LOCK);
+
+        //TODO: Fix it
+        //launcher.getRotationHelper().setStateHandlerRequest(REQUEST_LOCK);
     }
 
     @Override
@@ -51,12 +51,6 @@ public class LauncherLayoutListener extends AbstractFloatingView
         mHandler = handler;
     }
 
-    @Override
-    public void setInsets(Rect insets) {
-        if (mHandler != null) {
-            mHandler.buildAnimationController();
-        }
-    }
 
     @Override
     public boolean onControllerInterceptTouchEvent(MotionEvent ev) {
@@ -90,11 +84,6 @@ public class LauncherLayoutListener extends AbstractFloatingView
     }
 
     @Override
-    public void logActionCommand(int command) {
-        // We should probably log the weather
-    }
-
-    @Override
     protected boolean isOfType(int type) {
         return (type & TYPE_QUICKSTEP_PREVIEW) != 0;
     }
@@ -103,6 +92,15 @@ public class LauncherLayoutListener extends AbstractFloatingView
     public void finish() {
         setHandler(null);
         close(false);
-        mLauncher.getRotationHelper().setStateHandlerRequest(REQUEST_NONE);
+
+        //TODO: Fix it
+        //mLauncher.getRotationHelper().setStateHandlerRequest(REQUEST_NONE);
+    }
+
+    @Override
+    public void setInsets(WindowInsets insets) {
+        if (mHandler != null) {
+            mHandler.buildAnimationController();
+        }
     }
 }

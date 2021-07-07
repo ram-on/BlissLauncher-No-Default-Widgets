@@ -26,6 +26,7 @@ import android.view.ViewGroup;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -377,5 +378,24 @@ public class Utilities {
         }
         PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         return powerManager.isPowerSaveMode();
+    }
+
+    public static <T> T getOverrideObject(Class<T> clazz, Context context, int resId) {
+        String className = context.getString(resId);
+        if (!TextUtils.isEmpty(className)) {
+            try {
+                Class<?> cls = Class.forName(className);
+                return (T) cls.getDeclaredConstructor(Context.class).newInstance(context);
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+                | ClassCastException | NoSuchMethodException | InvocationTargetException e) {
+                Log.e(TAG, "Bad overriden class", e);
+            }
+        }
+
+        try {
+            return clazz.newInstance();
+        } catch (InstantiationException|IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

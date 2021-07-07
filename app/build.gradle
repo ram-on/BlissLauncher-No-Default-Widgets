@@ -102,11 +102,10 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation "androidx.dynamicanimation:dynamicanimation:1.0.0"
+    implementation files('libs/sysui_shared.jar')
 
     apiNougatImplementation 'org.cyanogenmod:platform.sdk:6.0'
     apiOreoImplementation files('libs/lineage-sdk-oreo.jar')
-    implementation files('libs/sysui_shared.jar')
-
 
     debugImplementation 'com.amitshekhar.android:debug-db:1.0.4'
 

@@ -18,28 +18,17 @@ package foundation.e.blisslauncher.features.quickstep;
 
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.pm.ShortcutInfo;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.RemoteException;
-import android.os.UserHandle;
 import android.util.Log;
 import android.view.View;
 
-import com.android.launcher3.AbstractFloatingView;
-import com.android.launcher3.BaseDraggingActivity;
-import com.android.launcher3.DeviceProfile;
-import com.android.launcher3.ItemInfo;
-import com.android.launcher3.R;
-import com.android.launcher3.ShortcutInfo;
-import com.android.launcher3.popup.SystemShortcut;
-import com.android.launcher3.userevent.nano.LauncherLogProto;
-import com.android.launcher3.util.InstantAppResolver;
-import com.android.quickstep.views.RecentsView;
-import com.android.quickstep.views.TaskThumbnailView;
-import com.android.quickstep.views.TaskView;
 import com.android.systemui.shared.recents.ISystemUiProxy;
 import com.android.systemui.shared.recents.model.Task;
 import com.android.systemui.shared.recents.view.AppTransitionAnimationSpecCompat;
@@ -53,53 +42,69 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static com.android.launcher3.userevent.nano.LauncherLogProto.Action.Touch.TAP;
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.database.model.LauncherItem;
+import foundation.e.blisslauncher.core.database.model.ShortcutItem;
+import foundation.e.blisslauncher.core.utils.PackageManagerHelper;
+import foundation.e.blisslauncher.core.utils.UserHandle;
+import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.quickstep.views.TaskThumbnailView;
+import foundation.e.blisslauncher.features.quickstep.views.TaskView;
+import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
+import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 
 /**
  * Represents a system shortcut that can be shown for a recent task.
  */
-public class TaskSystemShortcut<T extends SystemShortcut> extends SystemShortcut {
+public class TaskSystemShortcut {
 
     private static final String TAG = "TaskSystemShortcut";
 
-    protected T mSystemShortcut;
+    public final int iconResId;
+    public final int labelResId;
 
-    protected TaskSystemShortcut(T systemShortcut) {
-        super(systemShortcut.iconResId, systemShortcut.labelResId);
-        mSystemShortcut = systemShortcut;
+    public TaskSystemShortcut(int iconResId, int labelResId) {
+        this.iconResId = iconResId;
+        this.labelResId = labelResId;
     }
 
-    protected TaskSystemShortcut(int iconResId, int labelResId) {
-        super(iconResId, labelResId);
-    }
-
-    @Override
     public View.OnClickListener getOnClickListener(
-            BaseDraggingActivity activity, ItemInfo itemInfo) {
+            BaseDraggingActivity activity, LauncherItem itemInfo) {
         return null;
     }
 
     public View.OnClickListener getOnClickListener(BaseDraggingActivity activity, TaskView view) {
         Task task = view.getTask();
 
-        ShortcutInfo dummyInfo = new ShortcutInfo();
-        dummyInfo.intent = new Intent();
+        ShortcutItem dummyInfo = new ShortcutItem();
+        dummyInfo.launchIntent = new Intent();
         ComponentName component = task.getTopComponent();
-        dummyInfo.intent.setComponent(component);
-        dummyInfo.user = UserHandle.of(task.key.userId);
+        dummyInfo.launchIntent.setComponent(component);
+        dummyInfo.user = new UserHandle(task.key.userId, UserHandle.of(task.key.userId));
         dummyInfo.title = TaskUtils.getTitle(activity, task);
 
-        return getOnClickListenerForTask(activity, task, dummyInfo);
+        return getOnClickListenerForTask(activity, dummyInfo);
     }
 
     protected View.OnClickListener getOnClickListenerForTask(
-            BaseDraggingActivity activity, Task task, ItemInfo dummyInfo) {
-        return mSystemShortcut.getOnClickListener(activity, dummyInfo);
+            BaseDraggingActivity activity, LauncherItem dummyInfo) {
+        return getOnClickListener(activity, dummyInfo);
     }
 
-    public static class AppInfo extends TaskSystemShortcut<SystemShortcut.AppInfo> {
+    public static class AppInfo extends TaskSystemShortcut {
         public AppInfo() {
-            super(new SystemShortcut.AppInfo());
+            super(R.drawable.ic_info_no_shadow, R.string.app_info_drop_target_label);
+        }
+
+        @Override
+        public View.OnClickListener getOnClickListener(
+            BaseDraggingActivity activity, LauncherItem itemInfo) {
+            return (view) -> {
+                Rect sourceBounds = activity.getViewBounds(view);
+                Bundle opts = activity.getActivityLaunchOptionsAsBundle(view);
+                new PackageManagerHelper(activity).startDetailsActivityForInfo(
+                    itemInfo, sourceBounds, opts);
+            };
         }
     }
 
@@ -140,10 +145,10 @@ public class TaskSystemShortcut<T extends SystemShortcut> extends SystemShortcut
                             }
                         };
 
-                final DeviceProfile.OnDeviceProfileChangeListener onDeviceProfileChangeListener =
-                        new DeviceProfile.OnDeviceProfileChangeListener() {
+                final VariantDeviceProfile.OnDeviceProfileChangeListener onDeviceProfileChangeListener =
+                        new VariantDeviceProfile.OnDeviceProfileChangeListener() {
                             @Override
-                            public void onDeviceProfileChanged(DeviceProfile dp) {
+                            public void onDeviceProfileChanged(VariantDeviceProfile dp) {
                                 activity.removeOnDeviceProfileChangeListener(this);
                                 if (dp.isMultiWindowMode) {
                                     taskView.getRootView().addOnLayoutChangeListener(
@@ -169,8 +174,6 @@ public class TaskSystemShortcut<T extends SystemShortcut> extends SystemShortcut
                         Log.w(TAG, "Failed to notify SysUI of split screen: ", e);
                         return;
                     }
-                    activity.getUserEventDispatcher().logActionOnControl(TAP,
-                            LauncherLogProto.ControlType.SPLIT_SCREEN_TARGET);
                     // Add a device profile change listener to kick off animating the side tasks
                     // once we enter multiwindow mode and relayout
                     activity.addOnDeviceProfileChangeListener(onDeviceProfileChangeListener);
@@ -250,19 +253,4 @@ public class TaskSystemShortcut<T extends SystemShortcut> extends SystemShortcut
         }
     }
 
-    public static class Install extends TaskSystemShortcut<SystemShortcut.Install> {
-        public Install() {
-            super(new SystemShortcut.Install());
-        }
-
-        @Override
-        protected View.OnClickListener getOnClickListenerForTask(
-                BaseDraggingActivity activity, Task task, ItemInfo itemInfo) {
-            if (InstantAppResolver.newInstance(activity).isInstantApp(activity,
-                        task.getTopComponent().getPackageName())) {
-                return mSystemShortcut.createOnClickListener(activity, itemInfo);
-            }
-            return null;
-        }
-    }
 }

@@ -40,6 +40,9 @@ class VariantDeviceProfile(
     val width: Int,
     val height: Int
 ) {
+    @JvmField
+    var isMultiWindowMode: Boolean = false
+
     // Device properties
     val isTablet: Boolean
     val isLargeTablet: Boolean

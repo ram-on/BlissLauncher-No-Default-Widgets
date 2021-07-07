@@ -20,11 +20,12 @@ import android.content.Context;
 import android.graphics.Matrix;
 import android.view.View;
 
-import com.android.launcher3.R;
-import com.android.launcher3.Utilities;
-import com.android.launcher3.util.Preconditions;
 import com.android.systemui.shared.recents.model.Task;
 import com.android.systemui.shared.recents.model.ThumbnailData;
+
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.core.utils.Preconditions;
 
 /**
  * Factory class to create and add an overlays on the TaskView
@@ -37,7 +38,7 @@ public class TaskOverlayFactory {
         Preconditions.assertUIThread();
         if (sInstance == null) {
             sInstance = Utilities.getOverrideObject(TaskOverlayFactory.class,
-                    context.getApplicationContext(), R.string.task_overlay_factory_class);
+                    context.getApplicationContext(), R.string.task_overlay_factory_clas);
         }
         return sInstance;
     }

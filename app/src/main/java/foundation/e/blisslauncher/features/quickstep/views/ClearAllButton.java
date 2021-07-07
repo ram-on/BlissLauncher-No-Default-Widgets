@@ -16,6 +16,7 @@
 
 package foundation.e.blisslauncher.features.quickstep.views;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
 import android.util.AttributeSet;
@@ -24,6 +25,7 @@ import android.widget.Button;
 
 import androidx.annotation.Nullable;
 
+@SuppressLint("AppCompatCustomView")
 public class ClearAllButton extends Button {
     RecentsView mRecentsView;
 

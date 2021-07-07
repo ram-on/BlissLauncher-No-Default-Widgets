@@ -36,15 +36,6 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import com.android.launcher3.BaseActivity;
-import com.android.launcher3.BaseDraggingActivity;
-import com.android.launcher3.R;
-import com.android.launcher3.userevent.nano.LauncherLogProto.Action.Direction;
-import com.android.launcher3.userevent.nano.LauncherLogProto.Action.Touch;
-import com.android.quickstep.TaskSystemShortcut;
-import com.android.quickstep.TaskUtils;
-import com.android.quickstep.views.RecentsView.PageCallbacks;
-import com.android.quickstep.views.RecentsView.ScrollState;
 import com.android.systemui.shared.recents.model.Task;
 import com.android.systemui.shared.recents.model.Task.TaskCallbacks;
 import com.android.systemui.shared.recents.model.ThumbnailData;
@@ -52,13 +43,17 @@ import com.android.systemui.shared.system.ActivityManagerWrapper;
 
 import java.util.function.Consumer;
 
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.features.quickstep.TaskSystemShortcut;
+import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
+
 import static android.widget.Toast.LENGTH_SHORT;
-import static com.android.quickstep.views.TaskThumbnailView.DIM_ALPHA_MULTIPLIER;
+import static foundation.e.blisslauncher.features.quickstep.views.TaskThumbnailView.DIM_ALPHA_MULTIPLIER;
 
 /**
- * A task in the Recents view.
+ * A task in the Recents view that have a task thumbnail and an icon attached to it.
  */
-public class TaskView extends FrameLayout implements TaskCallbacks, PageCallbacks {
+public class TaskView extends FrameLayout implements TaskCallbacks, RecentsView.PageCallbacks {
 
     private static final String TAG = TaskView.class.getSimpleName();
 
@@ -115,9 +110,6 @@ public class TaskView extends FrameLayout implements TaskCallbacks, PageCallback
                 return;
             }
             launchTask(true /* animate */);
-            BaseActivity.fromContext(context).getUserEventDispatcher().logTaskLaunchOrDismiss(
-                    Touch.TAP, Direction.NONE, getRecentsView().indexOfChild(this),
-                    TaskUtils.getComponentKeyForTask(getTask().key));
         });
         setOutlineProvider(new TaskOutlineProvider(getResources()));
     }
@@ -234,7 +226,7 @@ public class TaskView extends FrameLayout implements TaskCallbacks, PageCallback
     }
 
     @Override
-    public void onPageScroll(ScrollState scrollState) {
+    public void onPageScroll(RecentsView.ScrollState scrollState) {
         float curveInterpolation =
                 CURVE_INTERPOLATOR.getInterpolation(scrollState.linearInterpolation);
 
