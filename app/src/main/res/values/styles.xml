@@ -42,4 +42,15 @@
         <item name="android:maxLines">2</item>
         <item name="android:textColor">?android:attr/textColorSecondary</item>
     </style>
+
+    <!-- Theme for the popup container -->
+    <style name="PopupItem">
+        <item name="android:colorControlHighlight">#E0E0E0</item>
+    </style>
+
+    <style name="OverviewTheme">
+        <item name="android:colorEdgeEffect">@color/workspaceTextColor</item>
+        <item name="android:textColorPrimary">@color/workspaceTextColor</item>
+        <item name="android:textColorSecondary">@color/workspaceTextColor</item>
+    </style>
 </resources>

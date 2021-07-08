@@ -37,6 +37,7 @@ import android.os.UserHandle;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
+import android.text.method.Touch;
 import android.util.ArraySet;
 import android.util.AttributeSet;
 import android.util.SparseBooleanArray;
@@ -45,9 +46,12 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewDebug;
+import android.view.WindowInsets;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.ListView;
+
+import androidx.annotation.Nullable;
 
 import com.android.systemui.shared.recents.model.RecentsTaskLoadPlan;
 import com.android.systemui.shared.recents.model.RecentsTaskLoader;
@@ -66,9 +70,25 @@ import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.Insettable;
 import foundation.e.blisslauncher.core.customviews.PagedView;
+import foundation.e.blisslauncher.core.utils.PendingAnimation;
+import foundation.e.blisslauncher.features.quickstep.OverviewCallbacks;
 import foundation.e.blisslauncher.features.quickstep.QuickScrubController;
 import foundation.e.blisslauncher.features.quickstep.RecentsModel;
+import foundation.e.blisslauncher.features.quickstep.util.ClipAnimationHelper;
+import foundation.e.blisslauncher.features.quickstep.util.TaskViewDrawable;
+import foundation.e.blisslauncher.features.quickstep.util.Themes;
 import foundation.e.blisslauncher.features.test.BaseActivity;
+import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
+import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
+import foundation.e.blisslauncher.features.test.anim.PropertyListBuilder;
+
+import static foundation.e.blisslauncher.features.quickstep.TaskUtils.checkCurrentOrManagedUserId;
+import static foundation.e.blisslauncher.features.test.BaseActivity.INVISIBLE_BY_STATE_HANDLER;
+import static foundation.e.blisslauncher.features.test.SystemUiController.UI_STATE_OVERVIEW;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.ACCEL;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.ACCEL_2;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.FAST_OUT_SLOW_IN;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
 
 /**
  * A list of recent tasks.
@@ -341,7 +361,7 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
     }
 
     private int getScrollEnd() {
-        return mIsRtl ? 0 : mMaxScrollX;
+        return mIsRtl ? 0 : mMaxScroll;
     }
 
     private float calculateClearAllButtonAlpha() {
@@ -489,19 +509,26 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
     }
 
     @Override
-    public void setInsets(Rect insets) {
-        mInsets.set(insets);
-        DeviceProfile dp = mActivity.getDeviceProfile();
+    public void setInsets(WindowInsets insets) {
+        Rect rectInsets = new Rect();
+        if (insets != null) {
+            rectInsets.left = insets.getSystemWindowInsetLeft();
+            rectInsets.top = insets.getSystemWindowInsetTop();
+            rectInsets.right = insets.getSystemWindowInsetRight();
+            rectInsets.bottom = insets.getSystemWindowInsetBottom();
+        }
+        mInsets.set(rectInsets);
+        VariantDeviceProfile dp = mActivity.getDeviceProfile();
         getTaskSize(dp, mTempRect);
 
         // Keep this logic in sync with ActivityControlHelper.getTranslationYForQuickScrub.
         mTempRect.top -= mTaskTopMargin;
         setPadding(mTempRect.left - mInsets.left, mTempRect.top - mInsets.top,
-                dp.availableWidthPx + mInsets.left - mTempRect.right,
-                dp.availableHeightPx + mInsets.top - mTempRect.bottom);
+            dp.getAvailableWidthPx() + mInsets.left - mTempRect.right,
+            dp.getAvailableHeightPx() + mInsets.top - mTempRect.bottom);
     }
 
-    protected abstract void getTaskSize(DeviceProfile dp, Rect outRect);
+    protected abstract void getTaskSize(VariantDeviceProfile dp, Rect outRect);
 
     public void getTaskSize(Rect outRect) {
         getTaskSize(mActivity.getDeviceProfile(), outRect);
@@ -769,17 +796,13 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
                             boolean shouldLog) {
         if (task != null) {
             ActivityManagerWrapper.getInstance().removeTask(task.key.id);
-            if (shouldLog) {
-                mActivity.getUserEventDispatcher().logTaskLaunchOrDismiss(
-                        onEndListener.logAction, Direction.UP, index,
-                        TaskUtils.getComponentKeyForTask(task.key));
-            }
         }
     }
 
     public PendingAnimation createTaskDismissAnimation(TaskView taskView, boolean animateTaskView,
             boolean shouldRemoveTask, long duration) {
-        if (FeatureFlags.IS_DOGFOOD_BUILD && mPendingAnimation != null) {
+        // TODO: Turn off in production build.
+        if (mPendingAnimation != null) {
             throw new IllegalStateException("Another pending animation is still running");
         }
         AnimatorSet anim = new AnimatorSet();
@@ -876,7 +899,8 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
     }
 
     public PendingAnimation createAllTasksDismissAnimation(long duration) {
-        if (FeatureFlags.IS_DOGFOOD_BUILD && mPendingAnimation != null) {
+        // TODO: Turn off in production build.
+        if (mPendingAnimation != null) {
             throw new IllegalStateException("Another pending animation is still running");
         }
         AnimatorSet anim = new AnimatorSet();
@@ -924,7 +948,7 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
         AnimatorPlaybackController controller = AnimatorPlaybackController.wrap(
                 pendingAnim.anim, DISMISS_TASK_DURATION);
         controller.dispatchOnStart();
-        controller.setEndAction(() -> pendingAnim.finish(true, Touch.SWIPE));
+        controller.setEndAction(() -> pendingAnim.finish(true));
         controller.getAnimationPlayer().setInterpolator(FAST_OUT_SLOW_IN);
         controller.start();
     }
@@ -1158,7 +1182,8 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
     }
 
     public PendingAnimation createTaskLauncherAnimation(TaskView tv, long duration) {
-        if (FeatureFlags.IS_DOGFOOD_BUILD && mPendingAnimation != null) {
+        //TODO: Remove this in production build.
+        if (mPendingAnimation != null) {
             throw new IllegalStateException("Another pending animation is still running");
         }
 
@@ -1205,12 +1230,6 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
                     }
                 };
                 tv.launchTask(false, onLaunchResult, getHandler());
-                Task task = tv.getTask();
-                if (task != null) {
-                    mActivity.getUserEventDispatcher().logTaskLaunchOrDismiss(
-                            onEndListener.logAction, Direction.DOWN, indexOfChild(tv),
-                            TaskUtils.getComponentKeyForTask(task.key));
-                }
             } else {
                 onTaskLaunchFinish.accept(false);
             }

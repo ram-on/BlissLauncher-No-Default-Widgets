@@ -24,16 +24,17 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
 import android.provider.Settings;
-import android.support.annotation.WorkerThread;
 import android.util.Log;
 
-import com.android.launcher3.MainThreadExecutor;
-import com.android.launcher3.Utilities;
-import com.android.launcher3.allapps.DiscoveryBounce;
-import com.android.launcher3.util.UiThreadHelper;
+import androidx.annotation.WorkerThread;
+
 import com.android.systemui.shared.recents.ISystemUiProxy;
 
 import java.util.concurrent.ExecutionException;
+
+import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
+import foundation.e.blisslauncher.features.test.UiThreadHelper;
 
 import static com.android.systemui.shared.system.NavigationBarCompat.FLAG_DISABLE_QUICK_SCRUB;
 import static com.android.systemui.shared.system.NavigationBarCompat.FLAG_DISABLE_SWIPE_UP;
@@ -153,7 +154,6 @@ public class OverviewInteractionState {
                 return true;
             case MSG_SET_SWIPE_UP_ENABLED:
                 mSwipeUpEnabled = msg.arg1 != 0;
-                resetHomeBounceSeenOnQuickstepEnabledFirstTime();
 
                 if (mOnSwipeUpSettingChangedListener != null) {
                     mOnSwipeUpSettingChangedListener.run();
@@ -213,7 +213,7 @@ public class OverviewInteractionState {
             mResolver.registerContentObserver(Settings.Secure.getUriFor(SWIPE_UP_SETTING_NAME),
                     false, this);
             mSwipeUpEnabled = getValue();
-            resetHomeBounceSeenOnQuickstepEnabledFirstTime();
+            // TODO: Maybe add home bounce here.
         }
 
         @Override
@@ -237,16 +237,6 @@ public class OverviewInteractionState {
         } else {
             Log.e(TAG, "Failed to get system resource ID. Incompatible framework version?");
             return false;
-        }
-    }
-
-    private void resetHomeBounceSeenOnQuickstepEnabledFirstTime() {
-        if (mSwipeUpEnabled && !Utilities.getPrefs(mContext).getBoolean(
-                HAS_ENABLED_QUICKSTEP_ONCE, true)) {
-            Utilities.getPrefs(mContext).edit()
-                    .putBoolean(HAS_ENABLED_QUICKSTEP_ONCE, true)
-                    .putBoolean(DiscoveryBounce.HOME_BOUNCE_SEEN, false)
-                    .apply();
         }
     }
 }

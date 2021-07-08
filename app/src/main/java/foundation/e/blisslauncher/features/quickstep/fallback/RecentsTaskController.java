@@ -15,8 +15,8 @@
  */
 package foundation.e.blisslauncher.features.quickstep.fallback;
 
-import com.android.launcher3.uioverrides.TaskViewTouchController;
-import com.android.quickstep.RecentsActivity;
+import foundation.e.blisslauncher.features.quickstep.RecentsActivity;
+import foundation.e.blisslauncher.features.quickstep.uioverrides.TaskViewTouchController;
 
 public class RecentsTaskController extends TaskViewTouchController<RecentsActivity> {
 

@@ -26,6 +26,7 @@ import android.graphics.Rect
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.WindowInsets
+import android.view.WindowManager
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.utils.Constants
@@ -38,10 +39,11 @@ class VariantDeviceProfile(
     val minSize: Point,
     val maxSize: Point,
     val width: Int,
-    val height: Int
-) {
+    val height: Int,
+    val isLandscape: Boolean,
     @JvmField
-    var isMultiWindowMode: Boolean = false
+    var isMultiWindowMode: Boolean
+) {
 
     // Device properties
     val isTablet: Boolean
@@ -95,6 +97,8 @@ class VariantDeviceProfile(
     var hotseatBarBottomPaddingPx: Int
     val hotseatBarSidePaddingPx: Int
 
+    val verticalDragHandleSizePx: Int
+
     // Widgets
     val appWidgetScale = PointF(1.0f, 1.0f)
 
@@ -110,7 +114,7 @@ class VariantDeviceProfile(
         val size =
             Point(availableWidthPx, availableHeightPx)
         return VariantDeviceProfile(
-            context, inv, size, size, widthPx, heightPx
+            context, inv, size, size, widthPx, heightPx, isLandscape, isMultiWindowMode
         )
     }
 
@@ -120,6 +124,36 @@ class VariantDeviceProfile(
      */
     var fullScreenProfile: VariantDeviceProfile? = null
         get() = inv.portraitProfile
+
+    fun getMultiWindowProfile(context: Context, mwSize: Point): VariantDeviceProfile {
+        // We take the minimum sizes of this profile and it's multi-window variant to ensure that
+        // the system decor is always excluded.
+        mwSize[Math.min(availableWidthPx, mwSize.x)] =
+            Math.min(availableHeightPx, mwSize.y)
+
+        // In multi-window mode, we can have widthPx = availableWidthPx
+        // and heightPx = availableHeightPx because Launcher uses the InvariantDeviceProfiles'
+        // widthPx and heightPx values where it's needed.
+        val profile = VariantDeviceProfile(
+            context, inv, mwSize, mwSize, mwSize.x, mwSize.y,
+            isLandscape, true
+        )
+
+        // If there isn't enough vertical cell padding with the labels displayed, hide the labels.
+        val workspaceCellPaddingY: Float = (profile.cellSize.y - profile.iconSizePx
+            - iconDrawablePaddingPx - profile.iconTextSizePx).toFloat()
+        if (workspaceCellPaddingY < profile.iconDrawablePaddingPx * 2) {
+            profile.adjustToHideWorkspaceLabels()
+        }
+
+        // We use these scales to measure and layout the widgets using their full invariant profile
+        // sizes and then draw them scaled and centered to fit in their multi-window mode cellspans.
+        val appWidgetScaleX: Float = profile.cellSize.x as Float / cellSize.x
+        val appWidgetScaleY: Float = profile.cellSize.y as Float / cellSize.y
+        profile.appWidgetScale.set(appWidgetScaleX, appWidgetScaleY)
+        profile.updateWorkspacePadding()
+        return profile
+    }
 
     init {
         var context = context
@@ -151,6 +185,9 @@ class VariantDeviceProfile(
             res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_layout_padding)
         cellLayoutBottomPaddingPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_layout_bottom_padding)
+        verticalDragHandleSizePx = res.getDimensionPixelSize(
+            R.dimen.vertical_drag_handle_size
+        )
         defaultPageSpacingPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_workspace_page_spacing)
         topWorkspacePadding =
@@ -169,6 +206,7 @@ class VariantDeviceProfile(
             res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_size) + hotseatBarTopPaddingPx + hotseatBarBottomPaddingPx
         workspacePageIndicatorHeight =
             res.getDimensionPixelSize(R.dimen.dotSize) * 2 + res.getDimensionPixelSize(R.dimen.dotPadding) * 2
+
         // Determine sizes.
         widthPx = width
         heightPx = height
@@ -322,6 +360,11 @@ class VariantDeviceProfile(
         updateWorkspacePadding()
     }
 
+    fun updateInsets(insets: Rect) {
+        this.insets.set(insets)
+        updateWorkspacePadding()
+    }
+
     // Since we are only concerned with the overall padding, layout direction does not matter.
     val cellSize: Point
         get() {
@@ -415,6 +458,21 @@ class VariantDeviceProfile(
             Constants.CONTAINER_HOTSEAT -> hotseatCellHeightPx
             else -> 0
         }
+    }
+
+    /**
+     * Adjusts the profile so that the labels on the Workspace are hidden.
+     * It is important to call this method after the All Apps variables have been set.
+     */
+    private fun adjustToHideWorkspaceLabels() {
+        iconTextSizePx = 0
+        iconDrawablePaddingPx = 0
+        cellHeightPx = iconSizePx
+    }
+
+    fun updateIsSeascape(wm: WindowManager): Boolean {
+        // TODO: Finish it when supporting landscape mode.
+        return false;
     }
 
     /**

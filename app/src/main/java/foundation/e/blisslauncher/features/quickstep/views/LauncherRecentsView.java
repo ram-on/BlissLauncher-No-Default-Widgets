@@ -28,6 +28,8 @@ import android.view.View;
 import android.view.ViewDebug;
 
 import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.features.quickstep.OverviewInteractionState;
+import foundation.e.blisslauncher.features.quickstep.util.ClipAnimationHelper;
 import foundation.e.blisslauncher.features.quickstep.util.LayoutUtils;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
@@ -71,7 +73,7 @@ public class LauncherRecentsView extends RecentsView<TestActivity> {
 
     @Override
     protected void onAllTasksRemoved() {
-        mActivity.getStateManager().goToState(NORMAL);
+        // TODO: Go to normal state here.
     }
 
     @Override
@@ -121,7 +123,8 @@ public class LauncherRecentsView extends RecentsView<TestActivity> {
             return anim;
         }
 
-        float allAppsProgressOffscreen = ALL_APPS_PROGRESS_OFF_SCREEN;
+        // TODO: Fix it when initial recents are done.
+        /*float allAppsProgressOffscreen = ALL_APPS_PROGRESS_OFF_SCREEN;
         LauncherState state = mActivity.getStateManager().getState();
         if ((state.getVisibleElements(mActivity) & ALL_APPS_HEADER_EXTRA) != 0) {
             float maxShiftRange = mActivity.getDeviceProfile().heightPx;
@@ -129,12 +132,7 @@ public class LauncherRecentsView extends RecentsView<TestActivity> {
             allAppsProgressOffscreen = 1f + (maxShiftRange - currShiftRange) / maxShiftRange;
         }
         anim.play(ObjectAnimator.ofFloat(
-                mActivity.getAllAppsController(), ALL_APPS_PROGRESS, allAppsProgressOffscreen));
-
-        ObjectAnimator dragHandleAnim = ObjectAnimator.ofInt(
-                mActivity.findViewById(R.id.scrim_view), ScrimView.DRAG_HANDLE_ALPHA, 0);
-        dragHandleAnim.setInterpolator(Interpolators.ACCEL_2);
-        anim.play(dragHandleAnim);
+                mActivity.getAllAppsController(), ALL_APPS_PROGRESS, allAppsProgressOffscreen));*/
 
         return anim;
     }
@@ -147,10 +145,9 @@ public class LauncherRecentsView extends RecentsView<TestActivity> {
     @Override
     protected void onTaskLaunched(boolean success) {
         if (success) {
-            mActivity.getStateManager().goToState(NORMAL, false /* animate */);
+            // TODO: Go to normal state here.
         } else {
-            LauncherState state = mActivity.getStateManager().getState();
-            mActivity.getAllAppsController().setState(state);
+            // TODO: Handle case when task launch failed.
         }
         super.onTaskLaunched(success);
     }

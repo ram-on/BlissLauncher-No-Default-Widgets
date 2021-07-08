@@ -27,10 +27,6 @@ import android.os.UserHandle;
 import android.util.LruCache;
 import android.util.SparseArray;
 
-import com.android.launcher3.FastBitmapDrawable;
-import com.android.launcher3.graphics.BitmapInfo;
-import com.android.launcher3.graphics.DrawableFactory;
-import com.android.launcher3.graphics.LauncherIcons;
 import com.android.systemui.shared.recents.model.IconLoader;
 import com.android.systemui.shared.recents.model.TaskKeyLruCache;
 
@@ -40,9 +36,7 @@ import com.android.systemui.shared.recents.model.TaskKeyLruCache;
 @TargetApi(Build.VERSION_CODES.O)
 public class NormalizedIconLoader extends IconLoader {
 
-    private final SparseArray<BitmapInfo> mDefaultIcons = new SparseArray<>();
-    private final DrawableFactory mDrawableFactory;
-    private LauncherIcons mLauncherIcons;
+    private final SparseArray<Drawable> mDefaultIcons = new SparseArray<>();
 
     public NormalizedIconLoader(Context context, TaskKeyLruCache<Drawable> iconCache,
             LruCache<ComponentName, ActivityInfo> activityInfoCache) {
@@ -53,14 +47,14 @@ public class NormalizedIconLoader extends IconLoader {
     @Override
     public Drawable getDefaultIcon(int userId) {
         synchronized (mDefaultIcons) {
-            BitmapInfo info = mDefaultIcons.get(userId);
+            Drawable info = mDefaultIcons.get(userId);
             if (info == null) {
                 info = getBitmapInfo(Resources.getSystem()
                         .getDrawable(android.R.drawable.sym_def_app_icon), userId, 0, false);
                 mDefaultIcons.put(userId, info);
             }
 
-            return new FastBitmapDrawable(info);
+            return new Drawable(info);
         }
     }
 

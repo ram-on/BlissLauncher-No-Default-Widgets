@@ -20,16 +20,14 @@ import android.util.Log;
 import android.view.HapticFeedbackConstants;
 import android.view.animation.Interpolator;
 
-import com.android.launcher3.Alarm;
-import com.android.launcher3.BaseActivity;
-import com.android.launcher3.OnAlarmListener;
-import com.android.launcher3.Utilities;
-import com.android.launcher3.userevent.nano.LauncherLogProto;
-import com.android.launcher3.userevent.nano.LauncherLogProto.Action.Touch;
-import com.android.quickstep.views.RecentsView;
-import com.android.quickstep.views.TaskView;
+import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.quickstep.views.TaskView;
+import foundation.e.blisslauncher.features.test.Alarm;
+import foundation.e.blisslauncher.features.test.BaseActivity;
+import foundation.e.blisslauncher.features.test.OnAlarmListener;
 
-import static com.android.launcher3.anim.Interpolators.FAST_OUT_SLOW_IN;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.FAST_OUT_SLOW_IN;
 
 /**
  * Responds to quick scrub callbacks to page through and launch recent tasks.
@@ -88,7 +86,6 @@ public class QuickScrubController implements OnAlarmListener {
         mActivityControlHelper = controlHelper;
 
         snapToNextTaskIfAvailable();
-        mActivity.getUserEventDispatcher().resetActionDurationMillis();
     }
 
     public void onQuickScrubEnd() {
@@ -105,10 +102,6 @@ public class QuickScrubController implements OnAlarmListener {
                     if (!result) {
                         taskView.notifyTaskLaunchFailed(TAG);
                         breakOutOfQuickScrub();
-                    } else {
-                        mActivity.getUserEventDispatcher().logTaskLaunchOrDismiss(Touch.DRAGDROP,
-                                LauncherLogProto.Action.Direction.NONE, page,
-                                TaskUtils.getComponentKeyForTask(taskView.getTask().key));
                     }
                     mWaitingForTaskLaunch = false;
                 }, taskView.getHandler());
@@ -228,7 +221,7 @@ public class QuickScrubController implements OnAlarmListener {
             int duration = overrideDuration > -1 ? overrideDuration
                     : Math.abs(pageToGoTo - mRecentsView.getNextPage())
                             * QUICKSCRUB_SNAP_DURATION_PER_PAGE;
-            mRecentsView.snapToPage(pageToGoTo, duration, interpolator);
+            mRecentsView.snapToPage(pageToGoTo, duration, false);
         }
         if (snappingToPage || forceHaptic) {
             mRecentsView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY,

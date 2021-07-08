@@ -25,10 +25,10 @@ import android.graphics.drawable.Drawable;
 import android.util.FloatProperty;
 import android.view.View;
 
-import com.android.launcher3.Utilities;
-import com.android.quickstep.views.RecentsView;
-import com.android.quickstep.views.TaskThumbnailView;
-import com.android.quickstep.views.TaskView;
+import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.quickstep.views.TaskThumbnailView;
+import foundation.e.blisslauncher.features.quickstep.views.TaskView;
 
 public class TaskViewDrawable extends Drawable {
 

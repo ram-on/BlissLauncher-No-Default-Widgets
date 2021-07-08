@@ -29,43 +29,36 @@ import android.os.Looper;
 
 import android.view.View;
 
-import com.android.launcher3.BaseDraggingActivity;
-import com.android.launcher3.DeviceProfile;
-import com.android.launcher3.Launcher;
-import com.android.launcher3.LauncherAppState;
-import com.android.launcher3.LauncherInitListener;
-import com.android.launcher3.LauncherState;
-import com.android.launcher3.R;
-import com.android.launcher3.allapps.AllAppsTransitionController;
-import com.android.launcher3.allapps.DiscoveryBounce;
-import com.android.launcher3.anim.AnimatorPlaybackController;
-import com.android.launcher3.dragndrop.DragLayer;
-import com.android.launcher3.uioverrides.FastOverviewState;
-import com.android.launcher3.userevent.nano.LauncherLogProto;
-import com.android.launcher3.util.MultiValueAlpha.AlphaProperty;
-import com.android.quickstep.TouchConsumer.InteractionType;
-import com.android.quickstep.util.LayoutUtils;
-import com.android.quickstep.util.RemoteAnimationProvider;
-import com.android.quickstep.util.RemoteAnimationTargetSet;
-import com.android.quickstep.util.TransformedRect;
-import com.android.quickstep.views.LauncherLayoutListener;
-import com.android.quickstep.views.RecentsView;
-import com.android.quickstep.views.RecentsViewContainer;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
+
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
 
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
-import static com.android.launcher3.LauncherAnimUtils.OVERVIEW_TRANSITION_MS;
-import static com.android.launcher3.LauncherState.FAST_OVERVIEW;
-import static com.android.launcher3.LauncherState.OVERVIEW;
-import static com.android.launcher3.allapps.AllAppsTransitionController.ALL_APPS_PROGRESS;
-import static com.android.launcher3.anim.Interpolators.LINEAR;
-import static com.android.quickstep.TouchConsumer.INTERACTION_NORMAL;
-import static com.android.quickstep.TouchConsumer.INTERACTION_QUICK_SCRUB;
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.utils.MultiValueAlpha;
+import foundation.e.blisslauncher.features.quickstep.util.LayoutUtils;
+import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationProvider;
+import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationTargetSet;
+import foundation.e.blisslauncher.features.quickstep.util.TransformedRect;
+import foundation.e.blisslauncher.features.quickstep.views.LauncherLayoutListener;
+import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.quickstep.views.RecentsViewContainer;
+import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
+import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
+import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
+import foundation.e.blisslauncher.features.test.dragndrop.DragLayer;
+
 import static com.android.systemui.shared.system.NavigationBarCompat.HIT_TARGET_BACK;
 import static com.android.systemui.shared.system.NavigationBarCompat.HIT_TARGET_ROTATION;
+import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_NORMAL;
+import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_QUICK_SCRUB;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.OVERVIEW_TRANSITION_MS;
 
 /**
  * Utility class which abstracts out the logical differences between Launcher and RecentsActivity.
@@ -81,15 +74,16 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
     void onQuickInteractionStart(T activity, @Nullable RunningTaskInfo taskInfo,
             boolean activityVisible);
 
-    float getTranslationYForQuickScrub(TransformedRect targetRect, DeviceProfile dp,
+    float getTranslationYForQuickScrub(
+        TransformedRect targetRect, VariantDeviceProfile dp,
             Context context);
 
     void executeOnWindowAvailable(T activity, Runnable action);
 
     void onTransitionCancelled(T activity, boolean activityVisible);
 
-    int getSwipeUpDestinationAndLength(DeviceProfile dp, Context context,
-            @InteractionType int interactionType, TransformedRect outRect);
+    int getSwipeUpDestinationAndLength(VariantDeviceProfile dp, Context context,
+            @TouchConsumer.InteractionType int interactionType, TransformedRect outRect);
 
     void onSwipeUpComplete(T activity);
 
@@ -120,84 +114,75 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
 
     boolean supportsLongSwipe(T activity);
 
-    AlphaProperty getAlphaProperty(T activity);
+    MultiValueAlpha.AlphaProperty getAlphaProperty(T activity);
 
-    /**
-     * Must return a non-null controller is supportsLongSwipe was true.
-     */
-    com.android.quickstep.LongSwipeHelper getLongSwipeController(T activity, RemoteAnimationTargetSet targetSet);
-
-    /**
-     * Used for containerType in {@link com.android.launcher3.logging.UserEventDispatcher}
-     */
-    int getContainerType();
-
-    class LauncherActivityControllerHelper implements ActivityControlHelper<Launcher> {
+    class LauncherActivityControllerHelper implements ActivityControlHelper<TestActivity> {
 
         @Override
-        public LayoutListener createLayoutListener(Launcher activity) {
+        public LayoutListener createLayoutListener(TestActivity activity) {
             return new LauncherLayoutListener(activity);
         }
 
         @Override
-        public void onQuickInteractionStart(Launcher activity, RunningTaskInfo taskInfo,
+        public void onQuickInteractionStart(TestActivity activity, RunningTaskInfo taskInfo,
                 boolean activityVisible) {
             LauncherState fromState = activity.getStateManager().getState();
             activity.getStateManager().goToState(FAST_OVERVIEW, activityVisible);
 
-            com.android.quickstep.QuickScrubController controller = activity.<RecentsView>getOverviewPanel()
+            QuickScrubController controller = activity.<RecentsView>getOverviewPanel()
                     .getQuickScrubController();
             controller.onQuickScrubStart(activityVisible && !fromState.overviewUi, this);
         }
 
         @Override
-        public float getTranslationYForQuickScrub(TransformedRect targetRect, DeviceProfile dp,
+        public float getTranslationYForQuickScrub(TransformedRect targetRect, VariantDeviceProfile dp,
                 Context context) {
             // The padding calculations are exactly same as that of RecentsView.setInsets
             int topMargin = context.getResources()
                     .getDimensionPixelSize(R.dimen.task_thumbnail_top_margin);
             int paddingTop = targetRect.rect.top - topMargin - dp.getInsets().top;
-            int paddingBottom = dp.availableHeightPx + dp.getInsets().top - targetRect.rect.bottom;
+            int paddingBottom = dp.getAvailableHeightPx() + dp.getInsets().top - targetRect.rect.bottom;
 
             return FastOverviewState.OVERVIEW_TRANSLATION_FACTOR * (paddingBottom - paddingTop);
         }
 
         @Override
-        public void executeOnWindowAvailable(Launcher activity, Runnable action) {
+        public void executeOnWindowAvailable(TestActivity activity, Runnable action) {
             activity.getWorkspace().runOnOverlayHidden(action);
         }
 
         @Override
-        public int getSwipeUpDestinationAndLength(DeviceProfile dp, Context context,
-                @InteractionType int interactionType, TransformedRect outRect) {
+        public int getSwipeUpDestinationAndLength(VariantDeviceProfile dp, Context context,
+                @TouchConsumer.InteractionType int interactionType, TransformedRect outRect) {
             LayoutUtils.calculateLauncherTaskSize(context, dp, outRect.rect);
             if (interactionType == INTERACTION_QUICK_SCRUB) {
                 outRect.scale = FastOverviewState.getOverviewScale(dp, outRect.rect, context);
             }
-            if (dp.isVerticalBarLayout()) {
+            /*if (dp.isVerticalBarLayout()) {
                 Rect targetInsets = dp.getInsets();
                 int hotseatInset = dp.isSeascape() ? targetInsets.left : targetInsets.right;
                 return dp.hotseatBarSizePx + dp.hotseatBarSidePaddingPx + hotseatInset;
             } else {
-                return dp.heightPx - outRect.rect.bottom;
-            }
+
+            }*/
+            return dp.getHeightPx() - outRect.rect.bottom;
         }
 
         @Override
-        public void onTransitionCancelled(Launcher activity, boolean activityVisible) {
+        public void onTransitionCancelled(TestActivity activity, boolean activityVisible) {
             LauncherState startState = activity.getStateManager().getRestState();
             activity.getStateManager().goToState(startState, activityVisible);
         }
 
         @Override
-        public void onSwipeUpComplete(Launcher activity) {
+        public void onSwipeUpComplete(TestActivity activity) {
             // Re apply state in case we did something funky during the transition.
             activity.getStateManager().reapplyState();
             DiscoveryBounce.showForOverviewIfNeeded(activity);
         }
 
         @Override
-        public AnimationFactory prepareRecentsUI(Launcher activity, boolean activityVisible,
+        public AnimationFactory prepareRecentsUI(TestActivity activity, boolean activityVisible,
                 Consumer<AnimatorPlaybackController> callback) {
             final LauncherState startState = activity.getStateManager().getState();
 
@@ -232,15 +217,15 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
             };
         }
 
-        private void createActivityControllerInternal(Launcher activity, boolean wasVisible,
+        private void createActivityControllerInternal(TestActivity activity, boolean wasVisible,
                 LauncherState startState, long transitionLength,
-                @InteractionType int interactionType,
+                @TouchConsumer.InteractionType int interactionType,
                 Consumer<AnimatorPlaybackController> callback) {
             LauncherState endState = interactionType == INTERACTION_QUICK_SCRUB
                     ? FAST_OVERVIEW : OVERVIEW;
             if (wasVisible) {
-                DeviceProfile dp = activity.getDeviceProfile();
-                long accuracy = 2 * Math.max(dp.widthPx, dp.heightPx);
+                VariantDeviceProfile dp = activity.getDeviceProfile();
+                long accuracy = 2 * Math.max(dp.getWidthPx(), dp.getHeightPx());
                 activity.getStateManager().goToState(startState, false);
                 callback.accept(activity.getStateManager()
                         .createAnimationToNewWorkspace(endState, accuracy));
@@ -277,7 +262,7 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
 
         @Nullable
         @Override
-        public Launcher getCreatedActivity() {
+        public TestActivity getCreatedActivity() {
             LauncherAppState app = LauncherAppState.getInstanceNoCreate();
             if (app == null) {
                 return null;
@@ -287,8 +272,8 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
 
         @Nullable
         @UiThread
-        private Launcher getVisibleLaucher() {
-            Launcher launcher = getCreatedActivity();
+        private TestActivity getVisibleLaucher() {
+            TestActivity launcher = getCreatedActivity();
             return (launcher != null) && launcher.isStarted() && launcher.hasWindowFocus() ?
                     launcher : null;
         }
@@ -296,7 +281,7 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
         @Nullable
         @Override
         public RecentsView getVisibleRecentsView() {
-            Launcher launcher = getVisibleLaucher();
+            TestActivity launcher = getVisibleLaucher();
             return launcher != null && launcher.getStateManager().getState().overviewUi
                     ? launcher.getOverviewPanel() : null;
         }
@@ -333,30 +318,15 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
         }
 
         @Override
-        public boolean supportsLongSwipe(Launcher activity) {
-            return !activity.getDeviceProfile().isVerticalBarLayout();
+        public boolean supportsLongSwipe(TestActivity activity) {
+            return false;
         }
 
         @Override
-        public com.android.quickstep.LongSwipeHelper getLongSwipeController(Launcher activity,
-                RemoteAnimationTargetSet targetSet) {
-            if (activity.getDeviceProfile().isVerticalBarLayout()) {
-                return null;
-            }
-            return new com.android.quickstep.LongSwipeHelper(activity, targetSet);
-        }
-
-        @Override
-        public AlphaProperty getAlphaProperty(Launcher activity) {
+        public MultiValueAlpha.AlphaProperty getAlphaProperty(TestActivity activity) {
             return activity.getDragLayer().getAlphaProperty(DragLayer.ALPHA_INDEX_SWIPE_UP);
         }
 
-        @Override
-        public int getContainerType() {
-            final Launcher launcher = getVisibleLaucher();
-            return launcher != null ? launcher.getStateManager().getState().containerType
-                    : LauncherLogProto.ContainerType.APP;
-        }
     }
 
     class FallbackActivityControllerHelper implements ActivityControlHelper<RecentsActivity> {
@@ -371,7 +341,7 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
         @Override
         public void onQuickInteractionStart(RecentsActivity activity, RunningTaskInfo taskInfo,
                 boolean activityVisible) {
-            com.android.quickstep.QuickScrubController controller = activity.<RecentsView>getOverviewPanel()
+            QuickScrubController controller = activity.<RecentsView>getOverviewPanel()
                     .getQuickScrubController();
 
             // TODO: match user is as well
@@ -385,7 +355,7 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
         }
 
         @Override
-        public float getTranslationYForQuickScrub(TransformedRect targetRect, DeviceProfile dp,
+        public float getTranslationYForQuickScrub(TransformedRect targetRect, VariantDeviceProfile dp,
                 Context context) {
             return 0;
         }
@@ -401,16 +371,19 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
         }
 
         @Override
-        public int getSwipeUpDestinationAndLength(DeviceProfile dp, Context context,
-                @InteractionType int interactionType, TransformedRect outRect) {
+        public int getSwipeUpDestinationAndLength(VariantDeviceProfile dp, Context context,
+                @TouchConsumer.InteractionType int interactionType, TransformedRect outRect) {
             LayoutUtils.calculateFallbackTaskSize(context, dp, outRect.rect);
-            if (dp.isVerticalBarLayout()) {
+
+            // TODO: Fix this when supporting landscape
+            /*if (dp.isVerticalBarLayout()) {
                 Rect targetInsets = dp.getInsets();
                 int hotseatInset = dp.isSeascape() ? targetInsets.left : targetInsets.right;
                 return dp.hotseatBarSizePx + dp.hotseatBarSidePaddingPx + hotseatInset;
             } else {
                 return dp.heightPx - outRect.rect.bottom;
-            }
+            }*/
+            return dp.getHeightPx() - outRect.rect.bottom;
         }
 
         @Override
@@ -468,7 +441,7 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
                 public void open() { }
 
                 @Override
-                public void setHandler(com.android.quickstep.WindowTransformSwipeHandler handler) { }
+                public void setHandler(WindowTransformSwipeHandler handler) { }
 
                 @Override
                 public void finish() { }
@@ -478,13 +451,13 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
         @Override
         public ActivityInitListener createActivityInitListener(
                 BiPredicate<RecentsActivity, Boolean> onInitListener) {
-            return new com.android.quickstep.RecentsActivityTracker(onInitListener);
+            return new RecentsActivityTracker(onInitListener);
         }
 
         @Nullable
         @Override
         public RecentsActivity getCreatedActivity() {
-            return com.android.quickstep.RecentsActivityTracker.getCurrentActivity();
+            return RecentsActivityTracker.getCurrentActivity();
         }
 
         @Nullable
@@ -525,20 +498,10 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
             return false;
         }
 
-        @Override
-        public com.android.quickstep.LongSwipeHelper getLongSwipeController(RecentsActivity activity,
-                RemoteAnimationTargetSet targetSet) {
-            return null;
-        }
 
         @Override
-        public AlphaProperty getAlphaProperty(RecentsActivity activity) {
+        public MultiValueAlpha.AlphaProperty getAlphaProperty(RecentsActivity activity) {
             return activity.getDragLayer().getAlphaProperty(0);
-        }
-
-        @Override
-        public int getContainerType() {
-            return LauncherLogProto.ContainerType.SIDELOADED_LAUNCHER;
         }
     }
 
@@ -565,7 +528,7 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
 
         default void onRemoteAnimationReceived(RemoteAnimationTargetSet targets) { }
 
-        void createActivityController(long transitionLength, @InteractionType int interactionType);
+        void createActivityController(long transitionLength, @TouchConsumer.InteractionType int interactionType);
 
         default void onTransitionCancelled() { }
     }

@@ -13,9 +13,12 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Message;
 import android.os.PowerManager;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
@@ -68,6 +71,8 @@ public class Utilities {
 
     public static final boolean ATLEAST_MARSHMALLOW =
         Build.VERSION.SDK_INT >= 23;
+
+    public static final int SINGLE_FRAME_MS = 16;
 
     // These values are same as that in {@link AsyncTask}.
     private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
@@ -397,5 +402,27 @@ public class Utilities {
         } catch (InstantiationException|IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void scaleRectFAboutCenter(RectF r, float scale) {
+        if (scale != 1.0f) {
+            float cx = r.centerX();
+            float cy = r.centerY();
+            r.offset(-cx, -cy);
+            r.left = r.left * scale;
+            r.top = r.top * scale ;
+            r.right = r.right * scale;
+            r.bottom = r.bottom * scale;
+            r.offset(cx, cy);
+        }
+    }
+
+    /**
+     * Utility method to post a runnable on the handler, skipping the synchronization barriers.
+     */
+    public static void postAsyncCallback(Handler handler, Runnable callback) {
+        Message msg = Message.obtain(handler, callback);
+        msg.setAsynchronous(true);
+        handler.sendMessage(msg);
     }
 }

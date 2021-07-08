@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
      Copyright (C) 2017 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,26 +13,24 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<com.android.quickstep.views.RecentsViewContainer
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<foundation.e.blisslauncher.features.quickstep.views.RecentsViewContainer xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clipChildren="false"
-    android:visibility="invisible"
->
-    <include layout="@layout/overview_clear_all_button"/>
+    android:visibility="invisible">
 
-    <com.android.quickstep.views.LauncherRecentsView
+    <include layout="@layout/overview_clear_all_button" />
+
+    <foundation.e.blisslauncher.features.quickstep.views.LauncherRecentsView
         android:id="@id/overview_panel"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:accessibilityPaneTitle="@string/accessibility_recent_apps"
         android:clipChildren="false"
         android:clipToPadding="false"
-        android:outlineProvider="none"
         android:focusableInTouchMode="true"
-        android:accessibilityPaneTitle="@string/accessibility_recent_apps"
-        android:theme="@style/HomeScreenElementTheme"
-    >
+        android:outlineProvider="none"
+        android:theme="@style/OverviewTheme">
 
-    </com.android.quickstep.views.LauncherRecentsView>
-</com.android.quickstep.views.RecentsViewContainer>
+    </foundation.e.blisslauncher.features.quickstep.views.LauncherRecentsView>
+</foundation.e.blisslauncher.features.quickstep.views.RecentsViewContainer>

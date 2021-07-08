@@ -23,13 +23,11 @@ import android.util.FloatProperty;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.android.launcher3.InsettableFrameLayout;
-import com.android.launcher3.R;
-
 import java.util.ArrayList;
 
-import static com.android.launcher3.userevent.nano.LauncherLogProto.Action.Touch.TAP;
-import static com.android.launcher3.userevent.nano.LauncherLogProto.ControlType.CLEAR_ALL_BUTTON;
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
+
 
 public class RecentsViewContainer extends InsettableFrameLayout {
     public static final FloatProperty<RecentsViewContainer> CONTENT_ALPHA =
@@ -60,8 +58,6 @@ public class RecentsViewContainer extends InsettableFrameLayout {
 
         mClearAllButton = findViewById(R.id.clear_all_button);
         mClearAllButton.setOnClickListener((v) -> {
-            mRecentsView.mActivity.getUserEventDispatcher()
-                    .logActionOnControl(TAP, CLEAR_ALL_BUTTON);
             mRecentsView.dismissAllTasks();
         });
 

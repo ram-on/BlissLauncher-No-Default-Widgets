@@ -20,6 +20,7 @@ import android.animation.ValueAnimator;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.LauncherApps;
 import android.content.pm.PackageManager;
 import android.graphics.RectF;
 import android.os.UserHandle;
@@ -27,27 +28,27 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.View;
 
-import com.android.launcher3.BaseDraggingActivity;
-import com.android.launcher3.ItemInfo;
-import com.android.launcher3.Utilities;
-import com.android.launcher3.compat.LauncherAppsCompat;
-import com.android.launcher3.compat.UserManagerCompat;
-import com.android.launcher3.util.ComponentKey;
-import com.android.quickstep.util.ClipAnimationHelper;
-import com.android.quickstep.util.MultiValueUpdateListener;
-import com.android.quickstep.util.RemoteAnimationTargetSet;
-import com.android.quickstep.views.RecentsView;
-import com.android.quickstep.views.TaskView;
 import com.android.systemui.shared.recents.model.Task;
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
 
 import java.util.List;
 
-import static com.android.launcher3.anim.Interpolators.LINEAR;
-import static com.android.launcher3.anim.Interpolators.TOUCH_RESPONSE_INTERPOLATOR;
+import foundation.e.blisslauncher.core.UserManagerCompat;
+import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.core.database.model.LauncherItem;
+import foundation.e.blisslauncher.core.utils.ComponentKey;
+import foundation.e.blisslauncher.features.quickstep.util.ClipAnimationHelper;
+import foundation.e.blisslauncher.features.quickstep.util.MultiValueUpdateListener;
+import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationTargetSet;
+import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.quickstep.views.TaskView;
+import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
+
 import static com.android.systemui.shared.recents.utilities.Utilities.getNextFrameNumber;
 import static com.android.systemui.shared.recents.utilities.Utilities.getSurface;
 import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_OPENING;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.TOUCH_RESPONSE_INTERPOLATOR;
 
 /**
  * Contains helpful methods for retrieving data from {@link Task}s.
@@ -60,12 +61,18 @@ public class TaskUtils {
      * TODO: remove this once we switch to getting the icon and label from IconCache.
      */
     public static CharSequence getTitle(Context context, Task task) {
-        LauncherAppsCompat launcherAppsCompat = LauncherAppsCompat.getInstance(context);
+        LauncherApps launcherApps =
+            (LauncherApps) context.getSystemService(Context.LAUNCHER_APPS_SERVICE);
         UserManagerCompat userManagerCompat = UserManagerCompat.getInstance(context);
         PackageManager packageManager = context.getPackageManager();
         UserHandle user = UserHandle.of(task.key.userId);
-        ApplicationInfo applicationInfo = launcherAppsCompat.getApplicationInfo(
-            task.getTopComponent().getPackageName(), 0, user);
+        ApplicationInfo applicationInfo = null;
+        try {
+            applicationInfo = launcherApps.getApplicationInfo(
+                task.getTopComponent().getPackageName(), 0, user);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
         if (applicationInfo == null) {
             Log.e(TAG, "Failed to get title for task " + task);
             return "";
@@ -95,10 +102,10 @@ public class TaskUtils {
 
         // It's possible that the launched view can still be resolved to a visible task view, check
         // the task id of the opening task and see if we can find a match.
-        if (v.getTag() instanceof ItemInfo) {
-            ItemInfo itemInfo = (ItemInfo) v.getTag();
+        if (v.getTag() instanceof LauncherItem) {
+            LauncherItem itemInfo = (LauncherItem) v.getTag();
             ComponentName componentName = itemInfo.getTargetComponent();
-            int userId = itemInfo.user.getIdentifier();
+            int userId = itemInfo.user.getRealHandle().getIdentifier();
             if (componentName != null) {
                 for (int i = 0; i < recentsView.getChildCount(); i++) {
                     TaskView taskView = recentsView.getPageAt(i);

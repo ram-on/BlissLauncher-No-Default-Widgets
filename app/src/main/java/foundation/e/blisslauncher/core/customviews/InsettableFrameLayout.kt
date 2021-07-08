@@ -15,6 +15,18 @@ open class InsettableFrameLayout(private val mContext: Context, attrs: Attribute
 
     var windowInsets: WindowInsets? = null
 
+    val insets: Rect
+        get() {
+            var tempInsets = Rect()
+            if (this.windowInsets != null) {
+                tempInsets.left = this.windowInsets!!.systemWindowInsetLeft
+                tempInsets.top = this.windowInsets!!.systemWindowInsetTop
+                tempInsets.right = this.windowInsets!!.systemWindowInsetRight
+                tempInsets.bottom = this.windowInsets!!.systemWindowInsetBottom
+            }
+            return tempInsets
+        }
+
     private fun setFrameLayoutChildInsets(child: View, newInsets: WindowInsets?, oldInsets: Rect) {
         if (newInsets == null) return
         val lp: LayoutParams =

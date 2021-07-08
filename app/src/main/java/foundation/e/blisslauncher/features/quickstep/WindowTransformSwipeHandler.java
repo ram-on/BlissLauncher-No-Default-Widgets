@@ -30,40 +30,16 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.os.UserHandle;
-import android.support.annotation.AnyThread;
-import android.support.annotation.UiThread;
-import android.support.annotation.WorkerThread;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver.OnDrawListener;
 import android.view.WindowManager;
 import android.view.animation.Interpolator;
 
-import com.android.launcher3.AbstractFloatingView;
-import com.android.launcher3.BaseDraggingActivity;
-import com.android.launcher3.DeviceProfile;
-import com.android.launcher3.InvariantDeviceProfile;
-import com.android.launcher3.LauncherAppState;
-import com.android.launcher3.R;
-import com.android.launcher3.Utilities;
-import com.android.launcher3.anim.AnimationSuccessListener;
-import com.android.launcher3.anim.AnimatorPlaybackController;
-import com.android.launcher3.logging.UserEventDispatcher;
-import com.android.launcher3.userevent.nano.LauncherLogProto.Action.Direction;
-import com.android.launcher3.userevent.nano.LauncherLogProto.Action.Touch;
-import com.android.launcher3.userevent.nano.LauncherLogProto.ContainerType;
-import com.android.launcher3.util.MultiValueAlpha;
-import com.android.launcher3.util.MultiValueAlpha.AlphaProperty;
-import com.android.launcher3.util.TraceHelper;
-import com.android.quickstep.ActivityControlHelper.ActivityInitListener;
-import com.android.quickstep.ActivityControlHelper.AnimationFactory;
-import com.android.quickstep.ActivityControlHelper.LayoutListener;
-import com.android.quickstep.TouchConsumer.InteractionType;
-import com.android.quickstep.util.ClipAnimationHelper;
-import com.android.quickstep.util.RemoteAnimationTargetSet;
-import com.android.quickstep.util.TransformedRect;
-import com.android.quickstep.views.RecentsView;
-import com.android.quickstep.views.TaskView;
+import androidx.annotation.AnyThread;
+import androidx.annotation.UiThread;
+import androidx.annotation.WorkerThread;
+
 import com.android.systemui.shared.recents.model.ThumbnailData;
 import com.android.systemui.shared.system.ActivityManagerWrapper;
 import com.android.systemui.shared.system.InputConsumerController;
@@ -75,14 +51,30 @@ import com.android.systemui.shared.system.WindowManagerWrapper;
 
 import java.util.StringJoiner;
 
-import static com.android.launcher3.BaseActivity.INVISIBLE_BY_STATE_HANDLER;
-import static com.android.launcher3.Utilities.SINGLE_FRAME_MS;
-import static com.android.launcher3.Utilities.postAsyncCallback;
-import static com.android.launcher3.anim.Interpolators.DEACCEL;
-import static com.android.launcher3.anim.Interpolators.LINEAR;
-import static com.android.quickstep.QuickScrubController.QUICK_SCRUB_FROM_APP_START_DURATION;
-import static com.android.quickstep.TouchConsumer.INTERACTION_NORMAL;
-import static com.android.quickstep.TouchConsumer.INTERACTION_QUICK_SCRUB;
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.core.utils.MultiValueAlpha;
+import foundation.e.blisslauncher.features.quickstep.util.ClipAnimationHelper;
+import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationTargetSet;
+import foundation.e.blisslauncher.features.quickstep.util.TransformedRect;
+import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.quickstep.views.TaskView;
+import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
+import foundation.e.blisslauncher.features.test.InvariantDeviceProfile;
+import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.TraceHelper;
+import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
+import foundation.e.blisslauncher.features.test.anim.AnimationSuccessListener;
+import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
+
+import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
+import static foundation.e.blisslauncher.core.Utilities.postAsyncCallback;
+import static foundation.e.blisslauncher.features.quickstep.QuickScrubController.QUICK_SCRUB_FROM_APP_START_DURATION;
+import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_NORMAL;
+import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_QUICK_SCRUB;
+import static foundation.e.blisslauncher.features.test.BaseActivity.INVISIBLE_BY_STATE_HANDLER;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.DEACCEL;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
 
 @TargetApi(Build.VERSION_CODES.O)
 public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
@@ -161,7 +153,7 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
 
     protected Runnable mGestureEndCallback;
     protected boolean mIsGoingToHome;
-    private DeviceProfile mDp;
+    private VariantDeviceProfile mDp;
     private int mTransitionDragLength;
 
     // Shift in the range of [0, 1].
@@ -180,7 +172,7 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
     public final int id;
     private final Context mContext;
     private final ActivityControlHelper<T> mActivityControlHelper;
-    private final ActivityInitListener mActivityInitListener;
+    private final ActivityControlHelper.ActivityInitListener mActivityInitListener;
 
     private final int mRunningTaskId;
     private final RunningTaskInfo mRunningTaskInfo;
@@ -190,21 +182,21 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
     private AnimatorPlaybackController mLauncherTransitionController;
 
     private T mActivity;
-    private LayoutListener mLayoutListener;
+    private ActivityControlHelper.LayoutListener mLayoutListener;
     private RecentsView mRecentsView;
     private QuickScrubController mQuickScrubController;
-    private AnimationFactory mAnimationFactory = (t, i) -> { };
+    private ActivityControlHelper.AnimationFactory mAnimationFactory = (t, i) -> { };
 
     private Runnable mLauncherDrawnCallback;
 
     private boolean mWasLauncherAlreadyVisible;
 
     private boolean mGestureStarted;
-    private int mLogAction = Touch.SWIPE;
     private float mCurrentQuickScrubProgress;
     private boolean mQuickScrubBlocked;
 
-    private @InteractionType int mInteractionType = INTERACTION_NORMAL;
+    private @TouchConsumer.InteractionType
+    int mInteractionType = INTERACTION_NORMAL;
 
     private InputConsumerController mInputConsumer =
             InputConsumerController.getRecentsAnimationInputConsumer();
@@ -217,7 +209,6 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
     private boolean mBgLongSwipeMode = false;
     private boolean mUiLongSwipeMode = false;
     private float mLongSwipeDisplacement = 0;
-    private LongSwipeHelper mLongSwipeController;
 
     WindowTransformSwipeHandler(int id, RunningTaskInfo runningTaskInfo, Context context,
             long touchTimeMs, ActivityControlHelper<T> controller) {
@@ -313,7 +304,7 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
         }
     }
 
-    private void initTransitionEndpoints(DeviceProfile dp) {
+    private void initTransitionEndpoints(VariantDeviceProfile dp) {
         mDp = dp;
 
         TransformedRect tempRect = new TransformedRect();
@@ -418,7 +409,7 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
     }
 
     private void launcherFrameDrawn() {
-        AlphaProperty property = mActivityControlHelper.getAlphaProperty(mActivity);
+        MultiValueAlpha.AlphaProperty property = mActivityControlHelper.getAlphaProperty(mActivity);
         if (property.getValue() < 1) {
             if (mGestureStarted) {
                 final MultiStateCallback callback = mStateCallback;
@@ -456,7 +447,7 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
         }
     }
 
-    public void updateInteractionType(@InteractionType int interactionType) {
+    public void updateInteractionType(@TouchConsumer.InteractionType int interactionType) {
         if (mInteractionType != INTERACTION_NORMAL) {
             throw new IllegalArgumentException(
                     "Can't change interaction type from " + mInteractionType);
@@ -493,7 +484,7 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
         } else {
             offsetX = res.getDimensionPixelSize(R.dimen.recents_page_spacing)
                     + tempRect.rect.width();
-            float distanceToReachEdge = mDp.widthPx / 2 + tempRect.rect.width() / 2 +
+            float distanceToReachEdge = mDp.getWidthPx() / 2 + tempRect.rect.width() / 2 +
                     res.getDimensionPixelSize(R.dimen.recents_page_spacing);
             float interpolation = Math.min(1, offsetX / distanceToReachEdge);
             scale = TaskView.getCurveScaleForInterpolation(interpolation);
@@ -568,10 +559,11 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
 
     public void onRecentsAnimationStart(RecentsAnimationControllerCompat controller,
             RemoteAnimationTargetSet targets, Rect homeContentInsets, Rect minimizedHomeBounds) {
-        LauncherAppState appState = LauncherAppState.getInstanceNoCreate();
-        InvariantDeviceProfile idp = appState == null ?
+        // TODO: Fix this, it may crash sometime
+        VariantDeviceProfile dp = TestActivity.Companion.getLauncher(mContext).getDeviceProfile();
+        /*InvariantDeviceProfile idp = appState == null ?
                 new InvariantDeviceProfile(mContext) : appState.getInvariantDeviceProfile();
-        DeviceProfile dp = idp.getDeviceProfile(mContext);
+        VariantDeviceProfile dp = idp.getDeviceProfile(mContext);*/
         final Rect overviewStackBounds;
         RemoteAnimationTargetCompat runningTaskTarget = targets.findTask(mRunningTaskId);
 
@@ -582,7 +574,7 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
                     new Point(minimizedHomeBounds.width(), minimizedHomeBounds.height()));
             dp.updateInsets(homeContentInsets);
         } else {
-            overviewStackBounds = new Rect(0, 0, dp.widthPx, dp.heightPx);
+            overviewStackBounds = new Rect(0, 0, dp.getWidthPx(), dp.getHeightPx());
             // If we are not in multi-window mode, home insets should be same as system insets.
             Rect insets = new Rect();
             WindowManagerWrapper.getInstance().getStableInsets(insets);
@@ -636,8 +628,6 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
         boolean isFling = mGestureStarted && Math.abs(endVelocity) > flingThreshold;
         setStateOnUiThread(STATE_GESTURE_COMPLETED);
 
-        mLogAction = isFling ? Touch.FLING : Touch.SWIPE;
-
         if (mBgLongSwipeMode) {
             executeOnUiThread(() -> onLongSwipeGestureFinishUi(endVelocity, isFling));
         } else {
@@ -675,22 +665,6 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
         animateToProgress(startShift, endShift, duration, DEACCEL);
     }
 
-    private void doLogGesture(boolean toLauncher) {
-        final int direction;
-        if (mDp.isVerticalBarLayout()) {
-            direction = (mDp.isSeascape() ^ toLauncher) ? Direction.LEFT : Direction.RIGHT;
-        } else {
-            direction = toLauncher ? Direction.UP : Direction.DOWN;
-        }
-
-        int dstContainerType = toLauncher ? ContainerType.TASKSWITCHER : ContainerType.APP;
-        UserEventDispatcher.newInstance(mContext, mDp).logStateChangeAction(
-                mLogAction, direction,
-                ContainerType.NAVBAR, ContainerType.APP,
-                dstContainerType,
-                0);
-    }
-
     /** Animates to the given progress, where 0 is the current app and 1 is overview. */
     private void animateToProgress(float start, float end, long duration,
             Interpolator interpolator) {
@@ -711,7 +685,6 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
     @UiThread
     private void resumeLastTaskForQuickstep() {
         setStateOnUiThread(STATE_RESUME_LAST_TASK);
-        doLogGesture(false /* toLauncher */);
         reset();
     }
 
@@ -814,7 +787,6 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
 
         RecentsModel.getInstance(mContext).onOverviewShown(false, TAG);
 
-        doLogGesture(true /* toLauncher */);
         reset();
     }
 
@@ -901,20 +873,22 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
     private void onLongSwipeDisabledUi() {
         mUiLongSwipeMode = false;
 
-        if (mLongSwipeController != null) {
+        // TODO:
+       /* if (mLongSwipeController != null) {
             mLongSwipeController.destroy();
 
             // Rebuild animations
             buildAnimationController();
-        }
+        }*/
     }
 
     private void onLongSwipeDisplacementUpdated() {
-        if (!mUiLongSwipeMode || mLongSwipeController == null) {
+        //TODO:
+        /*if (!mUiLongSwipeMode || mLongSwipeController == null) {
             return;
         }
 
-        mLongSwipeController.onMove(mLongSwipeDisplacement);
+        mLongSwipeController.onMove(mLongSwipeDisplacement);*/
     }
 
     private void checkLongSwipeCanEnter() {
@@ -941,13 +915,15 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
             return;
         }
 
-        mLongSwipeController = mActivityControlHelper.getLongSwipeController(
-                mActivity, mRecentsAnimationWrapper.targetSet);
+        //TODO
+        /*mLongSwipeController = mActivityControlHelper.getLongSwipeController(
+                mActivity, mRecentsAnimationWrapper.targetSet);*/
         onLongSwipeDisplacementUpdated();
     }
 
     private void onLongSwipeGestureFinishUi(float velocity, boolean isFling) {
-        if (!mUiLongSwipeMode || mLongSwipeController == null) {
+        //TODO:
+        /*if (!mUiLongSwipeMode || mLongSwipeController == null) {
             mUiLongSwipeMode = false;
             handleNormalGestureEnd(velocity, isFling);
             return;
@@ -955,7 +931,7 @@ public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {
         mUiLongSwipeMode = false;
         finishCurrentTransitionToHome();
         mLongSwipeController.end(velocity, isFling,
-                () -> setStateOnUiThread(STATE_HANDLER_INVALIDATED));
+                () -> setStateOnUiThread(STATE_HANDLER_INVALIDATED));*/
 
     }
 }

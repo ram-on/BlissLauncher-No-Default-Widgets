@@ -576,7 +576,7 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
         final int scrollOffsetRight = getWidth() - getPaddingRight() - mInsets.right;
         boolean pageScrollChanged = false;
 
-        for (int i = startIndex, childLeft = scrollOffsetLeft; i != endIndex; i += delta) {
+        for (int i = startIndex, childLeft = scrollOffsetLeft + offsetForPageScrolls(); i != endIndex; i += delta) {
             final View child = getPageAt(i);
             if (scrollLogic.shouldIncludeView(child)) {
                 final int childWidth = child.getMeasuredWidth();
@@ -652,6 +652,10 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
     protected int getChildOffset(int index) {
         if (index < 0 || index > getChildCount() - 1) return 0;
         return getPageAt(index).getLeft();
+    }
+
+    protected int offsetForPageScrolls() {
+        return 0;
     }
 
     @Override
@@ -1014,6 +1018,10 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
 
     protected void setEnableOverScroll(boolean enable) {
         mAllowOverScroll = enable;
+    }
+
+    protected void restoreScrollOnLayout() {
+        setCurrentPage(getNextPage());
     }
 
     @Override
@@ -1398,7 +1406,7 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
         return snapToPage(whichPage, duration, false);
     }
 
-    protected boolean snapToPage(int whichPage, int duration, boolean immediate) {
+    public boolean snapToPage(int whichPage, int duration, boolean immediate) {
         whichPage = validateNewPage(whichPage);
 
         int newX = getScrollForPage(whichPage);
@@ -1475,6 +1483,15 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
 
     protected float getDownMotionY() {
         return mDownMotionY;
+    }
+
+    protected boolean isPageOrderFlipped() {
+        return false;
+    }
+
+    protected String getCurrentPageDescription() {
+        return getContext().getString(R.string.default_scroll_format,
+            getNextPage() + 1, getChildCount());
     }
 
     protected interface ComputePageScrollsLogic {

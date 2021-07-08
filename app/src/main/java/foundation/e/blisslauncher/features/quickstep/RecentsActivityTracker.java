@@ -22,18 +22,18 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 
-import com.android.launcher3.MainThreadExecutor;
-import com.android.quickstep.ActivityControlHelper.ActivityInitListener;
-import com.android.quickstep.util.RemoteAnimationProvider;
 
 import java.lang.ref.WeakReference;
 import java.util.function.BiPredicate;
+
+import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
+import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationProvider;
 
 /**
  * Utility class to track create/destroy for RecentsActivity
  */
 @TargetApi(Build.VERSION_CODES.P)
-public class RecentsActivityTracker implements ActivityInitListener {
+public class RecentsActivityTracker implements ActivityControlHelper.ActivityInitListener {
 
     private static WeakReference<RecentsActivity> sCurrentActivity = new WeakReference<>(null);
     private static final Scheduler sScheduler = new Scheduler();

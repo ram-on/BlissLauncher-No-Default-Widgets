@@ -21,13 +21,14 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.WindowInsets;
 
-import com.android.launcher3.BaseActivity;
-import com.android.launcher3.R;
-import com.android.launcher3.util.Themes;
-import com.android.launcher3.util.TouchController;
-import com.android.launcher3.views.BaseDragLayer;
-import com.android.quickstep.RecentsActivity;
+import org.jetbrains.annotations.Nullable;
+
+import foundation.e.blisslauncher.features.quickstep.RecentsActivity;
+import foundation.e.blisslauncher.features.test.BaseActivity;
+import foundation.e.blisslauncher.features.test.BaseDragLayer;
+import foundation.e.blisslauncher.features.test.TouchController;
 
 public class RecentsRootView extends BaseDragLayer<RecentsActivity> {
 
@@ -60,32 +61,29 @@ public class RecentsRootView extends BaseDragLayer<RecentsActivity> {
             mLastKnownSize.set(width, height);
             mActivity.onRootViewSizeChanged();
         }
-
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
-    @TargetApi(23)
+    @Nullable
     @Override
-    protected boolean fitSystemWindows(Rect insets) {
+    public WindowInsets onApplyWindowInsets(@Nullable WindowInsets insets) {
         // Update device profile before notifying the children.
         mActivity.getDeviceProfile().updateInsets(insets);
         setInsets(insets);
-        return true; // I'll take it from here
+        return insets;
     }
 
     @Override
-    public void setInsets(Rect insets) {
+    public void setInsets(WindowInsets insets) {
         // If the insets haven't changed, this is a no-op. Avoid unnecessary layout caused by
         // modifying child layout params.
-        if (!insets.equals(mInsets)) {
+        if (!insets.equals(getWindowInsets())) {
             super.setInsets(insets);
-        }
-        setBackground(insets.top == 0 ? null
-                : Themes.getAttrDrawable(getContext(), R.attr.workspaceStatusBarScrim));
+        };
     }
 
     public void dispatchInsets() {
-        mActivity.getDeviceProfile().updateInsets(mInsets);
-        super.setInsets(mInsets);
+        mActivity.getDeviceProfile().updateInsets(getWindowInsets());
+        super.setInsets(getWindowInsets());
     }
 }

@@ -26,25 +26,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 
-import com.android.launcher3.AbstractFloatingView;
-import com.android.launcher3.BaseDraggingActivity;
-import com.android.launcher3.DeviceProfile;
-import com.android.launcher3.InvariantDeviceProfile;
-import com.android.launcher3.ItemInfo;
-import com.android.launcher3.LauncherAnimationRunner;
-import com.android.launcher3.LauncherAppState;
-import com.android.launcher3.R;
-import com.android.launcher3.anim.Interpolators;
-import com.android.launcher3.badge.BadgeInfo;
-import com.android.launcher3.uioverrides.UiFactory;
-import com.android.launcher3.util.SystemUiController;
-import com.android.launcher3.util.Themes;
-import com.android.launcher3.views.BaseDragLayer;
-import com.android.quickstep.fallback.FallbackRecentsView;
-import com.android.quickstep.fallback.RecentsRootView;
-import com.android.quickstep.util.ClipAnimationHelper;
-import com.android.quickstep.views.RecentsViewContainer;
-import com.android.quickstep.views.TaskView;
 import com.android.systemui.shared.system.ActivityOptionsCompat;
 import com.android.systemui.shared.system.RemoteAnimationAdapterCompat;
 import com.android.systemui.shared.system.RemoteAnimationRunnerCompat;
@@ -53,13 +34,27 @@ import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.database.model.LauncherItem;
+import foundation.e.blisslauncher.features.quickstep.fallback.FallbackRecentsView;
+import foundation.e.blisslauncher.features.quickstep.fallback.RecentsRootView;
+import foundation.e.blisslauncher.features.quickstep.util.ClipAnimationHelper;
+import foundation.e.blisslauncher.features.quickstep.util.Themes;
+import foundation.e.blisslauncher.features.quickstep.views.RecentsViewContainer;
+import foundation.e.blisslauncher.features.quickstep.views.TaskView;
+import foundation.e.blisslauncher.features.test.BaseDragLayer;
+import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
+import foundation.e.blisslauncher.features.test.InvariantDeviceProfile;
+import foundation.e.blisslauncher.features.test.LauncherAnimationRunner;
+import foundation.e.blisslauncher.features.test.SystemUiController;
+import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
+import foundation.e.blisslauncher.features.test.anim.Interpolators;
+
 import static android.content.pm.ActivityInfo.CONFIG_ORIENTATION;
 import static android.content.pm.ActivityInfo.CONFIG_SCREEN_SIZE;
-import static com.android.launcher3.LauncherAppTransitionManagerImpl.RECENTS_LAUNCH_DURATION;
-import static com.android.launcher3.LauncherAppTransitionManagerImpl.STATUS_BAR_TRANSITION_DURATION;
-import static com.android.quickstep.TaskUtils.getRecentsWindowAnimator;
-import static com.android.quickstep.TaskUtils.taskIsATargetWithMode;
 import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
+import static foundation.e.blisslauncher.features.quickstep.TaskUtils.getRecentsWindowAnimator;
+import static foundation.e.blisslauncher.features.quickstep.TaskUtils.taskIsATargetWithMode;
 
 /**
  * A simple activity to show the recently launched tasks
@@ -87,9 +82,10 @@ public class RecentsActivity extends BaseDraggingActivity {
 
         mRecentsRootView.setup();
 
-        getSystemUiController().updateUiState(SystemUiController.UI_STATE_BASE_WINDOW,
-                Themes.getAttrBoolean(this, R.attr.isWorkspaceDarkText));
-        com.android.quickstep.RecentsActivityTracker.onRecentsActivityCreate(this);
+        getSystemUiController().updateUiState(
+            SystemUiController.UI_STATE_BASE_WINDOW,
+                false);
+        RecentsActivityTracker.onRecentsActivityCreate(this);
     }
 
     @Override
@@ -109,13 +105,12 @@ public class RecentsActivity extends BaseDraggingActivity {
     }
 
     public void onRootViewSizeChanged() {
-        if (isInMultiWindowModeCompat()) {
+        if (isInMultiWindowMode()) {
             onHandleConfigChanged();
         }
     }
 
     private void onHandleConfigChanged() {
-        mUserEventDispatcher = null;
         initDeviceProfile();
 
         AbstractFloatingView.closeOpenViews(this, true,
@@ -138,7 +133,7 @@ public class RecentsActivity extends BaseDraggingActivity {
         if (isInMultiWindowModeCompat()) {
             InvariantDeviceProfile idp = appState == null
                     ? new InvariantDeviceProfile(this) : appState.getInvariantDeviceProfile();
-            DeviceProfile dp = idp.getDeviceProfile(this);
+            VariantDeviceProfile dp = idp.getDeviceProfile(this);
             mDeviceProfile = mRecentsRootView == null ? dp.copy(this)
                     : dp.getMultiWindowProfile(this, mRecentsRootView.getLastKnownSize());
         } else {
@@ -167,11 +162,6 @@ public class RecentsActivity extends BaseDraggingActivity {
 
     public RecentsViewContainer getOverviewPanelContainer() {
         return mOverviewPanelContainer;
-    }
-
-    @Override
-    public BadgeInfo getBadgeInfoForItem(ItemInfo info) {
-        return null;
     }
 
     @Override
@@ -224,7 +214,7 @@ public class RecentsActivity extends BaseDraggingActivity {
     }
 
     @Override
-    public void invalidateParent(ItemInfo info) { }
+    public void invalidateParent(LauncherItem info) { }
 
     @Override
     protected void onStart() {
@@ -253,13 +243,13 @@ public class RecentsActivity extends BaseDraggingActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        com.android.quickstep.RecentsActivityTracker.onRecentsActivityNewIntent(this);
+        RecentsActivityTracker.onRecentsActivityNewIntent(this);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        com.android.quickstep.RecentsActivityTracker.onRecentsActivityDestroy(this);
+        RecentsActivityTracker.onRecentsActivityDestroy(this);
     }
 
     @Override
@@ -272,12 +262,5 @@ public class RecentsActivity extends BaseDraggingActivity {
         startActivity(new Intent(Intent.ACTION_MAIN)
                 .addCategory(Intent.CATEGORY_HOME)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-    }
-
-    @Override
-    public void dump(String prefix, FileDescriptor fd, PrintWriter writer, String[] args) {
-        super.dump(prefix, fd, writer, args);
-        writer.println(prefix + "Misc:");
-        dumpMisc(writer);
     }
 }

@@ -17,9 +17,9 @@ package foundation.e.blisslauncher.features.quickstep;
 
 import android.content.Context;
 
-import com.android.launcher3.R;
-import com.android.launcher3.Utilities;
-import com.android.launcher3.util.Preconditions;
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.core.utils.Preconditions;
 
 /**
  * Callbacks related to overview/quicksteps.

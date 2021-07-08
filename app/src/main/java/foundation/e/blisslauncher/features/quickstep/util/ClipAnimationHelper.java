@@ -24,18 +24,10 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
 import android.os.RemoteException;
-import android.support.annotation.Nullable;
 import android.view.animation.Interpolator;
 
-import com.android.launcher3.BaseDraggingActivity;
-import com.android.launcher3.DeviceProfile;
-import com.android.launcher3.R;
-import com.android.launcher3.Utilities;
-import com.android.launcher3.anim.Interpolators;
-import com.android.launcher3.views.BaseDragLayer;
-import com.android.quickstep.RecentsModel;
-import com.android.quickstep.views.RecentsView;
-import com.android.quickstep.views.TaskThumbnailView;
+import androidx.annotation.Nullable;
+
 import com.android.systemui.shared.recents.ISystemUiProxy;
 import com.android.systemui.shared.recents.utilities.RectFEvaluator;
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
@@ -44,10 +36,21 @@ import com.android.systemui.shared.system.WindowManagerWrapper;
 
 import java.util.function.BiConsumer;
 
-import static com.android.launcher3.anim.Interpolators.LINEAR;
-import static com.android.quickstep.QuickScrubController.QUICK_SCRUB_TRANSLATION_Y_FACTOR;
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.DeviceProfile;
+import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.features.quickstep.RecentsModel;
+import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.quickstep.views.TaskThumbnailView;
+import foundation.e.blisslauncher.features.test.BaseDragLayer;
+import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
+import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
+import foundation.e.blisslauncher.features.test.anim.Interpolators;
+
 import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
 import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_OPENING;
+import static foundation.e.blisslauncher.features.quickstep.QuickScrubController.QUICK_SCRUB_TRANSLATION_Y_FACTOR;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
 
 /**
  * Utility class to handle window clip animation
@@ -251,27 +254,28 @@ public class ClipAnimationHelper {
         }
 
         // Assume that the task size is half screen size (minus the insets and the divider size)
-        DeviceProfile fullDp = activity.getDeviceProfile().getFullScreenProfile();
+        VariantDeviceProfile fullDp = activity.getDeviceProfile().getFullScreenProfile();
         // Use availableWidthPx and availableHeightPx instead of widthPx and heightPx to
         // account for system insets
-        int taskWidth = fullDp.availableWidthPx;
-        int taskHeight = fullDp.availableHeightPx;
+        int taskWidth = fullDp.getAvailableWidthPx();
+        int taskHeight = fullDp.getAvailableHeightPx();
         int halfDividerSize = activity.getResources()
                 .getDimensionPixelSize(R.dimen.multi_window_task_divider_size) / 2;
 
         Rect insets = new Rect();
         WindowManagerWrapper.getInstance().getStableInsets(insets);
-        if (fullDp.isLandscape) {
+        taskHeight = taskHeight / 2 - halfDividerSize;
+
+        // TODO: when supporting landscape mode
+        /*if (fullDp.isLandscape) {
             taskWidth = taskWidth / 2 - halfDividerSize;
         } else {
-            taskHeight = taskHeight / 2 - halfDividerSize;
-        }
+        }*/
 
         // Align the task to bottom left/right edge (closer to nav bar).
-        int left = activity.getDeviceProfile().isSeascape() ? insets.left
-                : (insets.left + fullDp.availableWidthPx - taskWidth);
+        int left =insets.left + fullDp.getAvailableWidthPx() - taskWidth;
         mSourceStackBounds.set(0, 0, taskWidth, taskHeight);
-        mSourceStackBounds.offset(left, insets.top + fullDp.availableHeightPx - taskHeight);
+        mSourceStackBounds.offset(left, insets.top + fullDp.getAvailableHeightPx() - taskHeight);
     }
 
     public void drawForProgress(TaskThumbnailView ttv, Canvas canvas, float progress) {

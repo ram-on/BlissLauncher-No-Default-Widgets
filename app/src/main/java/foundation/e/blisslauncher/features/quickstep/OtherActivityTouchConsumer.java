@@ -35,9 +35,7 @@ import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
 
-import com.android.launcher3.MainThreadExecutor;
-import com.android.launcher3.util.TraceHelper;
-import com.android.quickstep.util.RemoteAnimationTargetSet;
+
 import com.android.systemui.shared.system.ActivityManagerWrapper;
 import com.android.systemui.shared.system.AssistDataReceiver;
 import com.android.systemui.shared.system.BackgroundExecutor;
@@ -50,6 +48,10 @@ import com.android.systemui.shared.system.WindowManagerWrapper;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
+import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationTargetSet;
+import foundation.e.blisslauncher.features.test.TraceHelper;
 
 import static android.view.MotionEvent.ACTION_CANCEL;
 import static android.view.MotionEvent.ACTION_DOWN;
@@ -64,8 +66,7 @@ import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MOD
  * Touch consumer for handling events originating from an activity other than Launcher
  */
 @TargetApi(Build.VERSION_CODES.P)
-public class OtherActivityTouchConsumer extends ContextWrapper implements
-    com.android.quickstep.TouchConsumer {
+public class OtherActivityTouchConsumer extends ContextWrapper implements TouchConsumer {
 
     private static final long LAUNCHER_DRAW_TIMEOUT_MS = 150;
 
@@ -86,12 +87,12 @@ public class OtherActivityTouchConsumer extends ContextWrapper implements
     // Used for non-deferred gestures to determine when to start dragging
     private int mQuickStepDragSlop;
     private float mStartDisplacement;
-    private com.android.quickstep.WindowTransformSwipeHandler mInteractionHandler;
+    private WindowTransformSwipeHandler mInteractionHandler;
     private int mDisplayRotation;
     private Rect mStableInsets = new Rect();
 
     private VelocityTracker mVelocityTracker;
-    private com.android.quickstep.MotionEventQueue mEventQueue;
+    private MotionEventQueue mEventQueue;
     private boolean mIsGoingToHome;
 
     public OtherActivityTouchConsumer(Context base, RunningTaskInfo runningTaskInfo,
@@ -214,8 +215,8 @@ public class OtherActivityTouchConsumer extends ContextWrapper implements
     private void startTouchTrackingForWindowAnimation(long touchTimeMs) {
         // Create the shared handler
         RecentsAnimationState animationState = new RecentsAnimationState();
-        final com.android.quickstep.WindowTransformSwipeHandler
-            handler = new com.android.quickstep.WindowTransformSwipeHandler(
+        final WindowTransformSwipeHandler
+            handler = new WindowTransformSwipeHandler(
                 animationState.id, mRunningTask, this, touchTimeMs, mActivityControlHelper);
 
         // Preload the plan
@@ -297,7 +298,7 @@ public class OtherActivityTouchConsumer extends ContextWrapper implements
     public void reset() {
         // Clean up the old interaction handler
         if (mInteractionHandler != null) {
-            final com.android.quickstep.WindowTransformSwipeHandler handler = mInteractionHandler;
+            final WindowTransformSwipeHandler handler = mInteractionHandler;
             mInteractionHandler = null;
             mIsGoingToHome = handler.mIsGoingToHome;
             mMainThreadExecutor.execute(handler::reset);
@@ -320,7 +321,7 @@ public class OtherActivityTouchConsumer extends ContextWrapper implements
     }
 
     @Override
-    public Choreographer getIntrimChoreographer(com.android.quickstep.MotionEventQueue queue) {
+    public Choreographer getIntrimChoreographer(MotionEventQueue queue) {
         mEventQueue = queue;
         return mBackgroundThreadChoreographer;
     }

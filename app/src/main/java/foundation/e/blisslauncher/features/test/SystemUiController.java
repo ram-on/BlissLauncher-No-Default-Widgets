@@ -31,6 +31,8 @@ public class SystemUiController {
     // Various UI states in increasing order of priority
     public static final int UI_STATE_NORMAL = 0;
     public static final int UI_STATE_WOBBLING = 1;
+    public static final int UI_STATE_OVERVIEW = 2;
+
 
     public static final int FLAG_LIGHT_NAV = 1 << 0;
     public static final int FLAG_DARK_NAV = 1 << 1;

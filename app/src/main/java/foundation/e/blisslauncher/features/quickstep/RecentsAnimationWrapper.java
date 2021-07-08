@@ -15,14 +15,15 @@
  */
 package foundation.e.blisslauncher.features.quickstep;
 
-import com.android.launcher3.util.LooperExecutor;
-import com.android.launcher3.util.TraceHelper;
-import com.android.launcher3.util.UiThreadHelper;
-import com.android.quickstep.util.RemoteAnimationTargetSet;
 import com.android.systemui.shared.system.RecentsAnimationControllerCompat;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
+
+import foundation.e.blisslauncher.core.executors.LooperExecutor;
+import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationTargetSet;
+import foundation.e.blisslauncher.features.test.TraceHelper;
+import foundation.e.blisslauncher.features.test.UiThreadHelper;
 
 /**
  * Wrapper around RecentsAnimationController to help with some synchronization

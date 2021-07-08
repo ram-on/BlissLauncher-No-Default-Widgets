@@ -33,22 +33,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewConfiguration;
 
-import com.android.launcher3.AbstractFloatingView;
-import com.android.launcher3.BaseDraggingActivity;
-import com.android.launcher3.InvariantDeviceProfile;
-import com.android.launcher3.MainThreadExecutor;
-import com.android.launcher3.anim.AnimationSuccessListener;
-import com.android.launcher3.logging.UserEventDispatcher;
-import com.android.launcher3.userevent.nano.LauncherLogProto.Action;
-import com.android.launcher3.userevent.nano.LauncherLogProto.ContainerType;
-import com.android.quickstep.ActivityControlHelper.ActivityInitListener;
-import com.android.quickstep.ActivityControlHelper.AnimationFactory;
-import com.android.quickstep.ActivityControlHelper.FallbackActivityControllerHelper;
-import com.android.quickstep.ActivityControlHelper.LauncherActivityControllerHelper;
-import com.android.quickstep.util.ClipAnimationHelper;
-import com.android.quickstep.util.RemoteAnimationTargetSet;
-import com.android.quickstep.util.TransformedRect;
-import com.android.quickstep.views.RecentsView;
 import com.android.systemui.shared.system.ActivityManagerWrapper;
 import com.android.systemui.shared.system.LatencyTrackerCompat;
 import com.android.systemui.shared.system.PackageManagerWrapper;
@@ -57,16 +41,25 @@ import com.android.systemui.shared.system.TransactionCompat;
 
 import java.util.ArrayList;
 
+import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
+import foundation.e.blisslauncher.features.quickstep.util.ClipAnimationHelper;
+import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationTargetSet;
+import foundation.e.blisslauncher.features.quickstep.util.TransformedRect;
+import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
+import foundation.e.blisslauncher.features.test.anim.AnimationSuccessListener;
+
 import static android.content.Intent.ACTION_PACKAGE_ADDED;
 import static android.content.Intent.ACTION_PACKAGE_CHANGED;
 import static android.content.Intent.ACTION_PACKAGE_REMOVED;
-import static com.android.launcher3.anim.Interpolators.FAST_OUT_SLOW_IN;
-import static com.android.launcher3.anim.Interpolators.TOUCH_RESPONSE_INTERPOLATOR;
-import static com.android.quickstep.TouchConsumer.INTERACTION_NORMAL;
+
 import static com.android.systemui.shared.system.ActivityManagerWrapper.CLOSE_SYSTEM_WINDOWS_REASON_RECENTS;
 import static com.android.systemui.shared.system.PackageManagerWrapper.ACTION_PREFERRED_ACTIVITY_CHANGED;
 import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
 import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_OPENING;
+import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_NORMAL;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.FAST_OUT_SLOW_IN;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.TOUCH_RESPONSE_INTERPOLATOR;
 
 /**
  * Helper class to handle various atomic commands for switching between Overview.
@@ -80,7 +73,7 @@ public class OverviewCommandHelper {
 
     private final Context mContext;
     private final ActivityManagerWrapper mAM;
-    private final com.android.quickstep.RecentsModel mRecentsModel;
+    private final RecentsModel mRecentsModel;
     private final MainThreadExecutor mMainThreadExecutor;
     private final ComponentName mMyHomeComponent;
 
@@ -108,7 +101,7 @@ public class OverviewCommandHelper {
         mContext = context;
         mAM = ActivityManagerWrapper.getInstance();
         mMainThreadExecutor = new MainThreadExecutor();
-        mRecentsModel = com.android.quickstep.RecentsModel.getInstance(mContext);
+        mRecentsModel = RecentsModel.getInstance(mContext);
 
         Intent myHomeIntent = new Intent(Intent.ACTION_MAIN)
                 .addCategory(Intent.CATEGORY_HOME)
@@ -129,7 +122,7 @@ public class OverviewCommandHelper {
         if (defaultHome == null || mMyHomeComponent.equals(defaultHome)) {
             // User default home is same as out home app. Use Overview integrated in Launcher.
             overviewComponent = mMyHomeComponent;
-            mActivityControlHelper = new LauncherActivityControllerHelper();
+            mActivityControlHelper = new ActivityControlHelper.LauncherActivityControllerHelper();
             overviewIntentCategory = Intent.CATEGORY_HOME;
 
             if (mUpdateRegisteredPackage != null) {
@@ -140,7 +133,7 @@ public class OverviewCommandHelper {
         } else {
             // The default home app is a different launcher. Use the fallback Overview instead.
             overviewComponent = new ComponentName(mContext, RecentsActivity.class);
-            mActivityControlHelper = new FallbackActivityControllerHelper(defaultHome);
+            mActivityControlHelper = new ActivityControlHelper.FallbackActivityControllerHelper(defaultHome);
             overviewIntentCategory = Intent.CATEGORY_DEFAULT;
 
             // User's default home app can change as a result of package updates of this app (such
@@ -193,14 +186,7 @@ public class OverviewCommandHelper {
     }
 
     public void onTip(int actionType, int viewType) {
-        mMainThreadExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                UserEventDispatcher.newInstance(mContext,
-                        new InvariantDeviceProfile(mContext).getDeviceProfile(mContext))
-                        .logActionTip(actionType, viewType);
-            }
-        });
+        // TODO: Do nothing
     }
 
     public ActivityControlHelper getActivityControlHelper() {
@@ -221,7 +207,7 @@ public class OverviewCommandHelper {
         private final long mCreateTime;
         private final int mRunningTaskId;
 
-        private ActivityInitListener mListener;
+        private ActivityControlHelper.ActivityInitListener mListener;
         private T mActivity;
         private RecentsView mRecentsView;
         private final long mToggleClickedTime = SystemClock.uptimeMillis();
@@ -271,7 +257,8 @@ public class OverviewCommandHelper {
         private boolean onActivityReady(T activity, Boolean wasVisible) {
             activity.<RecentsView>getOverviewPanel().setCurrentTask(mRunningTaskId);
             AbstractFloatingView.closeAllOpenViews(activity, wasVisible);
-            AnimationFactory factory = mHelper.prepareRecentsUI(activity, wasVisible,
+            ActivityControlHelper.AnimationFactory
+                factory = mHelper.prepareRecentsUI(activity, wasVisible,
                     (controller) -> {
                         controller.dispatchOnStart();
                         ValueAnimator anim = controller.getAnimationPlayer()
@@ -286,11 +273,6 @@ public class OverviewCommandHelper {
             mActivity = activity;
             mRecentsView = mActivity.getOverviewPanel();
             mRecentsView.setRunningTaskIconScaledDown(true /* isScaledDown */, false /* animate */);
-            if (!mUserEventLogged) {
-                activity.getUserEventDispatcher().logActionCommand(Action.Command.RECENTS_BUTTON,
-                        mHelper.getContainerType(), ContainerType.TASKSWITCHER);
-                mUserEventLogged = true;
-            }
             return false;
         }
 

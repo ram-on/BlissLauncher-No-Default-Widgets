@@ -43,6 +43,8 @@ public abstract class BaseActivity extends Activity {
 
     private final ArrayList<VariantDeviceProfile.OnDeviceProfileChangeListener> mDPChangeListeners =
         new ArrayList<>();
+    private final ArrayList<MultiWindowModeChangedListener> mMultiWindowModeChangedListeners =
+        new ArrayList<>();
 
     protected VariantDeviceProfile mDeviceProfile;
     protected SystemUiController mSystemUiController;
@@ -157,6 +159,14 @@ public abstract class BaseActivity extends Activity {
         }
     }
 
+    public void addMultiWindowModeChangedListener(MultiWindowModeChangedListener listener) {
+        mMultiWindowModeChangedListeners.add(listener);
+    }
+
+    public void removeMultiWindowModeChangedListener(MultiWindowModeChangedListener listener) {
+        mMultiWindowModeChangedListeners.remove(listener);
+    }
+
     public void addForceInvisibleFlag(@InvisibilityFlags int flag) {
         mForceInvisible |= flag;
     }
@@ -167,5 +177,9 @@ public abstract class BaseActivity extends Activity {
 
     public boolean isForceInvisible() {
         return mForceInvisible != 0;
+    }
+
+    public interface MultiWindowModeChangedListener {
+        void onMultiWindowModeChanged(boolean isInMultiWindowMode);
     }
 }

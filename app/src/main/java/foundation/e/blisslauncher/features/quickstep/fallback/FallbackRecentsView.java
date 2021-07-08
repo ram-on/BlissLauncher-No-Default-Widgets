@@ -21,10 +21,10 @@ import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
 
-import com.android.launcher3.DeviceProfile;
-import com.android.quickstep.RecentsActivity;
-import com.android.quickstep.util.LayoutUtils;
-import com.android.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.quickstep.RecentsActivity;
+import foundation.e.blisslauncher.features.quickstep.util.LayoutUtils;
+import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 
 public class FallbackRecentsView extends RecentsView<RecentsActivity> {
 
@@ -62,7 +62,7 @@ public class FallbackRecentsView extends RecentsView<RecentsActivity> {
     }
 
     @Override
-    protected void getTaskSize(DeviceProfile dp, Rect outRect) {
+    protected void getTaskSize(VariantDeviceProfile dp, Rect outRect) {
         LayoutUtils.calculateFallbackTaskSize(getContext(), dp, outRect);
     }
 

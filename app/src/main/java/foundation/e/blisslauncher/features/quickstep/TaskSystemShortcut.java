@@ -80,7 +80,7 @@ public class TaskSystemShortcut {
         dummyInfo.launchIntent = new Intent();
         ComponentName component = task.getTopComponent();
         dummyInfo.launchIntent.setComponent(component);
-        dummyInfo.user = new UserHandle(task.key.userId, UserHandle.of(task.key.userId));
+        dummyInfo.user = new UserHandle(task.key.userId, android.os.UserHandle.of(task.key.userId));
         dummyInfo.title = TaskUtils.getTitle(activity, task);
 
         return getOnClickListenerForTask(activity, dummyInfo);

@@ -95,6 +95,8 @@ android {
             res.srcDirs = ['src/apiOreo/res']
         }
     }
+
+    addFrameworkJar('framework.jar')
 }
 
 dependencies {
@@ -103,7 +105,7 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation "androidx.dynamicanimation:dynamicanimation:1.0.0"
     implementation files('libs/sysui_shared.jar')
-
+    compileOnly files('libs/framework.jar')
     apiNougatImplementation 'org.cyanogenmod:platform.sdk:6.0'
     apiOreoImplementation files('libs/lineage-sdk-oreo.jar')
 

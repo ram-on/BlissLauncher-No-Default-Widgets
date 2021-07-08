@@ -38,7 +38,9 @@ import foundation.e.blisslauncher.features.quickstep.TaskSystemShortcut;
 import foundation.e.blisslauncher.features.quickstep.TaskUtils;
 import foundation.e.blisslauncher.features.test.BaseDragLayer;
 import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
+import foundation.e.blisslauncher.features.test.anim.AnimationSuccessListener;
 import foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils;
+import foundation.e.blisslauncher.features.test.anim.RoundedRectRevealOutlineProvider;
 
 /**
  * Contains options for a recent task when long-pressing its icon.
@@ -159,7 +161,7 @@ public class TaskMenuView extends AbstractFloatingView {
     private void orientAroundTaskView(TaskView taskView) {
         measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         mActivity.getDragLayer().getDescendantRectRelativeToSelf(taskView, sTempRect);
-        Rect insets = mActivity.getDragLayer().;
+        Rect insets = mActivity.getDragLayer().getInsets();
         int x = sTempRect.left + (sTempRect.width() - getMeasuredWidth()) / 2 - insets.left;
         setX(Utilities.isRtl(getResources()) ? -x : x);
         setY(sTempRect.top - mTaskIconAndName.getPaddingTop() - insets.top);

@@ -28,15 +28,13 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.os.RemoteException;
 import android.os.UserHandle;
-import android.support.annotation.WorkerThread;
 import android.util.Log;
 import android.util.LruCache;
 import android.util.SparseArray;
 import android.view.accessibility.AccessibilityManager;
 
-import com.android.launcher3.MainThreadExecutor;
-import com.android.launcher3.R;
-import com.android.launcher3.util.Preconditions;
+import androidx.annotation.WorkerThread;
+
 import com.android.systemui.shared.recents.ISystemUiProxy;
 import com.android.systemui.shared.recents.model.IconLoader;
 import com.android.systemui.shared.recents.model.RecentsTaskLoadPlan;
@@ -51,7 +49,11 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-import static com.android.quickstep.TaskUtils.checkCurrentOrManagedUserId;
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
+import foundation.e.blisslauncher.core.utils.Preconditions;
+
+import static foundation.e.blisslauncher.features.quickstep.TaskUtils.checkCurrentOrManagedUserId;
 
 /**
  * Singleton class to load and manage recents model.

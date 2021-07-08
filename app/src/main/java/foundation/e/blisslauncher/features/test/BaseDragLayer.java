@@ -13,6 +13,7 @@ import java.util.ArrayList;
 
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
+import foundation.e.blisslauncher.core.utils.MultiValueAlpha;
 
 /**
  * A viewgroup with utility methods for drag-n-drop and touch interception
@@ -24,6 +25,8 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
 
     protected final T mActivity;
 
+    private final MultiValueAlpha mMultiValueAlpha;
+
     protected TouchController[] mControllers;
     protected TouchController mActiveController;
     private TouchCompleteListener mTouchCompleteListener;
@@ -31,6 +34,7 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
     public BaseDragLayer(Context context, AttributeSet attrs, int alphaChannelCount) {
         super(context, attrs);
         mActivity = (T) BaseActivity.fromContext(context);
+        mMultiValueAlpha = new MultiValueAlpha(this, alphaChannelCount);
     }
 
     public boolean isEventOverView(View view, MotionEvent ev) {
@@ -210,6 +214,10 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
 
     public void setTouchCompleteListener(TouchCompleteListener listener) {
         mTouchCompleteListener = listener;
+    }
+
+    public MultiValueAlpha.AlphaProperty getAlphaProperty(int index) {
+        return mMultiValueAlpha.getProperty(index);
     }
 
     public interface TouchCompleteListener {

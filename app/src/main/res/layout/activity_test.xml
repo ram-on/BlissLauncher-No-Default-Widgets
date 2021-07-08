@@ -23,6 +23,11 @@
             android:layout_gravity="center"
             app:pageIndicator="@+id/page_indicator" />
 
+        <include
+            android:id="@+id/overview_panel_container"
+            layout="@layout/overview_panel"
+            android:visibility="gone" />
+
         <foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots
             android:id="@+id/page_indicator"
             android:layout_width="match_parent"

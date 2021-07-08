@@ -21,4 +21,5 @@
     <color name="white">#FFFFFF</color>
     <color name="color_blue">#0088ED</color>
 
+    <color name="workspaceTextColor">@android:color/white</color>
 </resources>
