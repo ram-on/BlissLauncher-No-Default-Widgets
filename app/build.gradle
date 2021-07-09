@@ -46,9 +46,9 @@ android {
 
     signingConfigs {
         debug {
-            storeFile file(getRootDir().path + "/keystore/debug.keystore")
+            storeFile file(getRootDir().path + "/keystore/platform.keystore")
             storePassword 'android'
-            keyAlias 'androiddebugkey'
+            keyAlias 'platform'
             keyPassword 'android'
         }
     }
