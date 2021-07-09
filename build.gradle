@@ -15,10 +15,6 @@ buildscript {
 
         classpath Libs.Kotlin.gradlePlugin
         classpath Libs.Kotlin.extensions
-
-        classpath Libs.Google.fabricPlugin
-        classpath Libs.Google.gmsGoogleServices
-
         classpath Libs.dexcountGradlePlugin
     }
 }
