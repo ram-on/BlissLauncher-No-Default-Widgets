@@ -1,5 +1,7 @@
 package foundation.e.blisslauncher.features.test;
 
+import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
+
 import android.content.Context;
 import android.graphics.Rect;
 import android.util.AttributeSet;
@@ -7,13 +9,11 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
-
-import java.util.ArrayList;
-
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
 import foundation.e.blisslauncher.core.utils.MultiValueAlpha;
+import foundation.e.blisslauncher.features.quickstep.AbstractFloatingView;
+import java.util.ArrayList;
 
 /**
  * A viewgroup with utility methods for drag-n-drop and touch interception
@@ -80,8 +80,7 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
     public void onViewRemoved(View child) {
         super.onViewRemoved(child);
 
-        //TODO: Implement when enabling folder grouping.
-        /*if (child instanceof AbstractFloatingView) {
+        if (child instanceof AbstractFloatingView) {
             // Handles the case where the view is removed without being properly closed.
             // This can happen if something goes wrong during a state change/transition.
             postDelayed(() -> {
@@ -90,7 +89,7 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
                     floatingView.close(false);
                 }
             }, SINGLE_FRAME_MS);
-        }*/
+        }
     }
 
     @Override
@@ -192,23 +191,22 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
 
     @Override
     protected boolean onRequestFocusInDescendants(int direction, Rect previouslyFocusedRect) {
-        /*View topView = AbstractFloatingView.getTopOpenView(mActivity);
+        View topView = AbstractFloatingView.getTopOpenView(mActivity);
         if (topView != null) {
             return topView.requestFocus(direction, previouslyFocusedRect);
         } else {
-
-        }*/
-        return super.onRequestFocusInDescendants(direction, previouslyFocusedRect);
+            return super.onRequestFocusInDescendants(direction, previouslyFocusedRect);
+        }
     }
 
     @Override
     public void addFocusables(ArrayList<View> views, int direction, int focusableMode) {
-        /*View topView = AbstractFloatingView.getTopOpenView(mActivity);
+        View topView = AbstractFloatingView.getTopOpenView(mActivity);
         if (topView != null) {
             topView.addFocusables(views, direction);
         } else {
             super.addFocusables(views, direction, focusableMode);
-        }*/
+        }
         super.addFocusables(views, direction, focusableMode);
     }
 
@@ -299,9 +297,9 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
         int count = getChildCount();
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
-            final FrameLayout.LayoutParams flp = (FrameLayout.LayoutParams) child.getLayoutParams();
+            final LayoutParams flp = (LayoutParams) child.getLayoutParams();
             if (flp instanceof LayoutParams) {
-                final LayoutParams lp = (LayoutParams) flp;
+                final LayoutParams lp = flp;
                 if (lp.customPosition) {
                     child.layout(lp.x, lp.y, lp.x + lp.width, lp.y + lp.height+lp.height);
                 }

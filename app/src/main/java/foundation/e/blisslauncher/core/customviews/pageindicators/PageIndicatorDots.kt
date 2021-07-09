@@ -18,9 +18,9 @@ import android.view.ViewOutlineProvider
 import android.view.WindowInsets
 import android.view.animation.Interpolator
 import android.view.animation.OvershootInterpolator
-import android.widget.FrameLayout
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.customviews.Insettable
+import foundation.e.blisslauncher.features.test.BaseDragLayer
 import foundation.e.blisslauncher.features.test.TestActivity
 import kotlin.math.abs
 
@@ -312,12 +312,12 @@ class PageIndicatorDots(context: Context, attrs: AttributeSet?, defStyleAttr: In
         outlineProvider = MyOutlineProver()
         mActiveColor = resources.getColor(R.color.dot_on_color)
         mInActiveColor = resources.getColor(R.color.dot_off_color)
-        //mIsRtl = Utilities.isRtl(getResources())
+        // mIsRtl = Utilities.isRtl(getResources())
     }
 
     override fun setInsets(insets: WindowInsets) {
         val deviceProfile = mLauncher.deviceProfile
-        val lp = layoutParams as FrameLayout.LayoutParams
+        val lp = layoutParams as BaseDragLayer.LayoutParams
         lp.leftMargin = 0.also { lp.rightMargin = it }
         lp.gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
         lp.bottomMargin = deviceProfile.hotseatBarSizePx + resources.getDimensionPixelSize(R.dimen.dotPadding) * 2 + insets.systemWindowInsetBottom

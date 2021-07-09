@@ -24,12 +24,12 @@ import android.util.Xml
 import android.view.WindowManager
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
-import org.xmlpull.v1.XmlPullParser
-import org.xmlpull.v1.XmlPullParserException
 import java.io.IOException
 import java.util.ArrayList
 import kotlin.math.hypot
 import kotlin.math.pow
+import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserException
 
 open class InvariantDeviceProfile {
     // Profile-defining invariant properties
@@ -114,7 +114,7 @@ open class InvariantDeviceProfile {
         fillResIconDpi = getLauncherIconDensity(iconBitmapSize)
         // If the partner customization apk contains any grid overrides, apply them
         // Supported overrides: numRows, numColumns, iconSize
-        //applyPartnerDeviceProfileOverrides(context, dm);
+        // applyPartnerDeviceProfileOverrides(context, dm);
         val realSize = Point()
         display.getRealSize(realSize)
         // The real size never changes. smallSide and largeSide will remain the

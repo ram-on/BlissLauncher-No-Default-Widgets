@@ -341,7 +341,7 @@ open class CellLayout @JvmOverloads constructor(
     open fun setIsDragOverlapping(isDragOverlapping: Boolean) {
         if (mIsDragOverlapping != isDragOverlapping) {
             mIsDragOverlapping = isDragOverlapping
-            //mBackground.setState(if (mIsDragOverlapping) BACKGROUND_STATE_ACTIVE else BACKGROUND_STATE_DEFAULT)
+            // mBackground.setState(if (mIsDragOverlapping) BACKGROUND_STATE_ACTIVE else BACKGROUND_STATE_DEFAULT)
             invalidate()
         }
     }
@@ -406,7 +406,7 @@ open class CellLayout @JvmOverloads constructor(
     fun onDropChild(child: View?) {
         child?.also {
             val lp: LayoutParams = it.layoutParams as LayoutParams
-            //lp.dropped = true
+            // lp.dropped = true
             child.requestLayout()
             markCellsAsOccupiedForView(child)
         }
@@ -827,11 +827,11 @@ open class CellLayout @JvmOverloads constructor(
                 result[1] = index / mCountX
             }
 
-            //appView.findViewById(R.id.app_label).setVisibility(GONE);
+            // appView.findViewById(R.id.app_label).setVisibility(GONE);
             val rowSpec = spec(UNDEFINED)
             val colSpec = spec(UNDEFINED)
             val iconLayoutParams = LayoutParams(rowSpec, colSpec)
-            //iconLayoutParams.setGravity(Gravity.CENTER)
+            // iconLayoutParams.setGravity(Gravity.CENTER)
             iconLayoutParams.height = if (mContainerType == HOTSEAT)
                 dp.hotseatCellHeightPx else dp.cellHeightPx
             iconLayoutParams.width = dp.cellWidthPx
@@ -862,7 +862,7 @@ open class CellLayout @JvmOverloads constructor(
         /*if ((mode == MODE_ON_DROP || !foundSolution)) {
             setUseTempCoords(false)
         }*/
-        //requestLayout()
+        // requestLayout()
         return result
     }
 

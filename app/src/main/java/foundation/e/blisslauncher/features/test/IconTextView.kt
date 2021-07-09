@@ -52,9 +52,9 @@ class IconTextView @JvmOverloads constructor(context: Context, attrs: AttributeS
 
     private var longPressHelper: CheckLongPressHelper
 
-    constructor(context: Context): this(context, null, 0)
+    constructor(context: Context) : this(context, null, 0)
 
-    constructor(context: Context, attrs: AttributeSet): this(context, attrs, 0)
+    constructor(context: Context, attrs: AttributeSet) : this(context, attrs, 0)
 
     init {
         setTextSize(TypedValue.COMPLEX_UNIT_PX, dp.iconTextSizePx.toFloat())
@@ -105,7 +105,7 @@ class IconTextView @JvmOverloads constructor(context: Context, attrs: AttributeS
 
     override fun setTag(tag: Any?) {
         if (tag != null) {
-            //TODO: Check Item info locked
+            // TODO: Check Item info locked
         }
         super.setTag(tag)
     }

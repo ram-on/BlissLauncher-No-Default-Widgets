@@ -74,8 +74,7 @@ public class LauncherRootView extends InsettableFrameLayout {
             }
         }
         if (resetState) {
-            // TODO: Enable state if necessary.
-            //mLauncher.getStateManager().reapplyState(true /* cancelCurrentAnimation */);
+            mLauncher.getStateManager().reapplyState(true /* cancelCurrentAnimation */);
         }
 
         return insets; // I'll take it from here

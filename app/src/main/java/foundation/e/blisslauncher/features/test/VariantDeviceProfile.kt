@@ -238,7 +238,7 @@ class VariantDeviceProfile(
         }
         updateWorkspacePadding()
         // This is done last, after iconSizePx is calculated above.
-        //TODO: mBadgeRenderer = BadgeRenderer(iconSizePx)
+        // TODO: mBadgeRenderer = BadgeRenderer(iconSizePx)
     }
 
     private fun updateAvailableDimensions(

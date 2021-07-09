@@ -30,7 +30,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
-            applicationIdSuffix '.debug'
             signingConfig signingConfigs.debug
         }
 
@@ -96,7 +95,6 @@ android {
             manifest.srcFile "src/apiOreo/AndroidManifest.xml"
         }
     }
-
     addFrameworkJar('framework.jar')
 }
 
@@ -105,7 +103,6 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation "androidx.dynamicanimation:dynamicanimation:1.0.0"
-    implementation files('libs/sysui_shared.jar')
     compileOnly files('libs/framework.jar')
     apiNougatImplementation 'org.cyanogenmod:platform.sdk:6.0'
     apiOreoImplementation files('libs/lineage-sdk-oreo.jar')
@@ -113,6 +110,10 @@ dependencies {
     debugImplementation 'com.amitshekhar.android:debug-db:1.0.4'
 
     implementation 'org.greenrobot:eventbus:3.1.1'
+
+    // Recents dependency
+    implementation project(':SystemUIShared')
+
 
     // Support Libs
     implementation Libs.AndroidX.appcompat
@@ -157,5 +158,3 @@ dependencies {
     androidTestImplementation Libs.AndroidX.Test.rules
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
 }
-
-apply plugin: 'com.getkeepsafe.dexcount'

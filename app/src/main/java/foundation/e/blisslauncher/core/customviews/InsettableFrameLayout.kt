@@ -10,7 +10,7 @@ import android.view.WindowInsets
 import android.widget.FrameLayout
 import foundation.e.blisslauncher.R
 
-open class InsettableFrameLayout(private val mContext: Context, attrs: AttributeSet?) : FrameLayout(
+open class InsettableFrameLayout(mContext: Context, attrs: AttributeSet?) : FrameLayout(
     mContext, attrs
 ), Insettable {
 
@@ -30,8 +30,8 @@ open class InsettableFrameLayout(private val mContext: Context, attrs: Attribute
 
     private fun setFrameLayoutChildInsets(child: View, newInsets: WindowInsets?, oldInsets: Rect) {
         if (newInsets == null) return
-        val lp: LayoutParams =
-            child.layoutParams as LayoutParams
+        val lp: FrameLayout.LayoutParams =
+            child.layoutParams as FrameLayout.LayoutParams
         if (child is Insettable) {
             Log.i("Insettable", "setIsnets for child")
             (child as Insettable).setInsets(newInsets)
@@ -45,7 +45,7 @@ open class InsettableFrameLayout(private val mContext: Context, attrs: Attribute
     }
 
     override fun onApplyWindowInsets(insets: WindowInsets?): WindowInsets? {
-        //BlissLauncher.getApplication(mContext).resetDeviceProfile()
+        // BlissLauncher.getApplication(mContext).resetDeviceProfile()
         setInsets(insets)
         return insets
     }

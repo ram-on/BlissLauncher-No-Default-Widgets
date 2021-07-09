@@ -63,9 +63,9 @@ class ShaderBlurDrawable internal constructor(private val blurWallpaperProvider:
                 blurBitmap
             }
 
-        //setupBlurPath()
+        // setupBlurPath()
 
-        //canvas.translate(0f, -1500f)
+        // canvas.translate(0f, -1500f)
         if (noRadius) {
             canvas.drawRect(
                 0f, 0f,
@@ -75,7 +75,7 @@ class ShaderBlurDrawable internal constructor(private val blurWallpaperProvider:
         } else {
             canvas.drawPath(DeviceProfile.path, blurPaint)
         }
-        //canvas.translate(0f, 1500f)
+        // canvas.translate(0f, 1500f)
     }
 
     override fun setAlpha(alpha: Int) {
