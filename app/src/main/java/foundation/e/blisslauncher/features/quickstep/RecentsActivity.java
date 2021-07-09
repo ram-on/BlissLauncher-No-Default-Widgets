@@ -15,6 +15,14 @@
  */
 package foundation.e.blisslauncher.features.quickstep;
 
+import static android.content.pm.ActivityInfo.CONFIG_ORIENTATION;
+import static android.content.pm.ActivityInfo.CONFIG_SCREEN_SIZE;
+import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
+import static foundation.e.blisslauncher.features.quickstep.LauncherAppTransitionManagerImpl.RECENTS_LAUNCH_DURATION;
+import static foundation.e.blisslauncher.features.quickstep.LauncherAppTransitionManagerImpl.STATUS_BAR_TRANSITION_DURATION;
+import static foundation.e.blisslauncher.features.quickstep.TaskUtils.getRecentsWindowAnimator;
+import static foundation.e.blisslauncher.features.quickstep.TaskUtils.taskIsATargetWithMode;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -25,36 +33,25 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-
 import com.android.systemui.shared.system.ActivityOptionsCompat;
 import com.android.systemui.shared.system.RemoteAnimationAdapterCompat;
 import com.android.systemui.shared.system.RemoteAnimationRunnerCompat;
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
-
-import java.io.FileDescriptor;
-import java.io.PrintWriter;
-
 import foundation.e.blisslauncher.R;
-import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.features.quickstep.fallback.FallbackRecentsView;
 import foundation.e.blisslauncher.features.quickstep.fallback.RecentsRootView;
+import foundation.e.blisslauncher.features.quickstep.uioverrides.UiFactory;
 import foundation.e.blisslauncher.features.quickstep.util.ClipAnimationHelper;
-import foundation.e.blisslauncher.features.quickstep.util.Themes;
 import foundation.e.blisslauncher.features.quickstep.views.RecentsViewContainer;
 import foundation.e.blisslauncher.features.quickstep.views.TaskView;
 import foundation.e.blisslauncher.features.test.BaseDragLayer;
 import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
 import foundation.e.blisslauncher.features.test.InvariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.LauncherAnimationRunner;
+import foundation.e.blisslauncher.features.test.LauncherAppState;
 import foundation.e.blisslauncher.features.test.SystemUiController;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.anim.Interpolators;
-
-import static android.content.pm.ActivityInfo.CONFIG_ORIENTATION;
-import static android.content.pm.ActivityInfo.CONFIG_SCREEN_SIZE;
-import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
-import static foundation.e.blisslauncher.features.quickstep.TaskUtils.getRecentsWindowAnimator;
-import static foundation.e.blisslauncher.features.quickstep.TaskUtils.taskIsATargetWithMode;
 
 /**
  * A simple activity to show the recently launched tasks
@@ -130,7 +127,7 @@ public class RecentsActivity extends BaseDraggingActivity {
         // In case we are reusing IDP, create a copy so that we dont conflict with Launcher
         // activity.
         LauncherAppState appState = LauncherAppState.getInstanceNoCreate();
-        if (isInMultiWindowModeCompat()) {
+        if (isInMultiWindowMode()) {
             InvariantDeviceProfile idp = appState == null
                     ? new InvariantDeviceProfile(this) : appState.getInvariantDeviceProfile();
             VariantDeviceProfile dp = idp.getDeviceProfile(this);
@@ -212,9 +209,6 @@ public class RecentsActivity extends BaseDraggingActivity {
         }
         return target;
     }
-
-    @Override
-    public void invalidateParent(LauncherItem info) { }
 
     @Override
     protected void onStart() {

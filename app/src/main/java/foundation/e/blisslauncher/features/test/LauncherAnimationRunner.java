@@ -15,22 +15,20 @@
  */
 package foundation.e.blisslauncher.features.test;
 
+import static com.android.systemui.shared.recents.utilities.Utilities.postAtFrontOfQueueAsynchronously;
+import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
+import static foundation.e.blisslauncher.core.Utilities.postAsyncCallback;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.Handler;
-
 import androidx.annotation.BinderThread;
 import androidx.annotation.UiThread;
-
 import com.android.systemui.shared.system.RemoteAnimationRunnerCompat;
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
-
-import static com.android.systemui.shared.recents.utilities.Utilities.postAtFrontOfQueueAsynchronously;
-import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
-import static foundation.e.blisslauncher.core.Utilities.postAsyncCallback;
 
 @TargetApi(Build.VERSION_CODES.P)
 public abstract class LauncherAnimationRunner implements RemoteAnimationRunnerCompat {

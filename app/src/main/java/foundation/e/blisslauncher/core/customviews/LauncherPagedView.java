@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core.customviews;
 
+import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
 import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SPRING_LOADED_TRANSITION_MS;
 
 import android.animation.Animator;
@@ -7,6 +8,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.LayoutTransition;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.WallpaperManager;
 import android.content.Context;
@@ -22,11 +24,13 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.WindowInsets;
 import android.widget.GridLayout;
 import android.widget.Toast;
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots;
 import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.FolderItem;
@@ -41,9 +45,13 @@ import foundation.e.blisslauncher.features.launcher.Hotseat;
 import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.IconTextView;
+import foundation.e.blisslauncher.features.test.LauncherState;
+import foundation.e.blisslauncher.features.test.LauncherStateManager;
 import foundation.e.blisslauncher.features.test.OnAlarmListener;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
+import foundation.e.blisslauncher.features.test.WorkspaceStateTransitionAnimation;
+import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
 import foundation.e.blisslauncher.features.test.dragndrop.DragController;
 import foundation.e.blisslauncher.features.test.dragndrop.DragOptions;
 import foundation.e.blisslauncher.features.test.dragndrop.DragSource;
@@ -56,12 +64,17 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
-    Insettable, DropTarget, DragSource, DragController.DragListener {
+    Insettable, DropTarget, DragSource, DragController.DragListener,
+    LauncherStateManager.StateHandler {
 
     private static final String TAG = "LauncherPagedView";
     private static final int DEFAULT_PAGE = 0;
     private static final int SNAP_OFF_EMPTY_SCREEN_DURATION = 400;
     private static final int FADE_EMPTY_SCREEN_DURATION = 150;
+
+    /** The value that {@link #mTransitionProgress} must be greater than for
+     * {@link #isFinishedSwitchingState()} ()} to return true. */
+    private static final float FINISHED_SWITCHING_STATE_TRANSITION_PROGRESS = 0.5f;
 
     private static final boolean MAP_NO_RECURSE = false;
     private static final boolean MAP_RECURSE = true;
@@ -129,6 +142,14 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     int mLastReorderX = -1;
     int mLastReorderY = -1;
     private IconTextView parentFolderCell;
+    private float mTransitionProgress;
+    private boolean mIsSwitchingState;
+    private boolean mForceDrawAdjacentPages;
+    private WorkspaceStateTransitionAnimation mStateTransitionAnimation;
+
+    float mLastOverlayScroll = 0;
+    boolean mOverlayShown = false;
+    private Runnable mOnOverlayHiddenCallback;
 
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -138,6 +159,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         super(context, attributeSet, defStyle);
 
         mLauncher = TestActivity.Companion.getLauncher(context);
+        mStateTransitionAnimation = new WorkspaceStateTransitionAnimation(mLauncher, this);
         mWallpaperManager = WallpaperManager.getInstance(context);
         setHapticFeedbackEnabled(false);
         initWorkspace();
@@ -779,22 +801,38 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        //return shouldConsumeTouch(v);
-        return true;
+        return shouldConsumeTouch(v);
+    }
+
+    private boolean shouldConsumeTouch(View v) {
+        return !workspaceIconsCanBeDragged()
+            || (!workspaceInModalState() && indexOfChild(v) != mCurrentPage);
     }
 
     public boolean isSwitchingState() {
-        return false;
+        return mIsSwitchingState;
+    }
+
+    private boolean workspaceInModalState() {
+        return !mLauncher.isInState(NORMAL);
+    }
+
+    /**
+     * Returns whether a drag should be allowed to be started from the current workspace state.
+     */
+    public boolean workspaceIconsCanBeDragged() {
+        return mLauncher.getStateManager().getState().workspaceIconsCanBeDragged;
     }
 
     /**
      * This differs from isSwitchingState in that we take into account how far the transition
      * has completed.
      */
-    /*public boolean isFinishedSwitchingState() {
+    public boolean isFinishedSwitchingState() {
         return !mIsSwitchingState
             || (mTransitionProgress > FINISHED_SWITCHING_STATE_TRANSITION_PROGRESS);
-    }*/
+    }
+
     @Override
     public boolean dispatchUnhandledMove(View focused, int direction) {
         return super.dispatchUnhandledMove(focused, direction);
@@ -889,7 +927,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     private void updateChildrenLayersEnabled() {
-        boolean enableChildrenLayers = isPageInTransition();
+        boolean enableChildrenLayers = mIsSwitchingState || isPageInTransition();
 
         if (enableChildrenLayers != mChildrenLayersEnabled) {
             mChildrenLayersEnabled = enableChildrenLayers;
@@ -911,6 +949,14 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             final int[] visibleScreens = getVisibleChildrenRange();
             int leftScreen = visibleScreens[0];
             int rightScreen = visibleScreens[1];
+
+            if (mForceDrawAdjacentPages) {
+                // In overview mode, make sure that the two side pages are visible.
+                leftScreen = Utilities.boundToRange(getCurrentPage() - 1, 0, rightScreen);
+                rightScreen = Utilities.boundToRange(getCurrentPage() + 1,
+                    leftScreen, getPageCount() - 1
+                );
+            }
 
             if (leftScreen == rightScreen) {
                 // make sure we're caching at least two pages always
@@ -957,12 +1003,41 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     @Override
+    public boolean scrollLeft() {
+        boolean result = false;
+        if (!workspaceInModalState() && !mIsSwitchingState) {
+            result = super.scrollLeft();
+        }
+        // TODO: Fix this asap
+        /*Folder openFolder = Folder.getOpen(mLauncher);
+        if (openFolder != null) {
+            openFolder.completeDragExit();
+        }*/
+        return result;
+    }
+
+    @Override
+    public boolean scrollRight() {
+        boolean result = false;
+        if (!workspaceInModalState() && !mIsSwitchingState) {
+            result = super.scrollRight();
+        }
+        // TODO: Fix this asap
+        /*Folder openFolder = Folder.getOpen(mLauncher);
+        if (openFolder != null) {
+            openFolder.completeDragExit();
+        }*/
+        return result;
+    }
+
+    @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
 
         // Update the page indicator progress.
         boolean isTransitioning =
-            (getLayoutTransition() != null && getLayoutTransition().isRunning());
+            mIsSwitchingState || (getLayoutTransition() != null && getLayoutTransition()
+                .isRunning());
         if (!isTransitioning) {
             showPageIndicatorAtCurrentScroll();
         }
@@ -1098,6 +1173,59 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     public boolean isDropEnabled() {
         Log.d(TAG, "isDropEnabled() called");
         return true;
+    }
+
+    /**
+     * @return false if the callback is still pending
+     */
+    private boolean tryRunOverlayCallback() {
+        if (mOnOverlayHiddenCallback == null) {
+            // Return true as no callback is pending. This is used by OnWindowFocusChangeListener
+            // to remove itself if multiple focus handles were added.
+            return true;
+        }
+        if (mOverlayShown || !hasWindowFocus()) {
+            return false;
+        }
+
+        mOnOverlayHiddenCallback.run();
+        mOnOverlayHiddenCallback = null;
+        return true;
+    }
+
+    /**
+     * Runs the given callback when the minus one overlay is hidden. Specifically, it is run
+     * when launcher's window has focus and the overlay is no longer being shown. If a callback
+     * is already present, the new callback will chain off it so both are run.
+     *
+     * @return Whether the callback was deferred.
+     */
+    public boolean runOnOverlayHidden(Runnable callback) {
+        if (mOnOverlayHiddenCallback == null) {
+            mOnOverlayHiddenCallback = callback;
+        } else {
+            // Chain the new callback onto the previous callback(s).
+            Runnable oldCallback = mOnOverlayHiddenCallback;
+            mOnOverlayHiddenCallback = () -> {
+                oldCallback.run();
+                callback.run();
+            };
+        }
+        if (!tryRunOverlayCallback()) {
+            ViewTreeObserver observer = getViewTreeObserver();
+            if (observer != null && observer.isAlive()) {
+                observer.addOnWindowFocusChangeListener(
+                    new ViewTreeObserver.OnWindowFocusChangeListener() {
+                        @Override
+                        public void onWindowFocusChanged(boolean hasFocus) {
+                            if (tryRunOverlayCallback() && observer.isAlive()) {
+                                observer.removeOnWindowFocusChangeListener(this);
+                            }
+                        }});
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -1910,6 +2038,56 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
     }
 
+    private void onStartStateTransition(LauncherState state) {
+        mIsSwitchingState = true;
+        mTransitionProgress = 0;
+
+        updateChildrenLayersEnabled();
+    }
+
+    private void onEndStateTransition() {
+        mIsSwitchingState = false;
+        mForceDrawAdjacentPages = false;
+        mTransitionProgress = 1;
+
+        updateChildrenLayersEnabled();
+    }
+
+    /**
+     * Sets the current workspace {@link LauncherState} and updates the UI without any animations
+     */
+    @Override
+    public void setState(LauncherState toState) {
+        onStartStateTransition(toState);
+        mStateTransitionAnimation.setState(toState);
+        onEndStateTransition();
+    }
+
+    /**
+     * Sets the current workspace {@link LauncherState}, then animates the UI
+     */
+    @Override
+    public void setStateWithAnimation(
+        LauncherState toState,
+        AnimatorSetBuilder builder, LauncherStateManager.AnimationConfig config
+    ) {
+        StateTransitionListener listener = new StateTransitionListener(toState);
+        mStateTransitionAnimation.setStateWithAnimation(toState, builder, config);
+
+        // Invalidate the pages now, so that we have the visible pages before the
+        // animation is started
+        if (toState.hasMultipleVisiblePages) {
+            mForceDrawAdjacentPages = true;
+        }
+        invalidate(); // This will call dispatchDraw(), which calls getVisiblePages().
+
+        ValueAnimator stepAnimator = ValueAnimator.ofFloat(0, 1);
+        stepAnimator.addUpdateListener(listener);
+        stepAnimator.setDuration(config.duration);
+        stepAnimator.addListener(listener);
+        builder.play(stepAnimator);
+    }
+
     class FolderCreationAlarmListener implements OnAlarmListener {
         final CellLayout layout;
         final IconTextView cell;
@@ -1976,6 +2154,31 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             mDragTargetLayout.visualizeDropLocation(child, mOutlineProvider,
                 mTargetCell[0], mTargetCell[1], false, dragObject
             );
+        }
+    }
+
+    private class StateTransitionListener extends AnimatorListenerAdapter
+        implements ValueAnimator.AnimatorUpdateListener {
+
+        private final LauncherState mToState;
+
+        StateTransitionListener(LauncherState toState) {
+            mToState = toState;
+        }
+
+        @Override
+        public void onAnimationUpdate(ValueAnimator anim) {
+            mTransitionProgress = anim.getAnimatedFraction();
+        }
+
+        @Override
+        public void onAnimationStart(Animator animation) {
+            onStartStateTransition(mToState);
+        }
+
+        @Override
+        public void onAnimationEnd(Animator animation) {
+            onEndStateTransition();
         }
     }
 }

@@ -15,11 +15,13 @@
  */
 package foundation.e.blisslauncher.features.quickstep.uioverrides;
 
+import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.scrollInterpolatorForVelocity;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.view.MotionEvent;
-
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.touch.SwipeDetector;
 import foundation.e.blisslauncher.core.utils.FlingBlockCheck;
@@ -34,9 +36,6 @@ import foundation.e.blisslauncher.features.test.TouchController;
 import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
 import foundation.e.blisslauncher.features.test.anim.Interpolators;
 import foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils;
-
-import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.scrollInterpolatorForVelocity;
 
 /**
  * Touch controller for handling task view card swipes

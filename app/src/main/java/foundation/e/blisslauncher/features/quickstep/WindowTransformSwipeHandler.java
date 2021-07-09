@@ -15,6 +15,15 @@
  */
 package foundation.e.blisslauncher.features.quickstep;
 
+import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
+import static foundation.e.blisslauncher.core.Utilities.postAsyncCallback;
+import static foundation.e.blisslauncher.features.quickstep.QuickScrubController.QUICK_SCRUB_FROM_APP_START_DURATION;
+import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_NORMAL;
+import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_QUICK_SCRUB;
+import static foundation.e.blisslauncher.features.test.BaseActivity.INVISIBLE_BY_STATE_HANDLER;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.DEACCEL;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
@@ -35,11 +44,9 @@ import android.view.View;
 import android.view.ViewTreeObserver.OnDrawListener;
 import android.view.WindowManager;
 import android.view.animation.Interpolator;
-
 import androidx.annotation.AnyThread;
 import androidx.annotation.UiThread;
 import androidx.annotation.WorkerThread;
-
 import com.android.systemui.shared.recents.model.ThumbnailData;
 import com.android.systemui.shared.system.ActivityManagerWrapper;
 import com.android.systemui.shared.system.InputConsumerController;
@@ -48,9 +55,6 @@ import com.android.systemui.shared.system.RecentsAnimationControllerCompat;
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
 import com.android.systemui.shared.system.WindowCallbacksCompat;
 import com.android.systemui.shared.system.WindowManagerWrapper;
-
-import java.util.StringJoiner;
-
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.utils.MultiValueAlpha;
@@ -60,21 +64,12 @@ import foundation.e.blisslauncher.features.quickstep.util.TransformedRect;
 import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
 import foundation.e.blisslauncher.features.quickstep.views.TaskView;
 import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
-import foundation.e.blisslauncher.features.test.InvariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.TraceHelper;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.anim.AnimationSuccessListener;
 import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
-
-import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
-import static foundation.e.blisslauncher.core.Utilities.postAsyncCallback;
-import static foundation.e.blisslauncher.features.quickstep.QuickScrubController.QUICK_SCRUB_FROM_APP_START_DURATION;
-import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_NORMAL;
-import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_QUICK_SCRUB;
-import static foundation.e.blisslauncher.features.test.BaseActivity.INVISIBLE_BY_STATE_HANDLER;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.DEACCEL;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+import java.util.StringJoiner;
 
 @TargetApi(Build.VERSION_CODES.O)
 public class WindowTransformSwipeHandler<T extends BaseDraggingActivity> {

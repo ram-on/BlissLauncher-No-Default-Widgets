@@ -51,7 +51,6 @@ public class LauncherLayoutListener extends AbstractFloatingView
         mHandler = handler;
     }
 
-
     @Override
     public boolean onControllerInterceptTouchEvent(MotionEvent ev) {
         return false;

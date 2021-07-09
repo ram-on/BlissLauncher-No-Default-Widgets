@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.widget.FrameLayout
+import foundation.e.blisslauncher.R
 
 open class InsettableFrameLayout(private val mContext: Context, attrs: AttributeSet?) : FrameLayout(
     mContext, attrs
@@ -80,5 +81,22 @@ open class InsettableFrameLayout(private val mContext: Context, attrs: Attribute
                 }
             }
         }
+    }
+    open class LayoutParams : FrameLayout.LayoutParams {
+        var ignoreInsets = false
+
+        constructor(c: Context, attrs: AttributeSet?) : super(c, attrs) {
+            val a = c.obtainStyledAttributes(
+                attrs,
+                R.styleable.InsettableFrameLayout_Layout
+            )
+            ignoreInsets = a.getBoolean(
+                R.styleable.InsettableFrameLayout_Layout_layout_ignoreInsets, false
+            )
+            a.recycle()
+        }
+
+        constructor(width: Int, height: Int) : super(width, height) {}
+        constructor(lp: ViewGroup.LayoutParams?) : super(lp!!) {}
     }
 }

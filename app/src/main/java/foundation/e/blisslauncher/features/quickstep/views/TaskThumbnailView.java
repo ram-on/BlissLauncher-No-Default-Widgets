@@ -16,6 +16,8 @@
 
 package foundation.e.blisslauncher.features.quickstep.views;
 
+import static com.android.systemui.shared.system.WindowManagerWrapper.WINDOWING_MODE_FULLSCREEN;
+
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -31,19 +33,14 @@ import android.util.AttributeSet;
 import android.util.FloatProperty;
 import android.util.Property;
 import android.view.View;
-
 import com.android.systemui.shared.recents.model.Task;
 import com.android.systemui.shared.recents.model.ThumbnailData;
-
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.features.quickstep.TaskOverlayFactory;
-import foundation.e.blisslauncher.features.quickstep.util.Themes;
 import foundation.e.blisslauncher.features.test.BaseActivity;
 import foundation.e.blisslauncher.features.test.SystemUiController;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
-
-import static com.android.systemui.shared.system.WindowManagerWrapper.WINDOWING_MODE_FULLSCREEN;
 
 /**
  * A thumbnail of task in the Recents view.

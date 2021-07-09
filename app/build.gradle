@@ -93,6 +93,7 @@ android {
         apiQ {
             java.srcDirs = ['src/apiOreo/java/foundation/e']
             res.srcDirs = ['src/apiOreo/res']
+            manifest.srcFile "src/apiOreo/AndroidManifest.xml"
         }
     }
 
@@ -108,7 +109,7 @@ dependencies {
     compileOnly files('libs/framework.jar')
     apiNougatImplementation 'org.cyanogenmod:platform.sdk:6.0'
     apiOreoImplementation files('libs/lineage-sdk-oreo.jar')
-
+    apiQImplementation files('libs/lineage-sdk-q.jar')
     debugImplementation 'com.amitshekhar.android:debug-db:1.0.4'
 
     implementation 'org.greenrobot:eventbus:3.1.1'

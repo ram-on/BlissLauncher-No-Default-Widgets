@@ -1,8 +1,10 @@
 package foundation.e.blisslauncher.core;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -424,5 +426,10 @@ public class Utilities {
         Message msg = Message.obtain(handler, callback);
         msg.setAsynchronous(true);
         handler.sendMessage(msg);
+    }
+
+    public static SharedPreferences getPrefs(Context context) {
+        return context.getSharedPreferences(
+            "foundation.e.blisslauncher.prefs", Context.MODE_PRIVATE);
     }
 }

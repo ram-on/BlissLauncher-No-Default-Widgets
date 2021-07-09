@@ -15,6 +15,15 @@
  */
 package foundation.e.blisslauncher.features.quickstep;
 
+import static android.view.MotionEvent.ACTION_CANCEL;
+import static android.view.MotionEvent.ACTION_DOWN;
+import static android.view.MotionEvent.ACTION_MOVE;
+import static android.view.MotionEvent.ACTION_POINTER_UP;
+import static android.view.MotionEvent.ACTION_UP;
+import static android.view.MotionEvent.INVALID_POINTER_ID;
+import static com.android.systemui.shared.system.ActivityManagerWrapper.CLOSE_SYSTEM_WINDOWS_REASON_RECENTS;
+import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
+
 import android.annotation.TargetApi;
 import android.app.ActivityManager.RunningTaskInfo;
 import android.content.Context;
@@ -34,8 +43,6 @@ import android.view.Surface;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
-
-
 import com.android.systemui.shared.system.ActivityManagerWrapper;
 import com.android.systemui.shared.system.AssistDataReceiver;
 import com.android.systemui.shared.system.BackgroundExecutor;
@@ -45,22 +52,11 @@ import com.android.systemui.shared.system.RecentsAnimationControllerCompat;
 import com.android.systemui.shared.system.RecentsAnimationListener;
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
 import com.android.systemui.shared.system.WindowManagerWrapper;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
 import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationTargetSet;
 import foundation.e.blisslauncher.features.test.TraceHelper;
-
-import static android.view.MotionEvent.ACTION_CANCEL;
-import static android.view.MotionEvent.ACTION_DOWN;
-import static android.view.MotionEvent.ACTION_MOVE;
-import static android.view.MotionEvent.ACTION_POINTER_UP;
-import static android.view.MotionEvent.ACTION_UP;
-import static android.view.MotionEvent.INVALID_POINTER_ID;
-import static com.android.systemui.shared.system.ActivityManagerWrapper.CLOSE_SYSTEM_WINDOWS_REASON_RECENTS;
-import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Touch consumer for handling events originating from an activity other than Launcher

@@ -56,7 +56,7 @@ public class SpringLoadedDragController implements OnAlarmListener {
     public void onAlarm(Alarm alarm) {
         if (mScreen != null) {
             // Snap to the screen that we are hovering over now
-            LauncherPagedView w = mLauncher.getWorkspace();
+            LauncherPagedView w = mLauncher.getLauncherPagedView();
             int page = w.indexOfChild(mScreen);
             if (page != w.getCurrentPage()) {
                 w.snapToPage(page);

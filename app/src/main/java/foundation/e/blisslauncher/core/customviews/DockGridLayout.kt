@@ -12,10 +12,10 @@ import foundation.e.blisslauncher.core.blur.ShaderBlurDrawable
 import foundation.e.blisslauncher.core.runOnMainThread
 
 class DockGridLayout @JvmOverloads constructor(
-    private val mContext: Context,
+    context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : GridLayout(mContext, attrs, defStyleAttr), Insettable,
+) : GridLayout(context, attrs, defStyleAttr), Insettable,
     BlurWallpaperProvider.Listener {
     private val blurWallpaperProvider: BlurWallpaperProvider
     private var fullBlurDrawable: ShaderBlurDrawable? = null
@@ -44,13 +44,13 @@ class DockGridLayout @JvmOverloads constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        BlurWallpaperProvider.getInstance(mContext).addListener(this)
+        BlurWallpaperProvider.getInstance(context).addListener(this)
         fullBlurDrawable!!.startListening()
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        BlurWallpaperProvider.getInstance(mContext).removeListener(this)
+        BlurWallpaperProvider.getInstance(context).removeListener(this)
         fullBlurDrawable!!.stopListening()
     }
 
@@ -75,7 +75,7 @@ class DockGridLayout @JvmOverloads constructor(
 
     override fun setInsets(insets: WindowInsets?) {
         if (insets == null) return
-        val deviceProfile = BlissLauncher.getApplication(mContext).deviceProfile
+        val deviceProfile = BlissLauncher.getApplication(context).deviceProfile
         val lp =
             layoutParams as InsettableRelativeLayout.LayoutParams
         lp.height = deviceProfile.hotseatCellHeightPx + insets.systemWindowInsetBottom
@@ -104,7 +104,7 @@ class DockGridLayout @JvmOverloads constructor(
 
     init {
         setWillNotDraw(false)
-        blurWallpaperProvider = BlurWallpaperProvider.getInstance(mContext)
+        blurWallpaperProvider = BlurWallpaperProvider.getInstance(context)
         createBlurDrawable()
     }
 }

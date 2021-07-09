@@ -30,6 +30,9 @@ import android.util.SparseArray;
 import com.android.systemui.shared.recents.model.IconLoader;
 import com.android.systemui.shared.recents.model.TaskKeyLruCache;
 
+import foundation.e.blisslauncher.BlissLauncher;
+import foundation.e.blisslauncher.core.IconsHandler;
+
 /**
  * Extension of {@link IconLoader} with icon normalization support
  */
@@ -41,7 +44,6 @@ public class NormalizedIconLoader extends IconLoader {
     public NormalizedIconLoader(Context context, TaskKeyLruCache<Drawable> iconCache,
             LruCache<ComponentName, ActivityInfo> activityInfoCache) {
         super(context, iconCache, activityInfoCache);
-        mDrawableFactory = DrawableFactory.get(context);
     }
 
     @Override
@@ -50,40 +52,29 @@ public class NormalizedIconLoader extends IconLoader {
             Drawable info = mDefaultIcons.get(userId);
             if (info == null) {
                 info = getBitmapInfo(Resources.getSystem()
-                        .getDrawable(android.R.drawable.sym_def_app_icon), userId, 0, false);
+                        .getDrawable(android.R.drawable.sym_def_app_icon), userId);
                 mDefaultIcons.put(userId, info);
             }
 
-            return new Drawable(info);
+            return info;
         }
     }
 
     @Override
     protected Drawable createBadgedDrawable(Drawable drawable, int userId, TaskDescription desc) {
-        return new FastBitmapDrawable(getBitmapInfo(drawable, userId, desc.getPrimaryColor(),
-                false));
+        return getBitmapInfo(drawable, userId);
     }
 
-    private synchronized BitmapInfo getBitmapInfo(Drawable drawable, int userId,
-            int primaryColor, boolean isInstantApp) {
-        if (mLauncherIcons == null) {
-            mLauncherIcons = LauncherIcons.obtain(mContext);
-        }
-
-        mLauncherIcons.setWrapperBackgroundColor(primaryColor);
-        // User version code O, so that the icon is always wrapped in an adaptive icon container.
-        return mLauncherIcons.createBadgedIconBitmap(drawable, UserHandle.of(userId),
-                Build.VERSION_CODES.O, isInstantApp);
+    private synchronized Drawable getBitmapInfo(Drawable drawable, int userId) {
+        IconsHandler iconsHandler = BlissLauncher.getApplication(mContext).getIconsHandler();
+        return iconsHandler.getBadgedIcon(drawable, UserHandle.of(userId));
     }
 
     @Override
     protected Drawable getBadgedActivityIcon(ActivityInfo activityInfo, int userId,
             TaskDescription desc) {
-        BitmapInfo bitmapInfo = getBitmapInfo(
+        return getBitmapInfo(
                 activityInfo.loadUnbadgedIcon(mContext.getPackageManager()),
-                userId,
-                desc.getPrimaryColor(),
-                activityInfo.applicationInfo.isInstantApp());
-        return mDrawableFactory.newIcon(bitmapInfo, activityInfo);
+                userId);
     }
 }

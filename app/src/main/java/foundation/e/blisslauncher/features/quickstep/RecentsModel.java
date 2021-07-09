@@ -15,6 +15,8 @@
  */
 package foundation.e.blisslauncher.features.quickstep;
 
+import static foundation.e.blisslauncher.features.quickstep.TaskUtils.checkCurrentOrManagedUserId;
+
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.ComponentCallbacks2;
@@ -32,9 +34,7 @@ import android.util.Log;
 import android.util.LruCache;
 import android.util.SparseArray;
 import android.view.accessibility.AccessibilityManager;
-
 import androidx.annotation.WorkerThread;
-
 import com.android.systemui.shared.recents.ISystemUiProxy;
 import com.android.systemui.shared.recents.model.IconLoader;
 import com.android.systemui.shared.recents.model.RecentsTaskLoadPlan;
@@ -44,16 +44,12 @@ import com.android.systemui.shared.recents.model.TaskKeyLruCache;
 import com.android.systemui.shared.system.ActivityManagerWrapper;
 import com.android.systemui.shared.system.BackgroundExecutor;
 import com.android.systemui.shared.system.TaskStackChangeListener;
-
-import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
-
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
 import foundation.e.blisslauncher.core.utils.Preconditions;
-
-import static foundation.e.blisslauncher.features.quickstep.TaskUtils.checkCurrentOrManagedUserId;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 /**
  * Singleton class to load and manage recents model.

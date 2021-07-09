@@ -53,4 +53,10 @@
         <item name="android:textColorPrimary">@color/workspaceTextColor</item>
         <item name="android:textColorSecondary">@color/workspaceTextColor</item>
     </style>
+
+    <style name="HomeScreenElementTheme">
+        <item name="android:colorEdgeEffect">@color/workspaceTextColor</item>
+        <item name="android:textColorPrimary">@color/workspaceTextColor</item>
+        <item name="android:textColorSecondary">@color/workspaceTextColor</item>
+    </style>
 </resources>

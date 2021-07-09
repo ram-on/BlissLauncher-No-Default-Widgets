@@ -16,18 +16,17 @@
 
 package foundation.e.blisslauncher.features.quickstep;
 
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.FAST_OUT_SLOW_IN;
+
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
 import android.view.animation.Interpolator;
-
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
 import foundation.e.blisslauncher.features.quickstep.views.TaskView;
 import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.BaseActivity;
 import foundation.e.blisslauncher.features.test.OnAlarmListener;
-
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.FAST_OUT_SLOW_IN;
 
 /**
  * Responds to quick scrub callbacks to page through and launch recent tasks.

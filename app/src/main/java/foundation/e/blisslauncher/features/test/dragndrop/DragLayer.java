@@ -115,7 +115,7 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
 
     @Override
     public boolean onInterceptHoverEvent(MotionEvent ev) {
-        if (mActivity == null || mActivity.getWorkspace() == null) {
+        if (mActivity == null || mActivity.getLauncherPagedView() == null) {
             return false;
         }
         /*AbstractFloatingView topView = AbstractFloatingView.getTopOpenView(mActivity);

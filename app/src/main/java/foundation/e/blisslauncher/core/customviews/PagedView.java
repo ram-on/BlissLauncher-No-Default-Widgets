@@ -1489,7 +1489,7 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
         return false;
     }
 
-    protected String getCurrentPageDescription() {
+    public String getCurrentPageDescription() {
         return getContext().getString(R.string.default_scroll_format,
             getNextPage() + 1, getChildCount());
     }

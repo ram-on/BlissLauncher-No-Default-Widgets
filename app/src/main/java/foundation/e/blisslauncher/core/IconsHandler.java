@@ -228,7 +228,7 @@ public class IconsHandler {
         }
     }
 
-    private Drawable getBadgedIcon(Drawable icon, android.os.UserHandle userHandle) {
+    public Drawable getBadgedIcon(Drawable icon, android.os.UserHandle userHandle) {
         return ctx.getApplicationContext().getPackageManager().getUserBadgedIcon(icon, userHandle);
     }
 

@@ -15,20 +15,16 @@
  */
 package foundation.e.blisslauncher.features.quickstep.util;
 
+import static java.lang.annotation.RetentionPolicy.SOURCE;
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Rect;
-
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
-
-import java.lang.annotation.Retention;
-
 import foundation.e.blisslauncher.R;
-import foundation.e.blisslauncher.core.DeviceProfile;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
-
-import static java.lang.annotation.RetentionPolicy.SOURCE;
+import java.lang.annotation.Retention;
 
 public class LayoutUtils {
 

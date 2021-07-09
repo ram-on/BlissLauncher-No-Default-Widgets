@@ -16,6 +16,12 @@
 
 package foundation.e.blisslauncher.features.quickstep;
 
+import static com.android.systemui.shared.recents.utilities.Utilities.getNextFrameNumber;
+import static com.android.systemui.shared.recents.utilities.Utilities.getSurface;
+import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_OPENING;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.TOUCH_RESPONSE_INTERPOLATOR;
+
 import android.animation.ValueAnimator;
 import android.content.ComponentName;
 import android.content.Context;
@@ -27,12 +33,8 @@ import android.os.UserHandle;
 import android.util.Log;
 import android.view.Surface;
 import android.view.View;
-
 import com.android.systemui.shared.recents.model.Task;
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
-
-import java.util.List;
-
 import foundation.e.blisslauncher.core.UserManagerCompat;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
@@ -43,12 +45,7 @@ import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationTargetS
 import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
 import foundation.e.blisslauncher.features.quickstep.views.TaskView;
 import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
-
-import static com.android.systemui.shared.recents.utilities.Utilities.getNextFrameNumber;
-import static com.android.systemui.shared.recents.utilities.Utilities.getSurface;
-import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_OPENING;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.TOUCH_RESPONSE_INTERPOLATOR;
+import java.util.List;
 
 /**
  * Contains helpful methods for retrieving data from {@link Task}s.

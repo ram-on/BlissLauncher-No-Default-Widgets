@@ -15,6 +15,17 @@
  */
 package foundation.e.blisslauncher.features.quickstep;
 
+import static android.content.Intent.ACTION_PACKAGE_ADDED;
+import static android.content.Intent.ACTION_PACKAGE_CHANGED;
+import static android.content.Intent.ACTION_PACKAGE_REMOVED;
+import static com.android.systemui.shared.system.ActivityManagerWrapper.CLOSE_SYSTEM_WINDOWS_REASON_RECENTS;
+import static com.android.systemui.shared.system.PackageManagerWrapper.ACTION_PREFERRED_ACTIVITY_CHANGED;
+import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
+import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_OPENING;
+import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_NORMAL;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.FAST_OUT_SLOW_IN;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.TOUCH_RESPONSE_INTERPOLATOR;
+
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
@@ -32,15 +43,11 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewConfiguration;
-
 import com.android.systemui.shared.system.ActivityManagerWrapper;
 import com.android.systemui.shared.system.LatencyTrackerCompat;
 import com.android.systemui.shared.system.PackageManagerWrapper;
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
 import com.android.systemui.shared.system.TransactionCompat;
-
-import java.util.ArrayList;
-
 import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
 import foundation.e.blisslauncher.features.quickstep.util.ClipAnimationHelper;
 import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationTargetSet;
@@ -48,18 +55,7 @@ import foundation.e.blisslauncher.features.quickstep.util.TransformedRect;
 import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
 import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
 import foundation.e.blisslauncher.features.test.anim.AnimationSuccessListener;
-
-import static android.content.Intent.ACTION_PACKAGE_ADDED;
-import static android.content.Intent.ACTION_PACKAGE_CHANGED;
-import static android.content.Intent.ACTION_PACKAGE_REMOVED;
-
-import static com.android.systemui.shared.system.ActivityManagerWrapper.CLOSE_SYSTEM_WINDOWS_REASON_RECENTS;
-import static com.android.systemui.shared.system.PackageManagerWrapper.ACTION_PREFERRED_ACTIVITY_CHANGED;
-import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
-import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_OPENING;
-import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_NORMAL;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.FAST_OUT_SLOW_IN;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.TOUCH_RESPONSE_INTERPOLATOR;
+import java.util.ArrayList;
 
 /**
  * Helper class to handle various atomic commands for switching between Overview.

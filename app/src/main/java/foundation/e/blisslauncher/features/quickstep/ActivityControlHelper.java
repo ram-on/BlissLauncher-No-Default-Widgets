@@ -15,6 +15,15 @@
  */
 package foundation.e.blisslauncher.features.quickstep;
 
+import static com.android.systemui.shared.system.NavigationBarCompat.HIT_TARGET_BACK;
+import static com.android.systemui.shared.system.NavigationBarCompat.HIT_TARGET_ROTATION;
+import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_NORMAL;
+import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_QUICK_SCRUB;
+import static foundation.e.blisslauncher.features.test.LauncherState.FAST_OVERVIEW;
+import static foundation.e.blisslauncher.features.test.LauncherState.OVERVIEW;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.OVERVIEW_TRANSITION_MS;
+
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.TargetApi;
@@ -26,20 +35,12 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-
-import android.view.View;
-
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
-
-import java.util.Objects;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
-
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.utils.MultiValueAlpha;
+import foundation.e.blisslauncher.features.quickstep.uioverrides.FastOverviewState;
 import foundation.e.blisslauncher.features.quickstep.util.LayoutUtils;
 import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationProvider;
 import foundation.e.blisslauncher.features.quickstep.util.RemoteAnimationTargetSet;
@@ -48,17 +49,15 @@ import foundation.e.blisslauncher.features.quickstep.views.LauncherLayoutListene
 import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
 import foundation.e.blisslauncher.features.quickstep.views.RecentsViewContainer;
 import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
+import foundation.e.blisslauncher.features.test.LauncherAppState;
+import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
 import foundation.e.blisslauncher.features.test.dragndrop.DragLayer;
-
-import static com.android.systemui.shared.system.NavigationBarCompat.HIT_TARGET_BACK;
-import static com.android.systemui.shared.system.NavigationBarCompat.HIT_TARGET_ROTATION;
-import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_NORMAL;
-import static foundation.e.blisslauncher.features.quickstep.TouchConsumer.INTERACTION_QUICK_SCRUB;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
-import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.OVERVIEW_TRANSITION_MS;
+import java.util.Objects;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
 /**
  * Utility class which abstracts out the logical differences between Launcher and RecentsActivity.
@@ -148,7 +147,8 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
 
         @Override
         public void executeOnWindowAvailable(TestActivity activity, Runnable action) {
-            activity.getWorkspace().runOnOverlayHidden(action);
+            //TODO: Fix if needed
+            //activity.getLauncherPagedView().runOnOverlayHidden(action);
         }
 
         @Override
@@ -178,7 +178,6 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
         public void onSwipeUpComplete(TestActivity activity) {
             // Re apply state in case we did something funky during the transition.
             activity.getStateManager().reapplyState();
-            DiscoveryBounce.showForOverviewIfNeeded(activity);
         }
 
         @Override
@@ -195,17 +194,13 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
             if (!activityVisible) {
                 // Since the launcher is not visible, we can safely reset the scroll position.
                 // This ensures then the next swipe up to all-apps starts from scroll 0.
-                activity.getAppsView().reset(false /* animate */);
                 activity.getStateManager().goToState(OVERVIEW, false);
-
-                // Optimization, hide the all apps view to prevent layout while initializing
-                activity.getAppsView().getContentView().setVisibility(View.GONE);
             }
 
             return new AnimationFactory() {
                 @Override
                 public void createActivityController(long transitionLength,
-                        @InteractionType int interactionType) {
+                        @TouchConsumer.InteractionType int interactionType) {
                     createActivityControllerInternal(activity, activityVisible, startState,
                             transitionLength, interactionType, callback);
                 }
@@ -231,32 +226,11 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
                         .createAnimationToNewWorkspace(endState, accuracy));
                 return;
             }
-
-            if (activity.getDeviceProfile().isVerticalBarLayout()) {
-                return;
-            }
-
-            AllAppsTransitionController controller = activity.getAllAppsController();
-            AnimatorSet anim = new AnimatorSet();
-
-            float scrollRange = Math.max(controller.getShiftRange(), 1);
-            float progressDelta = (transitionLength / scrollRange);
-
-            float endProgress = endState.getVerticalProgress(activity);
-            float startProgress = endProgress + progressDelta;
-            ObjectAnimator shiftAnim = ObjectAnimator.ofFloat(
-                    controller, ALL_APPS_PROGRESS, startProgress, endProgress);
-            shiftAnim.setInterpolator(LINEAR);
-            anim.play(shiftAnim);
-
-            anim.setDuration(transitionLength * 2);
-            activity.getStateManager().setCurrentAnimation(anim);
-            callback.accept(AnimatorPlaybackController.wrap(anim, transitionLength * 2));
         }
 
         @Override
         public ActivityInitListener createActivityInitListener(
-                BiPredicate<Launcher, Boolean> onInitListener) {
+                BiPredicate<TestActivity, Boolean> onInitListener) {
             return new LauncherInitListener(onInitListener);
         }
 
@@ -267,7 +241,7 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
             if (app == null) {
                 return null;
             }
-            return (Launcher) app.getModel().getCallback();
+            return (TestActivity) app.getLauncher();
         }
 
         @Nullable
@@ -288,14 +262,8 @@ public interface ActivityControlHelper<T extends BaseDraggingActivity> {
 
         @Override
         public boolean switchToRecentsIfVisible(boolean fromRecentsButton) {
-            Launcher launcher = getVisibleLaucher();
+            TestActivity launcher = getVisibleLaucher();
             if (launcher != null) {
-                if (fromRecentsButton) {
-                    launcher.getUserEventDispatcher().logActionCommand(
-                            LauncherLogProto.Action.Command.RECENTS_BUTTON,
-                            getContainerType(),
-                            LauncherLogProto.ContainerType.TASKSWITCHER);
-                }
                 launcher.getStateManager().goToState(OVERVIEW);
                 return true;
             }

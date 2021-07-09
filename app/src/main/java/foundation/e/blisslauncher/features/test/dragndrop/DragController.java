@@ -604,9 +604,9 @@ public class DragController implements DragDriver.EventListener, TouchController
         // cell layout to drop to in the existing drag/drop logic.
         dropCoordinates[0] = x;
         dropCoordinates[1] = y;
-        mLauncher.getDragLayer().mapCoordInSelfToDescendant(mLauncher.getWorkspace(),
+        mLauncher.getDragLayer().mapCoordInSelfToDescendant(mLauncher.getLauncherPagedView(),
                 dropCoordinates);
-        return mLauncher.getWorkspace();
+        return mLauncher.getLauncherPagedView();
     }
 
     public void setWindowToken(IBinder token) {

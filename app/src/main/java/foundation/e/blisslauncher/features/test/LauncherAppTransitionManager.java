@@ -35,7 +35,7 @@ public class LauncherAppTransitionManager {
             context, R.string.app_transition_manager_class);
     }
 
-    public ActivityOptions getActivityLaunchOptions(View v) {
+    public ActivityOptions getActivityLaunchOptions(TestActivity launcher, View v) {
         int left = 0, top = 0;
         int width = v.getMeasuredWidth(), height = v.getMeasuredHeight();
         if (v instanceof IconTextView) {

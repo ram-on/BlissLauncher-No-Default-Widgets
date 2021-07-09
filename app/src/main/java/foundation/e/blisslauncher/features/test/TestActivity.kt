@@ -23,7 +23,8 @@ import io.reactivex.observers.DisposableObserver
 
 class TestActivity : BaseDraggingActivity() {
 
-    private val mAppTransitionManager: LauncherAppTransitionManager = LauncherAppTransitionManager()
+    private var mOnResumeCallback: OnResumeCallback? = null
+    private lateinit var mAppTransitionManager: LauncherAppTransitionManager
     lateinit var dragController: DragController
     private lateinit var mOldConfig: Configuration
     private var mCompositeDisposable: CompositeDisposable? = null
@@ -32,6 +33,14 @@ class TestActivity : BaseDraggingActivity() {
     private lateinit var dragLayer: DragLayer
     private lateinit var workspace: LauncherPagedView
     private lateinit var hotseat: Hotseat
+
+    private lateinit var rotationHelper: RotationHelper
+    private lateinit var mStateManager: LauncherStateManager
+
+    // UI and state for the overview panel
+    private lateinit var overviewPanel: View
+
+    private lateinit var overviewPanelContainer: View
 
     private val TAG = "TestActivity"
 
@@ -62,8 +71,11 @@ class TestActivity : BaseDraggingActivity() {
         mOldConfig = Configuration(resources.configuration)
         initDeviceProfile(BlissLauncher.getApplication(this).invariantDeviceProfile)
         dragController = DragController(this)
+        mStateManager = LauncherStateManager(this)
         launcherView = LayoutInflater.from(this).inflate(R.layout.activity_test, null)
         setupViews()
+        rotationHelper = RotationHelper(this)
+        mAppTransitionManager = LauncherAppTransitionManager.newInstance(this)
 
         setContentView(launcherView)
         createOrUpdateIconGrid()
@@ -73,6 +85,8 @@ class TestActivity : BaseDraggingActivity() {
         dragLayer = findViewById(R.id.drag_layer)
         workspace = dragLayer.findViewById(R.id.workspace)
         workspace.initParentViews(dragLayer)
+        overviewPanel = findViewById(R.id.overview_panel)
+        overviewPanelContainer = findViewById(R.id.overview_panel_container)
         hotseat = findViewById(R.id.hotseat)
         launcherView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -88,6 +102,8 @@ class TestActivity : BaseDraggingActivity() {
         return launcherView.findViewById(id)
     }
 
+    fun getRotationHelper() = rotationHelper
+
     private fun initDeviceProfile(idp: InvariantDeviceProfile) {
         // Load device specific profile
         mDeviceProfile = idp.getDeviceProfile(this)
@@ -98,23 +114,23 @@ class TestActivity : BaseDraggingActivity() {
 
     fun isWorkspaceLoading() = false
 
-    override fun getDragLayer(): DragLayer {
-        return dragLayer
-    }
+    override fun getDragLayer(): DragLayer = dragLayer
 
-    override fun <T : View?> getOverviewPanel(): T {
-        TODO("Not yet implemented")
-    }
+    override fun <T : View?> getOverviewPanel(): T = overviewPanel as T
 
-    override fun getRootView(): View {
-        TODO("Not yet implemented")
-    }
+    fun <T : View?> getOverviewPanelContainer(): T = overviewPanelContainer as T
+
+    override fun getRootView(): View = TODO("Not yet implemented")
 
     override fun getActivityLaunchOptions(v: View?): ActivityOptions {
-        return mAppTransitionManager.getActivityLaunchOptions(v)
+        return mAppTransitionManager.getActivityLaunchOptions(this, v)
     }
 
-    fun getWorkspace(): LauncherPagedView = workspace
+    fun getLauncherPagedView(): LauncherPagedView = workspace
+
+    fun getStateManager() = mStateManager
+
+    fun getAppTransitionManager() = mAppTransitionManager
 
     override fun reapplyUi() {
     }
@@ -178,6 +194,15 @@ class TestActivity : BaseDraggingActivity() {
         return info.keyId
     }
 
+    fun setOnResumeCallback(callback: OnResumeCallback) {
+        mOnResumeCallback?.onLauncherResume()
+        mOnResumeCallback = callback
+    }
+
+    fun isInState(state: LauncherState): Boolean {
+        return mStateManager.getState() === state
+    }
+
     companion object {
         const val TAG = "Launcher"
         const val LOGD = false
@@ -190,5 +215,12 @@ class TestActivity : BaseDraggingActivity() {
                 context
             } else (context as ContextWrapper).baseContext as TestActivity
         }
+    }
+
+    /**
+     * Callback for listening for onResume
+     */
+    interface OnResumeCallback {
+        fun onLauncherResume()
     }
 }

@@ -140,8 +140,8 @@ class VariantDeviceProfile(
         )
 
         // If there isn't enough vertical cell padding with the labels displayed, hide the labels.
-        val workspaceCellPaddingY: Float = (profile.cellSize.y - profile.iconSizePx
-            - iconDrawablePaddingPx - profile.iconTextSizePx).toFloat()
+        val workspaceCellPaddingY: Float = (profile.cellSize.y - profile.iconSizePx -
+            iconDrawablePaddingPx - profile.iconTextSizePx).toFloat()
         if (workspaceCellPaddingY < profile.iconDrawablePaddingPx * 2) {
             profile.adjustToHideWorkspaceLabels()
         }
@@ -472,7 +472,7 @@ class VariantDeviceProfile(
 
     fun updateIsSeascape(wm: WindowManager): Boolean {
         // TODO: Finish it when supporting landscape mode.
-        return false;
+        return false
     }
 
     /**

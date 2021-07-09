@@ -68,7 +68,7 @@ public class ItemLongClickListener {
         }*/
 
         CellLayout.CellInfo longClickCellInfo = new CellLayout.CellInfo(v, info);
-        launcher.getWorkspace().startDrag(longClickCellInfo, dragOptions);
+        launcher.getLauncherPagedView().startDrag(longClickCellInfo, dragOptions);
     }
 
     public static boolean canStartDrag(TestActivity launcher) {

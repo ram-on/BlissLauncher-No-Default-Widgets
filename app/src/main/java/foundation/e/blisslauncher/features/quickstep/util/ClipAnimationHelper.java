@@ -15,6 +15,11 @@
  */
 package foundation.e.blisslauncher.features.quickstep.util;
 
+import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
+import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_OPENING;
+import static foundation.e.blisslauncher.features.quickstep.QuickScrubController.QUICK_SCRUB_TRANSLATION_Y_FACTOR;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+
 import android.annotation.TargetApi;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
@@ -25,19 +30,13 @@ import android.graphics.RectF;
 import android.os.Build;
 import android.os.RemoteException;
 import android.view.animation.Interpolator;
-
 import androidx.annotation.Nullable;
-
 import com.android.systemui.shared.recents.ISystemUiProxy;
 import com.android.systemui.shared.recents.utilities.RectFEvaluator;
 import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
 import com.android.systemui.shared.system.TransactionCompat;
 import com.android.systemui.shared.system.WindowManagerWrapper;
-
-import java.util.function.BiConsumer;
-
 import foundation.e.blisslauncher.R;
-import foundation.e.blisslauncher.core.DeviceProfile;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.features.quickstep.RecentsModel;
 import foundation.e.blisslauncher.features.quickstep.views.RecentsView;
@@ -46,11 +45,7 @@ import foundation.e.blisslauncher.features.test.BaseDragLayer;
 import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.anim.Interpolators;
-
-import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
-import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_OPENING;
-import static foundation.e.blisslauncher.features.quickstep.QuickScrubController.QUICK_SCRUB_TRANSLATION_Y_FACTOR;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+import java.util.function.BiConsumer;
 
 /**
  * Utility class to handle window clip animation

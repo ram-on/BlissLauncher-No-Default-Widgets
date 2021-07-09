@@ -16,6 +16,9 @@
 
 package foundation.e.blisslauncher.features.quickstep.views;
 
+import static android.widget.Toast.LENGTH_SHORT;
+import static foundation.e.blisslauncher.features.quickstep.views.TaskThumbnailView.DIM_ALPHA_MULTIPLIER;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
@@ -35,20 +38,14 @@ import android.view.ViewOutlineProvider;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 import android.widget.Toast;
-
 import com.android.systemui.shared.recents.model.Task;
 import com.android.systemui.shared.recents.model.Task.TaskCallbacks;
 import com.android.systemui.shared.recents.model.ThumbnailData;
 import com.android.systemui.shared.system.ActivityManagerWrapper;
-
-import java.util.function.Consumer;
-
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.features.quickstep.TaskSystemShortcut;
 import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
-
-import static android.widget.Toast.LENGTH_SHORT;
-import static foundation.e.blisslauncher.features.quickstep.views.TaskThumbnailView.DIM_ALPHA_MULTIPLIER;
+import java.util.function.Consumer;
 
 /**
  * A task in the Recents view that have a task thumbnail and an icon attached to it.

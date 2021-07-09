@@ -16,6 +16,14 @@
 
 package foundation.e.blisslauncher.features.quickstep.views;
 
+import static foundation.e.blisslauncher.features.quickstep.TaskUtils.checkCurrentOrManagedUserId;
+import static foundation.e.blisslauncher.features.test.BaseActivity.INVISIBLE_BY_STATE_HANDLER;
+import static foundation.e.blisslauncher.features.test.SystemUiController.UI_STATE_OVERVIEW;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.ACCEL;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.ACCEL_2;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.FAST_OUT_SLOW_IN;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
@@ -37,7 +45,6 @@ import android.os.UserHandle;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
-import android.text.method.Touch;
 import android.util.ArraySet;
 import android.util.AttributeSet;
 import android.util.SparseBooleanArray;
@@ -50,9 +57,7 @@ import android.view.WindowInsets;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.ListView;
-
 import androidx.annotation.Nullable;
-
 import com.android.systemui.shared.recents.model.RecentsTaskLoadPlan;
 import com.android.systemui.shared.recents.model.RecentsTaskLoader;
 import com.android.systemui.shared.recents.model.Task;
@@ -62,10 +67,6 @@ import com.android.systemui.shared.system.ActivityManagerWrapper;
 import com.android.systemui.shared.system.BackgroundExecutor;
 import com.android.systemui.shared.system.PackageManagerWrapper;
 import com.android.systemui.shared.system.TaskStackChangeListener;
-
-import java.util.ArrayList;
-import java.util.function.Consumer;
-
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.Insettable;
@@ -81,14 +82,8 @@ import foundation.e.blisslauncher.features.test.BaseActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
 import foundation.e.blisslauncher.features.test.anim.PropertyListBuilder;
-
-import static foundation.e.blisslauncher.features.quickstep.TaskUtils.checkCurrentOrManagedUserId;
-import static foundation.e.blisslauncher.features.test.BaseActivity.INVISIBLE_BY_STATE_HANDLER;
-import static foundation.e.blisslauncher.features.test.SystemUiController.UI_STATE_OVERVIEW;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.ACCEL;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.ACCEL_2;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.FAST_OUT_SLOW_IN;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+import java.util.ArrayList;
+import java.util.function.Consumer;
 
 /**
  * A list of recent tasks.
@@ -1251,7 +1246,7 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
     }
 
     @Override
-    protected String getCurrentPageDescription() {
+    public String getCurrentPageDescription() {
         return "";
     }
 

@@ -15,6 +15,11 @@
  */
 package foundation.e.blisslauncher.features.quickstep;
 
+import static com.android.systemui.shared.system.NavigationBarCompat.FLAG_DISABLE_QUICK_SCRUB;
+import static com.android.systemui.shared.system.NavigationBarCompat.FLAG_DISABLE_SWIPE_UP;
+import static com.android.systemui.shared.system.NavigationBarCompat.FLAG_SHOW_OVERVIEW_BUTTON;
+import static com.android.systemui.shared.system.SettingsCompat.SWIPE_UP_SETTING_NAME;
+
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Resources;
@@ -25,21 +30,11 @@ import android.os.Message;
 import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
-
 import androidx.annotation.WorkerThread;
-
 import com.android.systemui.shared.recents.ISystemUiProxy;
-
-import java.util.concurrent.ExecutionException;
-
-import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
 import foundation.e.blisslauncher.features.test.UiThreadHelper;
-
-import static com.android.systemui.shared.system.NavigationBarCompat.FLAG_DISABLE_QUICK_SCRUB;
-import static com.android.systemui.shared.system.NavigationBarCompat.FLAG_DISABLE_SWIPE_UP;
-import static com.android.systemui.shared.system.NavigationBarCompat.FLAG_SHOW_OVERVIEW_BUTTON;
-import static com.android.systemui.shared.system.SettingsCompat.SWIPE_UP_SETTING_NAME;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Sets overview interaction flags, such as:

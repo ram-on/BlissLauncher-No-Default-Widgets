@@ -29,8 +29,8 @@ import foundation.e.blisslauncher.core.Utilities;
 public class SystemUiController {
 
     // Various UI states in increasing order of priority
-    public static final int UI_STATE_NORMAL = 0;
-    public static final int UI_STATE_WOBBLING = 1;
+    public static final int UI_STATE_BASE_WINDOW = 0;
+    public static final int UI_STATE_NORMAL = 1;
     public static final int UI_STATE_OVERVIEW = 2;
 
 
