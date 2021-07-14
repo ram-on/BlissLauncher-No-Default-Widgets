@@ -26,7 +26,9 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 
 import java.io.ByteArrayOutputStream;
@@ -59,6 +61,7 @@ public class Utilities {
     /**
      * Use hard coded values to compile with android source.
      */
+    public static final boolean ATLEAST_Q = Build.VERSION.SDK_INT >= 29;
     public static final boolean ATLEAST_P =
         Build.VERSION.SDK_INT >= 28;
 
@@ -89,6 +92,16 @@ public class Utilities {
         TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>()
     );
 
+    /**
+     * Set on a motion event dispatched from the nav bar. See {@link MotionEvent#setEdgeFlags(int)}.
+     */
+    public static final int EDGE_NAV_BAR = 1 << 8;
+
+    /**
+     * Set on a motion event do disallow any gestures and only handle touch.
+     * See {@link MotionEvent#setEdgeFlags(int)}.
+     */
+    public static final int FLAG_NO_GESTURES = 1 << 9;
     /**
      * Compresses the bitmap to a byte array for serialization.
      */
@@ -431,5 +444,22 @@ public class Utilities {
     public static SharedPreferences getPrefs(Context context) {
         return context.getSharedPreferences(
             "foundation.e.blisslauncher.prefs", Context.MODE_PRIVATE);
+    }
+
+    public static float mapRange(float value, float min, float max) {
+        return min + (value * (max - min));
+    }
+
+    public static float squaredHypot(float x, float y) {
+        return x * x + y * y;
+    }
+
+    public static float squaredTouchSlop(Context context) {
+        float slop = ViewConfiguration.get(context).getScaledTouchSlop();
+        return slop * slop;
+    }
+
+    public static boolean shouldDisableGestures(MotionEvent ev) {
+        return (ev.getEdgeFlags() & FLAG_NO_GESTURES) == FLAG_NO_GESTURES;
     }
 }

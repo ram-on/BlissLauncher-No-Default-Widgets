@@ -87,6 +87,7 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
     @ViewDebug.ExportedProperty(category = "launcher")
     protected int mNextPage = INVALID_PAGE;
     protected int mMaxScroll;
+    private int mMinScroll;
     public Scroller mScroller;
     private Interpolator mDefaultInterpolator;
     private VelocityTracker mVelocityTracker;
@@ -636,6 +637,16 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
         invalidate();
     }
 
+    protected void updateMinAndMaxScrollX() {
+        mMinScroll = computeMinScrollX();
+        mMaxScroll = computeMaxScrollX();
+    }
+
+    protected int computeMinScrollX() {
+        return 0;
+    }
+
+
     @Override
     public void onViewAdded(View child) {
         super.onViewAdded(child);
@@ -1003,7 +1014,7 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
         mSettleOnPageInFreeScroll = settleOnPageInFreeScroll;
     }
 
-    private void setEnableFreeScroll(boolean freeScroll) {
+    protected void setEnableFreeScroll(boolean freeScroll) {
         boolean wasFreeScroll = mFreeScroll;
         mFreeScroll = freeScroll;
 

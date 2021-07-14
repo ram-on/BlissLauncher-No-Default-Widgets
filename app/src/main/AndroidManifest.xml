@@ -49,7 +49,17 @@
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup,GoogleAppIndexingWarning">
         <activity android:name=".features.test.TestActivity"
-            android:theme="@style/HomeScreenTheme">
+            android:theme="@style/HomeScreenTheme"
+            android:launchMode="singleTask"
+            android:clearTaskOnLaunch="true"
+            android:stateNotNeeded="true"
+            android:windowSoftInputMode="adjustPan"
+            android:screenOrientation="unspecified"
+            android:configChanges="keyboard|keyboardHidden|mcc|mnc|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:resizeableActivity="true"
+            android:resumeWhilePausing="true"
+            android:taskAffinity=""
+            android:enabled="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
@@ -162,7 +172,8 @@
 
         <service
             android:name=".features.quickstep.TouchInteractionService"
-            android:permission="android.permission.STATUS_BAR_SERVICE" >
+            android:permission="android.permission.STATUS_BAR_SERVICE"
+            android:directBootAware="true">
             <intent-filter>
                 <action android:name="android.intent.action.QUICKSTEP_SERVICE" />
             </intent-filter>

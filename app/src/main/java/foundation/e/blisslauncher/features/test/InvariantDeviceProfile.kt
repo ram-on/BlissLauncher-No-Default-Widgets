@@ -22,14 +22,15 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Xml
 import android.view.WindowManager
+import foundation.e.quickstep.MainThreadInitializedObject
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
+import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserException
 import java.io.IOException
 import java.util.ArrayList
 import kotlin.math.hypot
 import kotlin.math.pow
-import org.xmlpull.v1.XmlPullParser
-import org.xmlpull.v1.XmlPullParserException
 
 open class InvariantDeviceProfile {
     // Profile-defining invariant properties
@@ -64,6 +65,10 @@ open class InvariantDeviceProfile {
     lateinit var landscapeProfile: VariantDeviceProfile
     lateinit var portraitProfile: VariantDeviceProfile
     lateinit var defaultWallpaperSize: Point
+
+    // We do not need any synchronization for this variable as its only written on UI thread.
+    val INSTANCE: MainThreadInitializedObject<InvariantDeviceProfile> =
+        MainThreadInitializedObject { InvariantDeviceProfile() }
 
     constructor()
 

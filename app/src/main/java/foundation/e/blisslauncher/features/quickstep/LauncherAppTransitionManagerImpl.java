@@ -16,8 +16,6 @@
 
 package foundation.e.blisslauncher.features.quickstep;
 
-import static com.android.systemui.shared.recents.utilities.Utilities.getNextFrameNumber;
-import static com.android.systemui.shared.recents.utilities.Utilities.getSurface;
 import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_CLOSING;
 import static com.android.systemui.shared.system.RemoteAnimationTargetCompat.MODE_OPENING;
 import static foundation.e.blisslauncher.core.Utilities.postAsyncCallback;
@@ -93,26 +91,36 @@ public class LauncherAppTransitionManagerImpl extends LauncherAppTransitionManag
     implements VariantDeviceProfile.OnDeviceProfileChangeListener {
 
     private static final String TAG = "LauncherTransition";
+    /** Duration of status bar animations. */
     public static final int STATUS_BAR_TRANSITION_DURATION = 120;
+
+    /**
+     * Since our animations decelerate heavily when finishing, we want to start status bar animations
+     * x ms before the ending.
+     */
+    public static final int STATUS_BAR_TRANSITION_PRE_DELAY = 96;
 
     private static final String CONTROL_REMOTE_APP_TRANSITION_PERMISSION =
         "android.permission.CONTROL_REMOTE_APP_TRANSITION_ANIMATIONS";
 
-    private static final int APP_LAUNCH_DURATION = 500;
+    private static final int APP_LAUNCH_DURATION = 450;
     // Use a shorter duration for x or y translation to create a curve effect
-    private static final int APP_LAUNCH_CURVED_DURATION = APP_LAUNCH_DURATION / 2;
+    private static final int APP_LAUNCH_CURVED_DURATION = 250;
     // We scale the durations for the downward app launch animations (minus the scale animation).
     private static final float APP_LAUNCH_DOWN_DUR_SCALE_FACTOR = 0.8f;
     private static final int APP_LAUNCH_ALPHA_START_DELAY = 32;
     private static final int APP_LAUNCH_ALPHA_DURATION = 50;
+
+    private static final long CROP_DURATION = 375;
+    private static final long RADIUS_DURATION = 375;
 
     public static final int RECENTS_LAUNCH_DURATION = 336;
     public static final int RECENTS_QUICKSCRUB_LAUNCH_DURATION = 300;
     private static final int LAUNCHER_RESUME_START_DELAY = 100;
     private static final int CLOSING_TRANSITION_DURATION_MS = 250;
 
-    // Progress = 0: All apps is fully pulled up, Progress = 1: All apps is fully pulled down.
-    public static final float ALL_APPS_PROGRESS_OFF_SCREEN = 1.3059858f;
+    protected static final int CONTENT_ALPHA_DURATION = 217;
+    protected static final int CONTENT_TRANSLATION_DURATION = 350;
 
     private final TestActivity mLauncher;
     private final DragLayer mDragLayer;

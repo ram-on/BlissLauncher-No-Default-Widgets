@@ -1,13 +1,19 @@
 package foundation.e.blisslauncher.features.test;
 
+import static android.view.MotionEvent.ACTION_CANCEL;
+import static android.view.MotionEvent.ACTION_DOWN;
+import static android.view.MotionEvent.ACTION_UP;
 import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
+import static foundation.e.blisslauncher.core.Utilities.shouldDisableGestures;
 
 import android.content.Context;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewDebug;
 import android.view.ViewGroup;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
@@ -29,7 +35,21 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
 
     protected TouchController[] mControllers;
     protected TouchController mActiveController;
+    // Touch controller which is being used for the proxy events
+    protected TouchController mProxyTouchController;
     private TouchCompleteListener mTouchCompleteListener;
+
+    // Touch is being dispatched through the normal view dispatch system
+    private static final int TOUCH_DISPATCHING_VIEW = 1 << 0;
+    // Touch is being dispatched through the normal view dispatch system, and started at the
+    // system gesture region
+    private static final int TOUCH_DISPATCHING_GESTURE = 1 << 1;
+    // Touch is being dispatched through a proxy from InputMonitor
+    private static final int TOUCH_DISPATCHING_PROXY = 1 << 2;
+
+    @ViewDebug.ExportedProperty(category = "launcher")
+    private final RectF mSystemGestureRegion = new RectF();
+    private int mTouchDispatchState = 0;
 
     public BaseDragLayer(Context context, AttributeSet attrs, int alphaChannelCount) {
         super(context, attrs);
@@ -61,19 +81,30 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
         mActiveController = null;
 
         //TODO: Implement when adding folder grouping.
-        /*AbstractFloatingView topView = AbstractFloatingView.getTopOpenView(mActivity);
+        if ((mTouchDispatchState & (TOUCH_DISPATCHING_GESTURE | TOUCH_DISPATCHING_PROXY)) == 0) {
+            // Only look for controllers if we are not dispatching from gesture area and proxy is
+            // not active
+            mActiveController = findControllerToHandleTouch(ev);
+
+            if (mActiveController != null) return true;
+        }
+        return false;
+    }
+
+    private TouchController findControllerToHandleTouch(MotionEvent ev) {
+        if (shouldDisableGestures(ev)) return null;
+
+        AbstractFloatingView topView = AbstractFloatingView.getTopOpenView(mActivity);
         if (topView != null && topView.onControllerInterceptTouchEvent(ev)) {
-            mActiveController = topView;
-            return true;
-        }*/
+            return topView;
+        }
 
         for (TouchController controller : mControllers) {
             if (controller.onControllerInterceptTouchEvent(ev)) {
-                mActiveController = controller;
-                return true;
+                return controller;
             }
         }
-        return false;
+        return null;
     }
 
     @Override
@@ -108,6 +139,57 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
             // In case no child view handled the touch event, we may not get onIntercept anymore
             return findActiveController(ev);
         }
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        switch (ev.getAction()) {
+            case ACTION_DOWN: {
+                float x = ev.getX();
+                float y = ev.getY();
+                mTouchDispatchState |= TOUCH_DISPATCHING_VIEW;
+
+                if ((y < mSystemGestureRegion.top
+                    || x < mSystemGestureRegion.left
+                    || x > (getWidth() - mSystemGestureRegion.right)
+                    || y > (getHeight() - mSystemGestureRegion.bottom))) {
+                    mTouchDispatchState |= TOUCH_DISPATCHING_GESTURE;
+                } else {
+                    mTouchDispatchState &= ~TOUCH_DISPATCHING_GESTURE;
+                }
+                break;
+            }
+            case ACTION_CANCEL:
+            case ACTION_UP:
+                mTouchDispatchState &= ~TOUCH_DISPATCHING_GESTURE;
+                mTouchDispatchState &= ~TOUCH_DISPATCHING_VIEW;
+                break;
+        }
+        super.dispatchTouchEvent(ev);
+
+        // We want to get all events so that mTouchDispatchSource is maintained properly
+        return true;
+    }
+
+    /**
+     * Called before we are about to receive proxy events.
+     *
+     * @return false if we can't handle proxy at this time
+     */
+    public boolean prepareProxyEventStarting() {
+        mProxyTouchController = null;
+        if ((mTouchDispatchState & TOUCH_DISPATCHING_VIEW) != 0 && mActiveController != null) {
+            // We are already dispatching using view system and have an active controller, we can't
+            // handle another controller.
+
+            // This flag was already cleared in proxy ACTION_UP or ACTION_CANCEL. Added here just
+            // to be safe
+            mTouchDispatchState &= ~TOUCH_DISPATCHING_PROXY;
+            return false;
+        }
+
+        mTouchDispatchState |= TOUCH_DISPATCHING_PROXY;
+        return true;
     }
 
     /**
@@ -181,6 +263,25 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
         int left = vX - x;
         int top = vY - y;
         r.set(left, top, left + v.getMeasuredWidth(), top + v.getMeasuredHeight());
+    }
+
+    /**
+     * Proxies the touch events to the gesture handlers
+     */
+    public boolean proxyTouchEvent(MotionEvent ev) {
+        boolean handled;
+        if (mProxyTouchController != null) {
+            handled = mProxyTouchController.onControllerTouchEvent(ev);
+        } else {
+            mProxyTouchController = findControllerToHandleTouch(ev);
+            handled = mProxyTouchController != null;
+        }
+        int action = ev.getAction();
+        if (action == ACTION_UP || action == ACTION_CANCEL) {
+            mProxyTouchController = null;
+            mTouchDispatchState &= ~TOUCH_DISPATCHING_PROXY;
+        }
+        return handled;
     }
 
     @Override

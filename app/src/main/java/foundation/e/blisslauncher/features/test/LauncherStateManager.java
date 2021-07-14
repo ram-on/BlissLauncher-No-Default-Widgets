@@ -96,14 +96,16 @@ public class LauncherStateManager {
     // non atomic components as well.
     @IntDef(flag = true, value = {
             NON_ATOMIC_COMPONENT,
-            ATOMIC_COMPONENT
+            ATOMIC_OVERVIEW_PEEK_COMPONENT,
+        ATOMIC_OVERVIEW_SCALE_COMPONENT
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface AnimationComponents {}
     public static final int NON_ATOMIC_COMPONENT = 1 << 0;
-    public static final int ATOMIC_COMPONENT = 1 << 1;
+    public static final int ATOMIC_OVERVIEW_SCALE_COMPONENT = 1 << 1;
+    public static final int ATOMIC_OVERVIEW_PEEK_COMPONENT = 1 << 2;
 
-    public static final int ANIM_ALL = NON_ATOMIC_COMPONENT | ATOMIC_COMPONENT;
+    public static final int ANIM_ALL = NON_ATOMIC_COMPONENT | ATOMIC_OVERVIEW_PEEK_COMPONENT | ATOMIC_OVERVIEW_SCALE_COMPONENT;
 
     private final AnimationConfig mConfig = new AnimationConfig();
     private final Handler mUiHandler;
@@ -502,6 +504,9 @@ public class LauncherStateManager {
         private AnimatorSet mCurrentAnimation;
         private LauncherState mTargetState;
 
+        // Id to keep track of config changes, to tie an animation with the corresponding request
+        private int mChangeId = 0;
+
         /**
          * Cancels the current animation and resets config variables.
          */
@@ -522,6 +527,7 @@ public class LauncherStateManager {
 
             mCurrentAnimation = null;
             playbackController = null;
+            mChangeId++;
         }
 
         public PropertySetter getPropertySetter(AnimatorSetBuilder builder) {
@@ -534,6 +540,9 @@ public class LauncherStateManager {
 
         @Override
         public void onAnimationEnd(Animator animation) {
+            if (playbackController != null && playbackController.getTarget() == animation) {
+                playbackController = null;
+            }
             if (mCurrentAnimation == animation) {
                 mCurrentAnimation = null;
             }
@@ -545,8 +554,12 @@ public class LauncherStateManager {
             mCurrentAnimation.addListener(this);
         }
 
-        public boolean playAtomicComponent() {
-            return (animComponents & ATOMIC_COMPONENT) != 0;
+        public boolean playAtomicOverviewScaleComponent() {
+            return (animComponents & ATOMIC_OVERVIEW_SCALE_COMPONENT) != 0;
+        }
+
+        public boolean playAtomicOverviewPeekComponent() {
+            return (animComponents & ATOMIC_OVERVIEW_PEEK_COMPONENT) != 0;
         }
 
         public boolean playNonAtomicComponent() {

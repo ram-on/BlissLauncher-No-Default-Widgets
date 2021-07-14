@@ -31,7 +31,7 @@ import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.utils.FlingBlockCheck;
-import foundation.e.blisslauncher.core.utils.PendingAnimation;
+import foundation.e.blisslauncher.features.test.anim.PendingAnimation;
 import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.LauncherStateManager;
 import foundation.e.blisslauncher.features.test.TestActivity;

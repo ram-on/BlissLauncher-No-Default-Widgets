@@ -17,15 +17,30 @@ package foundation.e.blisslauncher.features.test;
 
 import static android.view.View.IMPORTANT_FOR_ACCESSIBILITY_AUTO;
 import static android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS;
+import static android.view.View.VISIBLE;
 import static android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
 import static foundation.e.blisslauncher.features.test.RotationHelper.REQUEST_NONE;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_OVERVIEW_FADE;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_OVERVIEW_SCALE;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_OVERVIEW_TRANSLATE_X;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_WORKSPACE_FADE;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_WORKSPACE_SCALE;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.ACCEL;
 import static foundation.e.blisslauncher.features.test.anim.Interpolators.ACCEL_2;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.DEACCEL;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.DEACCEL_1_7;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.clampToProgress;
 
 import android.graphics.Rect;
 import android.view.animation.Interpolator;
+
+import foundation.e.blisslauncher.core.customviews.LauncherPagedView;
+import foundation.e.blisslauncher.features.launcher.Hotseat;
 import foundation.e.blisslauncher.features.quickstep.uioverrides.FastOverviewState;
 import foundation.e.blisslauncher.features.quickstep.uioverrides.OverviewState;
 import foundation.e.blisslauncher.features.quickstep.uioverrides.UiFactory;
+import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
+
 import java.util.Arrays;
 
 /**
@@ -74,6 +89,12 @@ public class LauncherState {
      */
     public static final LauncherState OVERVIEW = new OverviewState(2);
     public static final LauncherState FAST_OVERVIEW = new FastOverviewState(3);
+    public static final LauncherState OVERVIEW_PEEK =
+        OverviewState.newPeekState(OVERVIEW_PEEK_STATE_ORDINAL);
+    public static final LauncherState QUICK_SWITCH =
+        OverviewState.newSwitchState(QUICK_SWITCH_STATE_ORDINAL);
+    public static final LauncherState BACKGROUND_APP =
+        OverviewState.newBackgroundState(BACKGROUND_APP_STATE_ORDINAL);
 
     protected static final Rect sTempRect = new Rect();
 
@@ -156,8 +177,8 @@ public class LauncherState {
         return Arrays.copyOf(sAllStates, sAllStates.length);
     }
 
-    public float[] getWorkspaceScaleAndTranslation(TestActivity launcher) {
-        return new float[] {1, 0, 0};
+    public ScaleAndTranslation getWorkspaceScaleAndTranslation(TestActivity launcher) {
+        return new ScaleAndTranslation(1f, 0f, 0f);
     }
 
     /**
@@ -189,6 +210,10 @@ public class LauncherState {
 
     public String getDescription(TestActivity launcher) {
         return launcher.getLauncherPagedView().getCurrentPageDescription();
+    }
+
+    public ScaleAndTranslation getOverviewScaleAndTranslation(TestActivity launcher) {
+        return UiFactory.getOverviewScaleAndTranslationForNormalState(launcher);
     }
 
     public PageAlphaProvider getWorkspacePageAlphaProvider(TestActivity launcher) {
@@ -228,6 +253,53 @@ public class LauncherState {
         launcher.getWindow().getDecorView().sendAccessibilityEvent(TYPE_WINDOW_STATE_CHANGED);
     }
 
+    public void onBackPressed(TestActivity launcher) {
+        if (this != NORMAL) {
+            LauncherStateManager lsm = launcher.getStateManager();
+            LauncherState lastState = lsm.getLastState();
+            lsm.goToState(lastState);
+        }
+    }
+
+    /**
+     * Prepares for a non-user controlled animation from fromState to this state. Preparations
+     * include:
+     * - Setting interpolators for various animations included in the state transition.
+     * - Setting some start values (e.g. scale) for views that are hidden but about to be shown.
+     */
+    public void prepareForAtomicAnimation(TestActivity launcher, LauncherState fromState,
+        AnimatorSetBuilder builder) {
+        if (this == NORMAL && fromState == OVERVIEW) {
+            builder.setInterpolator(ANIM_WORKSPACE_SCALE, DEACCEL);
+            builder.setInterpolator(ANIM_WORKSPACE_FADE, ACCEL);
+            builder.setInterpolator(ANIM_OVERVIEW_SCALE, clampToProgress(ACCEL, 0, 0.9f));
+            builder.setInterpolator(ANIM_OVERVIEW_TRANSLATE_X, ACCEL);
+            builder.setInterpolator(ANIM_OVERVIEW_FADE, DEACCEL_1_7);
+            LauncherPagedView workspace = launcher.getLauncherPagedView();
+
+            // Start from a higher workspace scale, but only if we're invisible so we don't jump.
+            boolean isWorkspaceVisible = workspace.getVisibility() == VISIBLE;
+            if (isWorkspaceVisible) {
+                CellLayout currentChild = (CellLayout) workspace.getChildAt(
+                    workspace.getCurrentPage());
+                isWorkspaceVisible = currentChild.getVisibility() == VISIBLE;
+            }
+            if (!isWorkspaceVisible) {
+                workspace.setScaleX(0.92f);
+                workspace.setScaleY(0.92f);
+            }
+            Hotseat hotseat = launcher.getHotseat();
+            boolean isHotseatVisible = hotseat.getVisibility() == VISIBLE && hotseat.getAlpha() > 0;
+            if (!isHotseatVisible) {
+                hotseat.setScaleX(0.92f);
+                hotseat.setScaleY(0.92f);
+            }
+        } else if (this == NORMAL && fromState == OVERVIEW_PEEK) {
+            // Keep fully visible until the very end (when overview is offscreen) to make invisible.
+            builder.setInterpolator(ANIM_OVERVIEW_FADE, t -> t < 1 ? 0 : 1);
+        }
+    }
+
     public static abstract class PageAlphaProvider {
 
         public final Interpolator interpolator;
@@ -237,5 +309,17 @@ public class LauncherState {
         }
 
         public abstract float getPageAlpha(int pageIndex);
+    }
+
+    public static class ScaleAndTranslation {
+        public float scale;
+        public float translationX;
+        public float translationY;
+
+        public ScaleAndTranslation(float scale, float translationX, float translationY) {
+            this.scale = scale;
+            this.translationX = translationX;
+            this.translationY = translationY;
+        }
     }
 }

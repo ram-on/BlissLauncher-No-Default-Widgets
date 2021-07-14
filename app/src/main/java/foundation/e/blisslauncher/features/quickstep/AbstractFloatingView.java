@@ -39,8 +39,8 @@ import foundation.e.blisslauncher.features.test.TouchController;
  */
 public abstract class AbstractFloatingView extends LinearLayout implements TouchController {
 
+
     @IntDef(flag = true, value = {
-            TYPE_QUICKSTEP_PREVIEW,
             TYPE_TASK_MENU,
             TYPE_OPTIONS_POPUP
     })
@@ -48,14 +48,15 @@ public abstract class AbstractFloatingView extends LinearLayout implements Touch
     public @interface FloatingViewType {}
 
     // Popups related to quickstep UI
-    public static final int TYPE_QUICKSTEP_PREVIEW = 1 << 6;
     public static final int TYPE_TASK_MENU = 1 << 7;
     public static final int TYPE_OPTIONS_POPUP = 1 << 8;
 
-    public static final int TYPE_ALL = TYPE_QUICKSTEP_PREVIEW | TYPE_TASK_MENU | TYPE_OPTIONS_POPUP;
+    public static final int TYPE_ALL =  TYPE_TASK_MENU | TYPE_OPTIONS_POPUP;
 
-    // Type of popups which should be kept open during launcher rebind
-    public static final int TYPE_REBIND_SAFE = TYPE_QUICKSTEP_PREVIEW ;
+    public static final int TYPE_ACCESSIBLE = TYPE_ALL;
+
+    public static final int TYPE_STATUS_BAR_SWIPE_DOWN_DISALLOW = TYPE_TASK_MENU;
+
 
     protected boolean mIsOpen;
 

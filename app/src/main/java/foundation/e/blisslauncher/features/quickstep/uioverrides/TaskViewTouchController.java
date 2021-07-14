@@ -25,7 +25,7 @@ import android.view.MotionEvent;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.touch.SwipeDetector;
 import foundation.e.blisslauncher.core.utils.FlingBlockCheck;
-import foundation.e.blisslauncher.core.utils.PendingAnimation;
+import foundation.e.blisslauncher.features.test.anim.PendingAnimation;
 import foundation.e.blisslauncher.features.quickstep.AbstractFloatingView;
 import foundation.e.blisslauncher.features.quickstep.OverviewInteractionState;
 import foundation.e.blisslauncher.features.quickstep.views.RecentsView;

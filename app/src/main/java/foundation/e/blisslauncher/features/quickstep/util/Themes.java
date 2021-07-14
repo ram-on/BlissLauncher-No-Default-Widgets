@@ -22,6 +22,8 @@ import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.drawable.Drawable;
 
+import foundation.e.blisslauncher.R;
+
 /**
  * Various utility methods associated with theming.
  */
@@ -103,5 +105,17 @@ public class Themes {
         target.getArray()[9] = Color.green(dstColor) - Color.green(srcColor);
         target.getArray()[14] = Color.blue(dstColor) - Color.blue(srcColor);
         target.getArray()[19] = Color.alpha(dstColor) - Color.alpha(srcColor);
+    }
+
+    public static float getDialogCornerRadius(Context context) {
+        return getDimension(context, android.R.attr.dialogCornerRadius,
+            context.getResources().getDimension(R.dimen.default_dialog_corner_radius));
+    }
+
+    public static float getDimension(Context context, int attr, float defaultValue) {
+        TypedArray ta = context.obtainStyledAttributes(new int[]{attr});
+        float value = ta.getDimension(0, defaultValue);
+        ta.recycle();
+        return value;
     }
 }

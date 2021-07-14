@@ -22,6 +22,7 @@ import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.graphics.drawable.Drawable;
+import android.util.FloatProperty;
 import android.util.Property;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -177,4 +178,46 @@ public class LauncherAnimUtils {
     public static int blockedFlingDurationFactor(float velocity) {
         return (int) Utilities.boundToRange(Math.abs(velocity) / 2, 2f, 6f);
     }
+
+    public static final FloatProperty<View> VIEW_ALPHA =
+        View.ALPHA instanceof FloatProperty ? (FloatProperty) View.ALPHA
+            : new FloatProperty<View>("alpha") {
+            @Override
+            public void setValue(View view, float v) {
+                view.setAlpha(v);
+            }
+
+            @Override
+            public Float get(View view) {
+                return view.getAlpha();
+            }
+        };
+
+    public static final FloatProperty<View> VIEW_TRANSLATE_X =
+        View.TRANSLATION_X instanceof FloatProperty ? (FloatProperty) View.TRANSLATION_X
+            : new FloatProperty<View>("translateX") {
+            @Override
+            public void setValue(View view, float v) {
+                view.setTranslationX(v);
+            }
+
+            @Override
+            public Float get(View view) {
+                return view.getTranslationX();
+            }
+        };
+
+    public static final FloatProperty<View> VIEW_TRANSLATE_Y =
+        View.TRANSLATION_Y instanceof FloatProperty ? (FloatProperty) View.TRANSLATION_Y
+            : new FloatProperty<View>("translateY") {
+            @Override
+            public void setValue(View view, float v) {
+                view.setTranslationY(v);
+            }
+
+            @Override
+            public Float get(View view) {
+                return view.getTranslationY();
+            }
+        };
 }

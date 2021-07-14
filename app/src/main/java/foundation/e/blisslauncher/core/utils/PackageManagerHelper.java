@@ -21,6 +21,7 @@ import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.LauncherActivityInfo;
 import android.content.pm.LauncherApps;
@@ -31,6 +32,7 @@ import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PatternMatcher;
 import android.os.UserHandle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -186,5 +188,18 @@ public class PackageManagerHelper {
                 Log.e(TAG, "Unable to launch settings", e);
             }
         }
+    }
+
+    /**
+     * Creates an intent filter to listen for actions with a specific package in the data field.
+     */
+    public static IntentFilter getPackageFilter(String pkg, String... actions) {
+        IntentFilter packageFilter = new IntentFilter();
+        for (String action : actions) {
+            packageFilter.addAction(action);
+        }
+        packageFilter.addDataScheme("package");
+        packageFilter.addDataSchemeSpecificPart(pkg, PatternMatcher.PATTERN_LITERAL);
+        return packageFilter;
     }
 }

@@ -71,7 +71,7 @@ import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.Insettable;
 import foundation.e.blisslauncher.core.customviews.PagedView;
-import foundation.e.blisslauncher.core.utils.PendingAnimation;
+import foundation.e.blisslauncher.features.test.anim.PendingAnimation;
 import foundation.e.blisslauncher.features.quickstep.OverviewCallbacks;
 import foundation.e.blisslauncher.features.quickstep.QuickScrubController;
 import foundation.e.blisslauncher.features.quickstep.RecentsModel;
