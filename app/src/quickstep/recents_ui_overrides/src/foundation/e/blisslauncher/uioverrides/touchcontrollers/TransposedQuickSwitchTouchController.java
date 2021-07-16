@@ -15,30 +15,30 @@
  */
 package foundation.e.blisslauncher.uioverrides.touchcontrollers;
 
-import com.android.blisslauncher.Launcher;
-import com.android.blisslauncher.LauncherState;
-import com.android.blisslauncher.touch.SwipeDetector;
+import foundation.e.blisslauncher.core.touch.SwipeDetector;
+import foundation.e.blisslauncher.features.test.LauncherState;
+import foundation.e.blisslauncher.features.test.TestActivity;
 
 public class TransposedQuickSwitchTouchController extends QuickSwitchTouchController {
 
-    public TransposedQuickSwitchTouchController(Launcher launcher) {
+    public TransposedQuickSwitchTouchController(TestActivity launcher) {
         super(launcher, SwipeDetector.VERTICAL);
     }
 
     @Override
     protected LauncherState getTargetState(LauncherState fromState, boolean isDragTowardPositive) {
         return super.getTargetState(fromState,
-                isDragTowardPositive ^ mLauncher.getDeviceProfile().isSeascape());
+                isDragTowardPositive);
     }
 
     @Override
     protected float initCurrentAnimation(int animComponents) {
         float multiplier = super.initCurrentAnimation(animComponents);
-        return mLauncher.getDeviceProfile().isSeascape() ? multiplier : -multiplier;
+        return -multiplier;
     }
 
     @Override
     protected float getShiftRange() {
-        return mLauncher.getDeviceProfile().heightPx / 2f;
+        return mLauncher.getDeviceProfile().getHeightPx() / 2f;
     }
 }

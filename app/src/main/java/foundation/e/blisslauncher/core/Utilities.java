@@ -1,6 +1,6 @@
 package foundation.e.blisslauncher.core;
 
-import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -30,6 +30,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.animation.Interpolator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -102,6 +103,7 @@ public class Utilities {
      * See {@link MotionEvent#setEdgeFlags(int)}.
      */
     public static final int FLAG_NO_GESTURES = 1 << 9;
+
     /**
      * Compresses the bitmap to a byte array for serialization.
      */
@@ -268,6 +270,13 @@ public class Utilities {
         return Math.max(lowerBound, Math.min(value, upperBound));
     }
 
+    /**
+     * @see #boundToRange(int, int, int).
+     */
+    public static long boundToRange(long value, long lowerBound, long upperBound) {
+        return Math.max(lowerBound, Math.min(value, upperBound));
+    }
+
     public static boolean isSystemApp(Context context, Intent intent) {
         PackageManager pm = context.getPackageManager();
         ComponentName cn = intent.getComponent();
@@ -336,6 +345,74 @@ public class Utilities {
     }
 
     /**
+     * Given a coordinate relative to the descendant, find the coordinate in a parent view's
+     * coordinates.
+     *
+     * @param descendant        The descendant to which the passed coordinate is relative.
+     * @param ancestor          The root view to make the coordinates relative to.
+     * @param coord             The coordinate that we want mapped.
+     * @param includeRootScroll Whether or not to account for the scroll of the descendant:
+     *                          sometimes this is relevant as in a child's coordinates within the descendant.
+     * @return The factor by which this descendant is scaled relative to this DragLayer. Caution
+     * this scale factor is assumed to be equal in X and Y, and so if at any point this
+     * assumption fails, we will need to return a pair of scale factors.
+     */
+    public static float getDescendantCoordRelativeToAncestor(
+        View descendant, View ancestor, float[] coord, boolean includeRootScroll
+    ) {
+        return getDescendantCoordRelativeToAncestor(descendant, ancestor, coord, includeRootScroll,
+            false, null
+        );
+    }
+
+    /**
+     * Given a coordinate relative to the descendant, find the coordinate in a parent view's
+     * coordinates.
+     *
+     * @param descendant        The descendant to which the passed coordinate is relative.
+     * @param ancestor          The root view to make the coordinates relative to.
+     * @param coord             The coordinate that we want mapped.
+     * @param includeRootScroll Whether or not to account for the scroll of the descendant:
+     *                          sometimes this is relevant as in a child's coordinates within the descendant.
+     * @param ignoreTransform   If true, view transform is ignored
+     * @param outRotation       If not null, and {@param ignoreTransform} is true, this is set to the
+     *                          overall rotation of the view in degrees.
+     * @return The factor by which this descendant is scaled relative to this DragLayer. Caution
+     * this scale factor is assumed to be equal in X and Y, and so if at any point this
+     * assumption fails, we will need to return a pair of scale factors.
+     */
+    public static float getDescendantCoordRelativeToAncestor(
+        View descendant, View ancestor,
+        float[] coord, boolean includeRootScroll, boolean ignoreTransform,
+        float[] outRotation
+    ) {
+        float scale = 1.0f;
+        View v = descendant;
+        while (v != ancestor && v != null) {
+            // For TextViews, scroll has a meaning which relates to the text position
+            // which is very strange... ignore the scroll.
+            if (v != descendant || includeRootScroll) {
+                offsetPoints(coord, -v.getScrollX(), -v.getScrollY());
+            }
+
+            v.getMatrix().mapPoints(coord);
+
+            offsetPoints(coord, v.getLeft(), v.getTop());
+            scale *= v.getScaleX();
+
+            v = (View) v.getParent();
+        }
+        return scale;
+    }
+
+    public static void offsetPoints(float[] points, float offsetX, float offsetY) {
+        for (int i = 0; i < points.length; i += 2) {
+            points[i] += offsetX;
+            points[i + 1] += offsetY;
+        }
+    }
+
+    /**
      * Inverse of {@link #getDescendantCoordRelativeToAncestor(View, View, int[], boolean)}.
      */
     public static void mapCoordInSelfToDescendant(View descendant, View root, int[] coord) {
@@ -355,6 +432,23 @@ public class Utilities {
         sInverseMatrix.mapPoints(sPoint);
         coord[0] = Math.round(sPoint[0]);
         coord[1] = Math.round(sPoint[1]);
+    }
+
+    /**
+     * Inverse of {@link #getDescendantCoordRelativeToAncestor(View, View, float[], boolean)}.
+     */
+    public static void mapCoordInSelfToDescendant(View descendant, View root, float[] coord) {
+        sMatrix.reset();
+        View v = descendant;
+        while(v != root) {
+            sMatrix.postTranslate(-v.getScrollX(), -v.getScrollY());
+            sMatrix.postConcat(v.getMatrix());
+            sMatrix.postTranslate(v.getLeft(), v.getTop());
+            v = (View) v.getParent();
+        }
+        sMatrix.postTranslate(-v.getScrollX(), -v.getScrollY());
+        sMatrix.invert(sInverseMatrix);
+        sInverseMatrix.mapPoints(coord);
     }
 
     /**
@@ -414,7 +508,7 @@ public class Utilities {
 
         try {
             return clazz.newInstance();
-        } catch (InstantiationException|IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
@@ -425,7 +519,7 @@ public class Utilities {
             float cy = r.centerY();
             r.offset(-cx, -cy);
             r.left = r.left * scale;
-            r.top = r.top * scale ;
+            r.top = r.top * scale;
             r.right = r.right * scale;
             r.bottom = r.bottom * scale;
             r.offset(cx, cy);
@@ -461,5 +555,38 @@ public class Utilities {
 
     public static boolean shouldDisableGestures(MotionEvent ev) {
         return (ev.getEdgeFlags() & FLAG_NO_GESTURES) == FLAG_NO_GESTURES;
+    }
+
+    public static float getProgress(float current, float min, float max) {
+        return Math.abs(current - min) / Math.abs(max - min);
+    }
+
+    public static void unregisterReceiverSafely(Context context, BroadcastReceiver receiver) {
+        try {
+            context.unregisterReceiver(receiver);
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    /**
+     * Maps t from one range to another range.
+     *
+     * @param t       The value to map.
+     * @param fromMin The lower bound of the range that t is being mapped from.
+     * @param fromMax The upper bound of the range that t is being mapped from.
+     * @param toMin   The lower bound of the range that t is being mapped to.
+     * @param toMax   The upper bound of the range that t is being mapped to.
+     * @return The mapped value of t.
+     */
+    public static float mapToRange(
+        float t, float fromMin, float fromMax, float toMin, float toMax,
+        Interpolator interpolator
+    ) {
+        if (fromMin == fromMax || toMin == toMax) {
+            Log.e(TAG, "mapToRange: range has 0 length");
+            return toMin;
+        }
+        float progress = getProgress(t, fromMin, fromMax);
+        return mapRange(interpolator.getInterpolation(progress), toMin, toMax);
     }
 }

@@ -24,6 +24,7 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.view.View.AccessibilityDelegate;
 import androidx.annotation.IntDef;
+import foundation.e.blisslauncher.core.utils.ViewCache;
 import java.lang.annotation.Retention;
 import java.util.ArrayList;
 
@@ -31,13 +32,24 @@ public abstract class BaseActivity extends Activity {
 
     public static final int INVISIBLE_BY_STATE_HANDLER = 1 << 0;
     public static final int INVISIBLE_BY_APP_TRANSITIONS = 1 << 1;
+    public static final int INVISIBLE_BY_PENDING_FLAGS = 1 << 2;
+
+    // This is not treated as invisibility flag, but adds as a hint for an incomplete transition.
+    // When the wallpaper animation runs, it replaces this flag with a proper invisibility
+    // flag, INVISIBLE_BY_PENDING_FLAGS only for the duration of that animation.
+    public static final int PENDING_INVISIBLE_BY_WALLPAPER_ANIMATION = 1 << 3;
+
+    private static final int INVISIBLE_FLAGS =
+        INVISIBLE_BY_STATE_HANDLER | INVISIBLE_BY_APP_TRANSITIONS | INVISIBLE_BY_PENDING_FLAGS;
+    public static final int STATE_HANDLER_INVISIBILITY_FLAGS =
+        INVISIBLE_BY_STATE_HANDLER | PENDING_INVISIBLE_BY_WALLPAPER_ANIMATION;
     public static final int INVISIBLE_ALL =
-        INVISIBLE_BY_STATE_HANDLER | INVISIBLE_BY_APP_TRANSITIONS;
+        INVISIBLE_FLAGS | PENDING_INVISIBLE_BY_WALLPAPER_ANIMATION;
 
     @Retention(SOURCE)
     @IntDef(
         flag = true,
-        value = {INVISIBLE_BY_STATE_HANDLER, INVISIBLE_BY_APP_TRANSITIONS})
+        value = {INVISIBLE_BY_STATE_HANDLER, INVISIBLE_BY_APP_TRANSITIONS, INVISIBLE_BY_PENDING_FLAGS, PENDING_INVISIBLE_BY_WALLPAPER_ANIMATION})
     public @interface InvisibilityFlags {
     }
 
@@ -68,6 +80,12 @@ public abstract class BaseActivity extends Activity {
     // animation
     @InvisibilityFlags
     private int mForceInvisible;
+
+    private final ViewCache mViewCache = new ViewCache();
+
+    public ViewCache getViewCache() {
+        return mViewCache;
+    }
 
     public VariantDeviceProfile getDeviceProfile() {
         return mDeviceProfile;

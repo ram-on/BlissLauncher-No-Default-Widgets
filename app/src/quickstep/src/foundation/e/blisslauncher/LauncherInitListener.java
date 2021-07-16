@@ -23,9 +23,9 @@ import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Handler;
 
-import foundation.e.quickstep.OverviewCallbacks;
-import foundation.e.quickstep.util.RemoteAnimationProvider;
-import foundation.e.quickstep.ActivityControlHelper;
+import foundation.e.blisslauncher.quickstep.OverviewCallbacks;
+import foundation.e.blisslauncher.quickstep.util.RemoteAnimationProvider;
+import foundation.e.blisslauncher.quickstep.ActivityControlHelper;
 
 import java.util.function.BiPredicate;
 

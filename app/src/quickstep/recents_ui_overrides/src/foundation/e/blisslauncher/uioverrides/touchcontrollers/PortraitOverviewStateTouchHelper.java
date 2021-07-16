@@ -16,14 +16,13 @@
 
 package foundation.e.blisslauncher.uioverrides.touchcontrollers;
 
-import static com.android.blisslauncher.uioverrides.touchcontrollers.PortraitStatesTouchController.isTouchOverHotseat;
+import static foundation.e.blisslauncher.uioverrides.touchcontrollers.PortraitStatesTouchController.isTouchOverHotseat;
 
 import android.view.MotionEvent;
-
-import com.android.blisslauncher.Launcher;
-import com.android.blisslauncher.util.PendingAnimation;
-import foundation.e.quickstep.views.RecentsView;
-import foundation.e.quickstep.views.TaskView;
+import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.anim.PendingAnimation;
+import foundation.e.blisslauncher.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.quickstep.views.TaskView;
 
 /**
  * Helper class for {@link PortraitStatesTouchController} that determines swipeable regions and
@@ -32,9 +31,9 @@ import foundation.e.quickstep.views.TaskView;
 public final class PortraitOverviewStateTouchHelper {
 
     RecentsView mRecentsView;
-    Launcher mLauncher;
+    TestActivity mLauncher;
 
-    public PortraitOverviewStateTouchHelper(Launcher launcher) {
+    public PortraitOverviewStateTouchHelper(TestActivity launcher) {
         mLauncher = launcher;
         mRecentsView = launcher.getOverviewPanel();
     }

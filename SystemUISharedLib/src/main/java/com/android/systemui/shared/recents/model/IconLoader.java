@@ -31,7 +31,6 @@ import android.os.UserHandle;
 import android.util.IconDrawableFactory;
 import android.util.Log;
 import android.util.LruCache;
-
 import com.android.systemui.shared.system.PackageManagerWrapper;
 
 public abstract class IconLoader {

@@ -33,14 +33,11 @@ import static foundation.e.blisslauncher.features.test.anim.Interpolators.clampT
 
 import android.graphics.Rect;
 import android.view.animation.Interpolator;
-
 import foundation.e.blisslauncher.core.customviews.LauncherPagedView;
 import foundation.e.blisslauncher.features.launcher.Hotseat;
-import foundation.e.blisslauncher.features.quickstep.uioverrides.FastOverviewState;
-import foundation.e.blisslauncher.features.quickstep.uioverrides.OverviewState;
-import foundation.e.blisslauncher.features.quickstep.uioverrides.UiFactory;
 import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
-
+import foundation.e.blisslauncher.uioverrides.UiFactory;
+import foundation.e.blisslauncher.uioverrides.states.OverviewState;
 import java.util.Arrays;
 
 /**
@@ -55,6 +52,7 @@ public class LauncherState {
      */
     public static final int NONE = 0;
     public static final int HOTSEAT_ICONS = 1 << 0;
+    public static final int RECENTS_CLEAR_ALL_BUTTON = 1 << 1;
 
     protected static final int FLAG_MULTI_PAGE = 1 << 0;
     protected static final int FLAG_DISABLE_ACCESSIBILITY = 1 << 1;
@@ -66,6 +64,12 @@ public class LauncherState {
     protected static final int FLAG_OVERVIEW_UI = 1 << 7;
     protected static final int FLAG_HIDE_BACK_BUTTON = 1 << 8;
     protected static final int FLAG_HAS_SYS_UI_SCRIM = 1 << 9;
+
+
+    public static final int OVERVIEW_STATE_ORDINAL = 1;
+    public static final int OVERVIEW_PEEK_STATE_ORDINAL = 2;
+    public static final int QUICK_SWITCH_STATE_ORDINAL = 3;
+    public static final int BACKGROUND_APP_STATE_ORDINAL = 4;
 
     protected static final PageAlphaProvider DEFAULT_ALPHA_PROVIDER =
             new PageAlphaProvider(ACCEL_2) {
@@ -87,8 +91,7 @@ public class LauncherState {
     /**
      * Various Launcher states arranged in the increasing order of UI layers
      */
-    public static final LauncherState OVERVIEW = new OverviewState(2);
-    public static final LauncherState FAST_OVERVIEW = new FastOverviewState(3);
+    public static final LauncherState OVERVIEW = new OverviewState(OVERVIEW_STATE_ORDINAL);
     public static final LauncherState OVERVIEW_PEEK =
         OverviewState.newPeekState(OVERVIEW_PEEK_STATE_ORDINAL);
     public static final LauncherState QUICK_SWITCH =
@@ -177,6 +180,11 @@ public class LauncherState {
         return Arrays.copyOf(sAllStates, sAllStates.length);
     }
 
+    public ScaleAndTranslation getHotseatScaleAndTranslation(TestActivity launcher) {
+        // For most states, treat the hotseat as if it were part of the workspace.
+        return getWorkspaceScaleAndTranslation(launcher);
+    }
+
     public ScaleAndTranslation getWorkspaceScaleAndTranslation(TestActivity launcher) {
         return new ScaleAndTranslation(1f, 0f, 0f);
     }
@@ -202,6 +210,10 @@ public class LauncherState {
             return HOTSEAT_ICONS | VERTICAL_SWIPE_INDICATOR;
         }*/
         return HOTSEAT_ICONS;
+    }
+
+    public float getVerticalProgress(TestActivity launcher) {
+        return 1f;
     }
 
     public float getWorkspaceScrimAlpha(TestActivity launcher) {
@@ -243,7 +255,6 @@ public class LauncherState {
      */
     public void onStateTransitionEnd(TestActivity launcher) {
         if (this == NORMAL) {
-            UiFactory.resetOverview(launcher);
             // Clear any rotation locks when going to normal state
             launcher.getRotationHelper().setCurrentStateRequest(REQUEST_NONE);
         }
@@ -298,6 +309,10 @@ public class LauncherState {
             // Keep fully visible until the very end (when overview is offscreen) to make invisible.
             builder.setInterpolator(ANIM_OVERVIEW_FADE, t -> t < 1 ? 0 : 1);
         }
+    }
+
+    public float getOverviewFullscreenProgress() {
+        return 0;
     }
 
     public static abstract class PageAlphaProvider {

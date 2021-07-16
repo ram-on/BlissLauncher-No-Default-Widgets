@@ -15,14 +15,14 @@
  */
 package foundation.e.blisslauncher.uioverrides.states;
 
-import foundation.e.blisslauncher.features.quickstep.AbstractFloatingView;
+import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.OVERVIEW_TRANSITION_MS;
+
+import foundation.e.blisslauncher.core.customviews.AbstractFloatingView;
 import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.TestActivity;
-import foundation.e.quickstep.util.LayoutUtils;
-import foundation.e.quickstep.views.RecentsView;
-import foundation.e.quickstep.views.TaskView;
-
-import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.OVERVIEW_TRANSITION_MS;
+import foundation.e.blisslauncher.quickstep.util.LayoutUtils;
+import foundation.e.blisslauncher.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.quickstep.views.TaskView;
 
 /**
  * State indicating that the Launcher is behind an app
@@ -44,10 +44,11 @@ public class BackgroundAppState extends OverviewState {
 
     @Override
     public float getVerticalProgress(TestActivity launcher) {
-        int transitionLength = LayoutUtils.getShelfTrackingDistance(launcher,
+        /*int transitionLength = LayoutUtils.getShelfTrackingDistance(launcher,
                 launcher.getDeviceProfile());
         float progressDelta = (transitionLength / scrollRange);
-        return super.getVerticalProgress(launcher) + progressDelta;
+        return super.getVerticalProgress(launcher) + progressDelta;*/
+        return 1f;
     }
 
     @Override
@@ -70,13 +71,13 @@ public class BackgroundAppState extends OverviewState {
     }
 
     @Override
-    public int getVisibleElements(Launcher launcher) {
+    public int getVisibleElements(TestActivity launcher) {
         return super.getVisibleElements(launcher)
-                & ~RECENTS_CLEAR_ALL_BUTTON & ~VERTICAL_SWIPE_INDICATOR;
+                & ~RECENTS_CLEAR_ALL_BUTTON;
     }
 
     @Override
-    public ScaleAndTranslation getHotseatScaleAndTranslation(Launcher launcher) {
+    public ScaleAndTranslation getHotseatScaleAndTranslation(TestActivity launcher) {
         if ((getVisibleElements(launcher) & HOTSEAT_ICONS) != 0) {
             // Translate hotseat offscreen if we show it in overview.
             ScaleAndTranslation scaleAndTranslation = super.getHotseatScaleAndTranslation(launcher);

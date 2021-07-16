@@ -15,6 +15,8 @@
  */
 package foundation.e.blisslauncher.features.test.anim;
 
+import static androidx.dynamicanimation.animation.FloatPropertyCompat.createFloatPropertyCompat;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
@@ -24,16 +26,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.FloatProperty;
 import android.util.Log;
-
 import androidx.dynamicanimation.animation.DynamicAnimation.OnAnimationEndListener;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
-
-import java.util.ArrayList;
-
 import foundation.e.blisslauncher.core.Flags;
-
-import static androidx.dynamicanimation.animation.FloatPropertyCompat.createFloatPropertyCompat;
+import java.util.ArrayList;
 
 /**
  * This animator allows for an object's property to be be controlled by an {@link ObjectAnimator} or

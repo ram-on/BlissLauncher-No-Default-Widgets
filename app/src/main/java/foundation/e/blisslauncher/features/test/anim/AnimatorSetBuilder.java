@@ -39,10 +39,13 @@ public class AnimatorSetBuilder {
     public static final int ANIM_OVERVIEW_TRANSLATE_Y = 8;
     public static final int ANIM_OVERVIEW_FADE = 9;
 
+    public static final int FLAG_DONT_ANIMATE_OVERVIEW = 1 << 0;
+
     protected final ArrayList<Animator> mAnims = new ArrayList<>();
 
     private final SparseArray<Interpolator> mInterpolators = new SparseArray<>();
     private List<Runnable> mOnFinishRunnables = new ArrayList<>();
+    private int mFlags = 0;
 
     /**
      * Associates a tag with all the animations added after this call.
@@ -80,5 +83,13 @@ public class AnimatorSetBuilder {
 
     public void setInterpolator(int animId, Interpolator interpolator) {
         mInterpolators.put(animId, interpolator);
+    }
+
+    public void addFlag(int flag) {
+        mFlags |= flag;
+    }
+
+    public boolean hasFlag(int flag) {
+        return (mFlags & flag) != 0;
     }
 }

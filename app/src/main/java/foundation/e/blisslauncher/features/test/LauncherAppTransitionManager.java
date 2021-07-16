@@ -16,6 +16,7 @@
 
 package foundation.e.blisslauncher.features.test;
 
+import android.animation.Animator;
 import android.app.ActivityOptions;
 import android.content.Context;
 import android.graphics.Rect;
@@ -50,5 +51,16 @@ public class LauncherAppTransitionManager {
             }
         }
         return ActivityOptions.makeClipRevealAnimation(v, left, top, width, height);
+    }
+
+    /**
+     * Number of animations which run on state properties.
+     */
+    public int getStateElementAnimationsCount() {
+        return 0;
+    }
+
+    public Animator createStateElementAnimation(int index, float... values) {
+        throw new RuntimeException("Unknown gesture animation " + index);
     }
 }

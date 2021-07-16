@@ -31,11 +31,8 @@ import android.view.IWindowManager;
 import android.view.InputChannel;
 import android.view.InputEvent;
 import android.view.WindowManagerGlobal;
-
 import com.android.systemui.shared.QuickstepCompat;
-
 import java.io.PrintWriter;
-
 import xyz.paphonb.quickstep.compat.InputCompat;
 
 /**

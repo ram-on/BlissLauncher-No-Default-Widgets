@@ -17,8 +17,11 @@
 package foundation.e.blisslauncher.features.test;
 
 import static foundation.e.blisslauncher.features.test.LauncherState.HOTSEAT_ICONS;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_HOTSEAT_SCALE;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_HOTSEAT_TRANSLATE;
 import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_WORKSPACE_FADE;
 import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_WORKSPACE_SCALE;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_WORKSPACE_TRANSLATE;
 import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
 import static foundation.e.blisslauncher.features.test.anim.Interpolators.ZOOM_OUT;
 import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SCALE_PROPERTY;
@@ -27,8 +30,10 @@ import static foundation.e.blisslauncher.features.test.anim.PropertySetter.NO_AN
 import android.view.View;
 import android.view.animation.Interpolator;
 import foundation.e.blisslauncher.core.customviews.LauncherPagedView;
+import foundation.e.blisslauncher.features.launcher.Hotseat;
 import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
 import foundation.e.blisslauncher.features.test.anim.PropertySetter;
+import foundation.e.blisslauncher.features.test.dragndrop.DragLayer;
 
 /**
  * Manages the animations between each of the workspace states.
@@ -64,27 +69,43 @@ public class WorkspaceStateTransitionAnimation {
      */
     private void setWorkspaceProperty(LauncherState state, PropertySetter propertySetter,
             AnimatorSetBuilder builder, LauncherStateManager.AnimationConfig config) {
-        float[] scaleAndTranslation = state.getWorkspaceScaleAndTranslation(mLauncher);
-        mNewScale = scaleAndTranslation[0];
+        LauncherState.ScaleAndTranslation scaleAndTranslation = state.getWorkspaceScaleAndTranslation(mLauncher);
+        LauncherState.ScaleAndTranslation hotseatScaleAndTranslation = state.getHotseatScaleAndTranslation(
+            mLauncher);
+        mNewScale = scaleAndTranslation.scale;
         LauncherState.PageAlphaProvider pageAlphaProvider = state.getWorkspacePageAlphaProvider(mLauncher);
         final int childCount = mWorkspace.getChildCount();
         for (int i = 0; i < childCount; i++) {
             applyChildState(state, (CellLayout) mWorkspace.getChildAt(i), i, pageAlphaProvider,
-                    propertySetter, builder, config);
+                propertySetter, builder, config);
         }
 
         int elements = state.getVisibleElements(mLauncher);
         Interpolator fadeInterpolator = builder.getInterpolator(ANIM_WORKSPACE_FADE,
-                pageAlphaProvider.interpolator);
-        boolean playAtomicComponent = config.playAtomicComponent();
+            pageAlphaProvider.interpolator);
+        boolean playAtomicComponent = config.playAtomicOverviewScaleComponent();
+        Hotseat hotseat = mWorkspace.getHotseat();
         if (playAtomicComponent) {
             Interpolator scaleInterpolator = builder.getInterpolator(ANIM_WORKSPACE_SCALE, ZOOM_OUT);
             propertySetter.setFloat(mWorkspace, SCALE_PROPERTY, mNewScale, scaleInterpolator);
+
+            DragLayer dragLayer = mLauncher.getDragLayer();
+            float[] workspacePivot =
+                new float[]{ mWorkspace.getPivotX(), mWorkspace.getPivotY() };
+            dragLayer.getDescendantCoordRelativeToSelf(mWorkspace, workspacePivot);
+            dragLayer.mapCoordInSelfToDescendant(hotseat, workspacePivot);
+            hotseat.setPivotX(workspacePivot[0]);
+            hotseat.setPivotY(workspacePivot[1]);
+            float hotseatScale = hotseatScaleAndTranslation.scale;
+            Interpolator hotseatScaleInterpolator = builder.getInterpolator(ANIM_HOTSEAT_SCALE,
+                scaleInterpolator);
+            propertySetter.setFloat(hotseat, SCALE_PROPERTY, hotseatScale,
+                hotseatScaleInterpolator);
+
             float hotseatIconsAlpha = (elements & HOTSEAT_ICONS) != 0 ? 1 : 0;
-            propertySetter.setViewAlpha(mLauncher.getHotseat().getLayout(), hotseatIconsAlpha,
-                    fadeInterpolator);
+            propertySetter.setViewAlpha(hotseat, hotseatIconsAlpha, fadeInterpolator);
             propertySetter.setViewAlpha(mLauncher.getLauncherPagedView().getPageIndicator(),
-                    hotseatIconsAlpha, fadeInterpolator);
+                hotseatIconsAlpha, fadeInterpolator);
         }
 
         if (!config.playNonAtomicComponent()) {
@@ -92,11 +113,21 @@ public class WorkspaceStateTransitionAnimation {
             return;
         }
 
-        Interpolator translationInterpolator = !playAtomicComponent ? LINEAR : ZOOM_OUT;
+        Interpolator translationInterpolator = !playAtomicComponent
+            ? LINEAR
+            : builder.getInterpolator(ANIM_WORKSPACE_TRANSLATE, ZOOM_OUT);
         propertySetter.setFloat(mWorkspace, View.TRANSLATION_X,
-                scaleAndTranslation[1], translationInterpolator);
+            scaleAndTranslation.translationX, translationInterpolator);
         propertySetter.setFloat(mWorkspace, View.TRANSLATION_Y,
-                scaleAndTranslation[2], translationInterpolator);
+            scaleAndTranslation.translationY, translationInterpolator);
+
+        Interpolator hotseatTranslationInterpolator = builder.getInterpolator(
+            ANIM_HOTSEAT_TRANSLATE, translationInterpolator);
+        propertySetter.setFloat(hotseat, View.TRANSLATION_Y,
+            hotseatScaleAndTranslation.translationY, hotseatTranslationInterpolator);
+        propertySetter.setFloat(mWorkspace.getPageIndicator(), View.TRANSLATION_Y,
+            hotseatScaleAndTranslation.translationY, hotseatTranslationInterpolator);
+
     }
 
     public void applyChildState(LauncherState state, CellLayout cl, int childIndex) {
@@ -110,11 +141,11 @@ public class WorkspaceStateTransitionAnimation {
         float pageAlpha = pageAlphaProvider.getPageAlpha(childIndex);
         int drawableAlpha = Math.round(pageAlpha * (state.hasWorkspacePageBackground ? 255 : 0));
 
-        if (config.playAtomicComponent()) {
+        if (config.playAtomicOverviewScaleComponent()) {
             Interpolator fadeInterpolator = builder.getInterpolator(ANIM_WORKSPACE_FADE,
-                    pageAlphaProvider.interpolator);
+                pageAlphaProvider.interpolator);
             propertySetter.setFloat(cl, View.ALPHA,
-                    pageAlpha, fadeInterpolator);
+                pageAlpha, fadeInterpolator);
         }
     }
 }

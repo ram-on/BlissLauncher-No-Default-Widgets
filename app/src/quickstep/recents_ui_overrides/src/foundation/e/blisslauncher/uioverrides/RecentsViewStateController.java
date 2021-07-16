@@ -15,24 +15,22 @@
  */
 package foundation.e.blisslauncher.uioverrides;
 
-import static com.android.blisslauncher.LauncherState.RECENTS_CLEAR_ALL_BUTTON;
-import static com.android.blisslauncher.anim.Interpolators.LINEAR;
+import static foundation.e.blisslauncher.features.test.LauncherState.RECENTS_CLEAR_ALL_BUTTON;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
 
 import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
 import android.os.Build;
 import android.util.FloatProperty;
-
 import androidx.annotation.NonNull;
-
-import com.android.blisslauncher.Launcher;
-import com.android.blisslauncher.LauncherState;
-import com.android.blisslauncher.LauncherStateManager.AnimationConfig;
-import com.android.blisslauncher.anim.AnimatorSetBuilder;
-import com.android.blisslauncher.anim.PropertySetter;
-import foundation.e.quickstep.views.ClearAllButton;
-import foundation.e.quickstep.views.LauncherRecentsView;
-import foundation.e.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.test.LauncherState;
+import foundation.e.blisslauncher.features.test.LauncherStateManager;
+import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
+import foundation.e.blisslauncher.features.test.anim.PropertySetter;
+import foundation.e.blisslauncher.quickstep.views.ClearAllButton;
+import foundation.e.blisslauncher.quickstep.views.LauncherRecentsView;
+import foundation.e.blisslauncher.quickstep.views.RecentsView;
 
 /**
  * State handler for handling UI changes for {@link LauncherRecentsView}. In addition to managing
@@ -42,7 +40,7 @@ import foundation.e.quickstep.views.RecentsView;
 public final class RecentsViewStateController extends
     BaseRecentsViewStateController<LauncherRecentsView> {
 
-    public RecentsViewStateController(Launcher launcher) {
+    public RecentsViewStateController(TestActivity launcher) {
         super(launcher);
     }
 
@@ -59,7 +57,7 @@ public final class RecentsViewStateController extends
 
     @Override
     void setStateWithAnimationInternal(@NonNull final LauncherState toState,
-            @NonNull AnimatorSetBuilder builder, @NonNull AnimationConfig config) {
+            @NonNull AnimatorSetBuilder builder, @NonNull LauncherStateManager.AnimationConfig config) {
         super.setStateWithAnimationInternal(toState, builder, config);
 
         if (!toState.overviewUi) {

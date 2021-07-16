@@ -16,18 +16,6 @@
 
 package foundation.e.blisslauncher.uioverrides;
 
-import android.util.FloatProperty;
-import android.view.View;
-import android.view.animation.Interpolator;
-
-import androidx.annotation.NonNull;
-
-import foundation.e.blisslauncher.features.test.LauncherState;
-import foundation.e.blisslauncher.features.test.LauncherStateManager;
-import foundation.e.blisslauncher.features.test.TestActivity;
-import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
-import foundation.e.blisslauncher.features.test.anim.PropertySetter;
-
 import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_OVERVIEW_FADE;
 import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_OVERVIEW_SCALE;
 import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_OVERVIEW_TRANSLATE_X;
@@ -35,6 +23,16 @@ import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.A
 import static foundation.e.blisslauncher.features.test.anim.Interpolators.AGGRESSIVE_EASE_IN_OUT;
 import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
 import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SCALE_PROPERTY;
+
+import android.util.FloatProperty;
+import android.view.View;
+import android.view.animation.Interpolator;
+import androidx.annotation.NonNull;
+import foundation.e.blisslauncher.features.test.LauncherState;
+import foundation.e.blisslauncher.features.test.LauncherStateManager;
+import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
+import foundation.e.blisslauncher.features.test.anim.PropertySetter;
 
 /**
  * State handler for recents view. Manages UI changes and animations for recents view based off the

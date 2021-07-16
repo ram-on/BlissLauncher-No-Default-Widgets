@@ -20,7 +20,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 
-import foundation.e.quickstep.OverviewInteractionState;
+import foundation.e.blisslauncher.quickstep.OverviewInteractionState;
 
 import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.LauncherStateManager;

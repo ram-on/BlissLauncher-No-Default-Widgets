@@ -20,17 +20,14 @@ import static android.view.Display.DEFAULT_DISPLAY;
 
 import android.app.ActivityManager;
 import android.app.ActivityManager.TaskDescription;
-import android.app.TaskInfo;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.view.ViewDebug;
-
 import com.android.systemui.shared.QuickstepCompat;
 import com.android.systemui.shared.recents.utilities.Utilities;
-
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Objects;

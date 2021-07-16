@@ -32,17 +32,16 @@ import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SC
 
 import android.graphics.Rect;
 import android.view.View;
-
 import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.customviews.AbstractFloatingView;
 import foundation.e.blisslauncher.core.customviews.LauncherPagedView;
-import foundation.e.blisslauncher.features.quickstep.AbstractFloatingView;
 import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
-import foundation.e.quickstep.SysUINavigationMode;
-import foundation.e.quickstep.views.RecentsView;
-import foundation.e.quickstep.views.TaskView;
+import foundation.e.blisslauncher.quickstep.SysUINavigationMode;
+import foundation.e.blisslauncher.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.quickstep.views.TaskView;
 
 /**
  * Definition for overview state
@@ -128,8 +127,7 @@ public class OverviewState extends LauncherState {
     }
 
     public static float getDefaultVerticalProgress(TestActivity launcher) {
-        return 1 - (getDefaultSwipeHeight(launcher)
-                / launcher.getAllAppsController().getShiftRange());
+        return 1f;
     }
 
     @Override
@@ -142,7 +140,7 @@ public class OverviewState extends LauncherState {
     }
 
     public static float getDefaultSwipeHeight(VariantDeviceProfile dp) {
-        return dp.ge - dp.allAppsIconTextSizePx;
+        return 0f;
     }
 
     @Override

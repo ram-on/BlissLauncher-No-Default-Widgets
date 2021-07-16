@@ -15,15 +15,20 @@
  */
 package foundation.e.blisslauncher.uioverrides.touchcontrollers;
 
+import static foundation.e.blisslauncher.core.Flags.ENABLE_QUICKSTEP_LIVE_TILE;
+import static foundation.e.blisslauncher.core.Flags.QUICKSTEP_SPRINGS;
+import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
+import static foundation.e.blisslauncher.core.customviews.AbstractFloatingView.TYPE_ACCESSIBLE;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.scrollInterpolatorForVelocity;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.view.MotionEvent;
-
 import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.core.customviews.AbstractFloatingView;
 import foundation.e.blisslauncher.core.touch.SwipeDetector;
 import foundation.e.blisslauncher.core.utils.FlingBlockCheck;
-import foundation.e.blisslauncher.features.quickstep.AbstractFloatingView;
 import foundation.e.blisslauncher.features.test.BaseDragLayer;
 import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
 import foundation.e.blisslauncher.features.test.TouchController;
@@ -31,15 +36,9 @@ import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
 import foundation.e.blisslauncher.features.test.anim.Interpolators;
 import foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils;
 import foundation.e.blisslauncher.features.test.anim.PendingAnimation;
-import foundation.e.quickstep.SysUINavigationMode;
-import foundation.e.quickstep.views.RecentsView;
-import foundation.e.quickstep.views.TaskView;
-
-import static foundation.e.blisslauncher.core.Flags.ENABLE_QUICKSTEP_LIVE_TILE;
-import static foundation.e.blisslauncher.core.Flags.QUICKSTEP_SPRINGS;
-import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
-import static foundation.e.blisslauncher.features.quickstep.AbstractFloatingView.TYPE_ACCESSIBLE;
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.scrollInterpolatorForVelocity;
+import foundation.e.blisslauncher.quickstep.SysUINavigationMode;
+import foundation.e.blisslauncher.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.quickstep.views.TaskView;
 
 /**
  * Touch controller for handling task view card swipes

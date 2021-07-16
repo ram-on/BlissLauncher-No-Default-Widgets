@@ -19,7 +19,7 @@ import static foundation.e.blisslauncher.core.Utilities.SINGLE_FRAME_MS;
 import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
 import static foundation.e.blisslauncher.features.test.LauncherState.OVERVIEW;
 import static foundation.e.blisslauncher.features.test.LauncherStateManager.ANIM_ALL;
-import static foundation.e.blisslauncher.features.test.LauncherStateManager.ATOMIC_COMPONENT;
+import static foundation.e.blisslauncher.features.test.LauncherStateManager.ATOMIC_OVERVIEW_SCALE_COMPONENT;
 import static foundation.e.blisslauncher.features.test.LauncherStateManager.NON_ATOMIC_COMPONENT;
 import static foundation.e.blisslauncher.features.test.anim.Interpolators.scrollInterpolatorForVelocity;
 
@@ -31,7 +31,6 @@ import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.utils.FlingBlockCheck;
-import foundation.e.blisslauncher.features.test.anim.PendingAnimation;
 import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.LauncherStateManager;
 import foundation.e.blisslauncher.features.test.TestActivity;
@@ -40,6 +39,7 @@ import foundation.e.blisslauncher.features.test.anim.AnimationSuccessListener;
 import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
 import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
 import foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils;
+import foundation.e.blisslauncher.features.test.anim.PendingAnimation;
 
 /**
  * TouchController for handling state changes
@@ -56,7 +56,7 @@ public abstract class AbstractStateChangeTouchController
      * Play an atomic recents animation when the progress from NORMAL to OVERVIEW reaches this.
      */
     public static final float ATOMIC_OVERVIEW_ANIM_THRESHOLD = 0.5f;
-    protected static final long ATOMIC_DURATION = 200;
+    protected final long ATOMIC_DURATION = getAtomicDuration();
 
     protected final TestActivity mLauncher;
     protected final SwipeDetector mDetector;
@@ -77,7 +77,7 @@ public abstract class AbstractStateChangeTouchController
     private boolean mCanBlockFling;
     private FlingBlockCheck mFlingBlockCheck = new FlingBlockCheck();
 
-    private AnimatorSet mAtomicAnim;
+    public AnimatorSet mAtomicAnim;
     private boolean mPassedOverviewAtomicThreshold;
     // mAtomicAnim plays the atomic components of the state animations when we pass the threshold.
     // However, if we reinit to transition to a new state (e.g. OVERVIEW -> ALL_APPS) before the
@@ -90,6 +90,10 @@ public abstract class AbstractStateChangeTouchController
     public AbstractStateChangeTouchController(TestActivity l, SwipeDetector.Direction dir) {
         mLauncher = l;
         mDetector = new SwipeDetector(l, this, dir);
+    }
+
+    protected long getAtomicDuration() {
+        return 200;
     }
 
     protected abstract boolean canInterceptTouch(MotionEvent ev);
@@ -224,7 +228,7 @@ public abstract class AbstractStateChangeTouchController
     }
 
     @Override
-    public boolean onDrag(float displacement, float velocity) {
+    public boolean onDrag(float displacement) {
         float deltaProgress = mProgressMultiplier * (displacement - mDisplacementShift);
         float progress = deltaProgress + mStartProgress;
         updateProgress(progress);
@@ -291,15 +295,14 @@ public abstract class AbstractStateChangeTouchController
 
     private AnimatorSet createAtomicAnimForState(LauncherState fromState, LauncherState targetState,
             long duration) {
-        AnimatorSetBuilder builder = new AnimatorSetBuilder();
-        mLauncher.getStateManager().prepareForAtomicAnimation(fromState, targetState, builder);
-        LauncherStateManager.AnimationConfig config = new LauncherStateManager.AnimationConfig();
-        config.animComponents = ATOMIC_COMPONENT;
-        config.duration = duration;
-        for (LauncherStateManager.StateHandler handler : mLauncher.getStateManager().getStateHandlers()) {
-            handler.setStateWithAnimation(targetState, builder, config);
-        }
-        return builder.build();
+        AnimatorSetBuilder builder = getAnimatorSetBuilderForStates(fromState, targetState);
+        return mLauncher.getStateManager().createAtomicAnimation(fromState, targetState, builder,
+            ATOMIC_OVERVIEW_SCALE_COMPONENT, duration);
+    }
+
+    protected AnimatorSetBuilder getAnimatorSetBuilderForStates(LauncherState fromState,
+        LauncherState toState) {
+        return new AnimatorSetBuilder();
     }
 
     @Override
@@ -448,5 +451,9 @@ public abstract class AbstractStateChangeTouchController
             mAtomicComponentsController.getAnimationPlayer().cancel();
             mAtomicComponentsController = null;
         }
+    }
+
+    protected float getShiftRange() {
+        return 0;
     }
 }

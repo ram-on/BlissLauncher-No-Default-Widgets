@@ -17,12 +17,15 @@ import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.features.launcher.Hotseat
 import foundation.e.blisslauncher.features.test.dragndrop.DragController
 import foundation.e.blisslauncher.features.test.dragndrop.DragLayer
+import foundation.e.blisslauncher.uioverrides.UiFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableObserver
+import java.util.ArrayList
 
 class TestActivity : BaseDraggingActivity() {
 
+    private var mCancelTouchController: Runnable? = null
     private var mOnResumeCallback: OnResumeCallback? = null
     private lateinit var mAppTransitionManager: LauncherAppTransitionManager
     lateinit var dragController: DragController
@@ -40,7 +43,7 @@ class TestActivity : BaseDraggingActivity() {
     // UI and state for the overview panel
     private lateinit var overviewPanel: View
 
-    private lateinit var overviewPanelContainer: View
+    private val mOnResumeCallbacks = ArrayList<OnResumeCallback>()
 
     private val TAG = "TestActivity"
 
@@ -71,10 +74,10 @@ class TestActivity : BaseDraggingActivity() {
         mOldConfig = Configuration(resources.configuration)
         initDeviceProfile(BlissLauncher.getApplication(this).invariantDeviceProfile)
         dragController = DragController(this)
+        rotationHelper = RotationHelper(this)
         mStateManager = LauncherStateManager(this)
         launcherView = LayoutInflater.from(this).inflate(R.layout.activity_test, null)
         setupViews()
-        rotationHelper = RotationHelper(this)
         mAppTransitionManager = LauncherAppTransitionManager.newInstance(this)
 
         setContentView(launcherView)
@@ -86,12 +89,12 @@ class TestActivity : BaseDraggingActivity() {
         workspace = dragLayer.findViewById(R.id.workspace)
         workspace.initParentViews(dragLayer)
         overviewPanel = findViewById(R.id.overview_panel)
-        overviewPanelContainer = findViewById(R.id.overview_panel_container)
         hotseat = findViewById(R.id.hotseat)
         launcherView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             or View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
         dragLayer.setup(dragController, workspace)
+        mCancelTouchController = UiFactory.enableLiveUIChanges(this)
         workspace.setup(dragController)
         workspace.bindAndInitFirstScreen(null)
         dragController.addDragListener(workspace)
@@ -110,6 +113,26 @@ class TestActivity : BaseDraggingActivity() {
         onDeviceProfileInitiated()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (mOnResumeCallbacks.isNotEmpty()) {
+            val resumeCallbacks = ArrayList(mOnResumeCallbacks)
+            mOnResumeCallbacks.clear()
+            for (i in resumeCallbacks.indices.reversed()) {
+                resumeCallbacks[i].onLauncherResume()
+            }
+            resumeCallbacks.clear()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (mCancelTouchController != null) {
+            mCancelTouchController!!.run()
+            mCancelTouchController = null
+        }
+    }
+
     fun getHotseat() = hotseat
 
     fun isWorkspaceLoading() = false
@@ -118,9 +141,7 @@ class TestActivity : BaseDraggingActivity() {
 
     override fun <T : View?> getOverviewPanel(): T = overviewPanel as T
 
-    fun <T : View?> getOverviewPanelContainer(): T = overviewPanelContainer as T
-
-    override fun getRootView(): View = TODO("Not yet implemented")
+    override fun getRootView(): LauncherRootView = launcherView as LauncherRootView
 
     override fun getActivityLaunchOptions(v: View?): ActivityOptions {
         return mAppTransitionManager.getActivityLaunchOptions(this, v)
@@ -201,6 +222,10 @@ class TestActivity : BaseDraggingActivity() {
 
     fun isInState(state: LauncherState): Boolean {
         return mStateManager.getState() === state
+    }
+
+    fun addOnResumeCallback(callback: OnResumeCallback) {
+        mOnResumeCallbacks.add(callback)
     }
 
     companion object {

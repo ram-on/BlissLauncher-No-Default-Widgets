@@ -18,11 +18,10 @@ package foundation.e.blisslauncher.uioverrides.states;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.android.blisslauncher.Launcher;
-import com.android.blisslauncher.userevent.nano.LauncherLogProto;
-import foundation.e.quickstep.WindowTransformSwipeHandler;
-import foundation.e.quickstep.views.RecentsView;
-import foundation.e.quickstep.views.TaskView;
+import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.quickstep.WindowTransformSwipeHandler;
+import foundation.e.blisslauncher.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.quickstep.views.TaskView;
 
 /**
  * State to indicate we are about to launch a recent task. Note that this state is only used when
@@ -34,24 +33,22 @@ public class QuickSwitchState extends BackgroundAppState {
     private static final String TAG = "QuickSwitchState";
 
     public QuickSwitchState(int id) {
-        super(id, LauncherLogProto.ContainerType.APP);
+        super(id);
     }
 
     @Override
-    public ScaleAndTranslation getWorkspaceScaleAndTranslation(Launcher launcher) {
-        float shiftRange = launcher.getAllAppsController().getShiftRange();
-        float shiftProgress = getVerticalProgress(launcher) - NORMAL.getVerticalProgress(launcher);
-        float translationY = shiftProgress * shiftRange;
-        return new ScaleAndTranslation(1, 0, translationY);
+    public ScaleAndTranslation getWorkspaceScaleAndTranslation(TestActivity launcher) {
+        // TODO: May need to fix it.
+        return new ScaleAndTranslation(1, 0, 0);
     }
 
     @Override
-    public int getVisibleElements(Launcher launcher) {
+    public int getVisibleElements(TestActivity launcher) {
         return NONE;
     }
 
     @Override
-    public void onStateTransitionEnd(Launcher launcher) {
+    public void onStateTransitionEnd(TestActivity launcher) {
         TaskView tasktolaunch = launcher.<RecentsView>getOverviewPanel().getTaskViewAt(0);
         if (tasktolaunch != null) {
             tasktolaunch.launchTask(false, success -> {

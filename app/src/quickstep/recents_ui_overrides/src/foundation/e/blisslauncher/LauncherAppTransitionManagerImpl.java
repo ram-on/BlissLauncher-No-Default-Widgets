@@ -16,13 +16,13 @@
 
 package foundation.e.blisslauncher;
 
+import static androidx.dynamicanimation.animation.DynamicAnimation.MIN_VISIBLE_CHANGE_PIXELS;
 import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
 import static foundation.e.blisslauncher.features.test.anim.Interpolators.AGGRESSIVE_EASE;
 import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
-import static foundation.e.quickstep.TaskViewUtils.findTaskViewToLaunch;
-import static foundation.e.quickstep.TaskViewUtils.getRecentsWindowAnimator;
-
-import static androidx.dynamicanimation.animation.DynamicAnimation.MIN_VISIBLE_CHANGE_PIXELS;
+import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.VIEW_TRANSLATE_X;
+import static foundation.e.blisslauncher.quickstep.TaskViewUtils.findTaskViewToLaunch;
+import static foundation.e.blisslauncher.quickstep.TaskViewUtils.getRecentsWindowAnimator;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -30,17 +30,15 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.view.View;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
+import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
 import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
 import foundation.e.blisslauncher.features.test.anim.Interpolators;
 import foundation.e.blisslauncher.features.test.anim.SpringObjectAnimator;
-import foundation.e.quickstep.util.ClipAnimationHelper;
-import foundation.e.quickstep.views.RecentsView;
-import foundation.e.quickstep.views.TaskView;
-import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
+import foundation.e.blisslauncher.quickstep.util.ClipAnimationHelper;
+import foundation.e.blisslauncher.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.quickstep.views.TaskView;
 
 /**
  * A {@link QuickstepAppTransitionManagerImpl} that also implements recents transitions from
@@ -48,6 +46,7 @@ import com.android.systemui.shared.system.RemoteAnimationTargetCompat;
  */
 public final class LauncherAppTransitionManagerImpl extends QuickstepAppTransitionManagerImpl {
 
+    public static final int INDEX_SHELF_ANIM = 0;
     public static final int INDEX_RECENTS_FADE_ANIM = 1;
     public static final int INDEX_RECENTS_TRANSLATE_X_ANIM = 2;
 

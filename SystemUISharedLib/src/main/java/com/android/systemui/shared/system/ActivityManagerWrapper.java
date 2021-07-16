@@ -32,7 +32,6 @@ import android.app.ActivityManager;
 import android.app.ActivityManager.RecentTaskInfo;
 import android.app.ActivityManager.RunningTaskInfo;
 import android.app.ActivityOptions;
-import android.app.ActivityTaskManager;
 import android.app.AppGlobals;
 import android.app.IAssistDataReceiver;
 import android.app.WindowConfiguration;
@@ -57,21 +56,15 @@ import android.os.UserHandle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.IRecentsAnimationController;
-import android.view.IRecentsAnimationRunner;
 import android.view.RemoteAnimationTarget;
-
 import com.android.internal.app.IVoiceInteractionManagerService;
 import com.android.systemui.shared.QuickstepCompat;
 import com.android.systemui.shared.recents.model.Task;
-import com.android.systemui.shared.recents.model.Task.TaskKey;
 import com.android.systemui.shared.recents.model.ThumbnailData;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
-
-import xyz.paphonb.quickstep.compat.ActivityManagerCompat;
 import xyz.paphonb.quickstep.compat.RecentsAnimationRunner;
 
 public class ActivityManagerWrapper {

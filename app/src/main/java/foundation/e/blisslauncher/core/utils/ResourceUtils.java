@@ -21,10 +21,15 @@ import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
+
 import foundation.e.blisslauncher.core.Utilities;
 import java.lang.reflect.InvocationTargetException;
 
 public class ResourceUtils {
+
+    public static final String NAVBAR_LANDSCAPE_LEFT_RIGHT_SIZE = "navigation_bar_width";
+    public static final String NAVBAR_BOTTOM_GESTURE_SIZE = "navigation_bar_gesture_height";
 
     /**
      * Sets a fake configuration to the passed Resources to allow access to resources
@@ -86,6 +91,25 @@ public class ResourceUtils {
                             configuration.screenLayout,
                             configuration.uiMode, sdk);
         }
+    }
+
+    public static int getNavbarSize(String resName, Resources res) {
+        return getDimenByName(resName, res, 48);
+    }
+
+    private static int getDimenByName(String resName, Resources res, int defaultValue) {
+        final int frameSize;
+        final int frameSizeResID = res.getIdentifier(resName, "dimen", "android");
+        if (frameSizeResID != 0) {
+            frameSize = res.getDimensionPixelSize(frameSizeResID);
+        } else {
+            frameSize = pxFromDp(defaultValue, res.getDisplayMetrics());
+        }
+        return frameSize;
+    }
+
+    public static int pxFromDp(float size, DisplayMetrics metrics) {
+        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, size, metrics));
     }
 
 }

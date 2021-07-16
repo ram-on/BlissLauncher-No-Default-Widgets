@@ -58,6 +58,10 @@ public class RotationHelper implements OnSharedPreferenceChangeListener {
      */
     private int mStateHandlerRequest = REQUEST_NONE;
     /**
+     * Rotation request made by an app transition
+     */
+    private int mCurrentTransitionRequest = REQUEST_NONE;
+    /**
      * Rotation request made by a Launcher State
      */
     private int mCurrentStateRequest = REQUEST_NONE;
@@ -65,6 +69,7 @@ public class RotationHelper implements OnSharedPreferenceChangeListener {
     // This is used to defer setting rotation flags until the activity is being created
     private boolean mInitialized;
     public boolean mDestroyed;
+    private boolean mRotationHasDifferentUI;
 
     private int mLastActivityFlags = -1;
 
@@ -83,6 +88,10 @@ public class RotationHelper implements OnSharedPreferenceChangeListener {
         }
     }
 
+    public void setRotationHadDifferentUI(boolean rotationHasDifferentUI) {
+        mRotationHasDifferentUI = rotationHasDifferentUI;
+    }
+
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
         mAutoRotateEnabled = mPrefs.getBoolean(ALLOW_ROTATION_PREFERENCE_KEY,
@@ -93,6 +102,13 @@ public class RotationHelper implements OnSharedPreferenceChangeListener {
     public void setStateHandlerRequest(int request) {
         if (mStateHandlerRequest != request) {
             mStateHandlerRequest = request;
+            notifyChange();
+        }
+    }
+
+    public void setCurrentTransitionRequest(int request) {
+        if (mCurrentTransitionRequest != request) {
+            mCurrentTransitionRequest = request;
             notifyChange();
         }
     }
@@ -128,11 +144,14 @@ public class RotationHelper implements OnSharedPreferenceChangeListener {
         final int activityFlags;
         if (mStateHandlerRequest != REQUEST_NONE) {
             activityFlags = mStateHandlerRequest == REQUEST_LOCK ?
-                    SCREEN_ORIENTATION_LOCKED : SCREEN_ORIENTATION_UNSPECIFIED;
+                SCREEN_ORIENTATION_LOCKED : SCREEN_ORIENTATION_UNSPECIFIED;
+        } else if (mCurrentTransitionRequest != REQUEST_NONE) {
+            activityFlags = mCurrentTransitionRequest == REQUEST_LOCK ?
+                SCREEN_ORIENTATION_LOCKED : SCREEN_ORIENTATION_UNSPECIFIED;
         } else if (mCurrentStateRequest == REQUEST_LOCK) {
             activityFlags = SCREEN_ORIENTATION_LOCKED;
         } else if (mIgnoreAutoRotateSettings || mCurrentStateRequest == REQUEST_ROTATE
-                || mAutoRotateEnabled) {
+            || mAutoRotateEnabled) {
             activityFlags = SCREEN_ORIENTATION_UNSPECIFIED;
         } else {
             // If auto rotation is off, allow rotation on the activity, in case the user is using
@@ -141,7 +160,7 @@ public class RotationHelper implements OnSharedPreferenceChangeListener {
         }
         if (activityFlags != mLastActivityFlags) {
             mLastActivityFlags = activityFlags;
-            mActivity.setRequestedOrientation(activityFlags);
+            UiThreadHelper.setOrientationAsync(mActivity, activityFlags);
         }
     }
 

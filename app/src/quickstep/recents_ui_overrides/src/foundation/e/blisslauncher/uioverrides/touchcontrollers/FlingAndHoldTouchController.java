@@ -16,22 +16,17 @@
 
 package foundation.e.blisslauncher.uioverrides.touchcontrollers;
 
-import static com.android.blisslauncher.LauncherState.ALL_APPS;
-import static com.android.blisslauncher.LauncherState.HOTSEAT_ICONS;
-import static com.android.blisslauncher.LauncherState.NORMAL;
-import static com.android.blisslauncher.LauncherState.OVERVIEW;
-import static com.android.blisslauncher.LauncherState.OVERVIEW_PEEK;
-import static com.android.blisslauncher.LauncherStateManager.ANIM_ALL;
-import static com.android.blisslauncher.LauncherStateManager.ATOMIC_OVERVIEW_PEEK_COMPONENT;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_HOTSEAT_SCALE;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_HOTSEAT_TRANSLATE;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_VERTICAL_PROGRESS;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_WORKSPACE_FADE;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_WORKSPACE_SCALE;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_WORKSPACE_TRANSLATE;
-import static com.android.blisslauncher.anim.Interpolators.DEACCEL_3;
-import static com.android.blisslauncher.anim.Interpolators.OVERSHOOT_1_2;
 import static com.android.systemui.shared.system.QuickStepContract.SYSUI_STATE_OVERVIEW_DISABLED;
+import static foundation.e.blisslauncher.features.test.LauncherState.HOTSEAT_ICONS;
+import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
+import static foundation.e.blisslauncher.features.test.LauncherState.OVERVIEW;
+import static foundation.e.blisslauncher.features.test.LauncherState.OVERVIEW_PEEK;
+import static foundation.e.blisslauncher.features.test.LauncherStateManager.ANIM_ALL;
+import static foundation.e.blisslauncher.features.test.LauncherStateManager.ATOMIC_OVERVIEW_PEEK_COMPONENT;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_HOTSEAT_SCALE;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_HOTSEAT_TRANSLATE;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_VERTICAL_PROGRESS;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.OVERSHOOT_1_2;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -39,14 +34,12 @@ import android.animation.AnimatorSet;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
-
-import com.android.blisslauncher.Launcher;
-import com.android.blisslauncher.LauncherState;
-import com.android.blisslauncher.anim.AnimatorSetBuilder;
-import com.android.blisslauncher.userevent.nano.LauncherLogProto.Action.Touch;
-import foundation.e.quickstep.OverviewInteractionState;
-import foundation.e.quickstep.util.MotionPauseDetector;
-import foundation.e.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.features.test.LauncherState;
+import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
+import foundation.e.blisslauncher.quickstep.OverviewInteractionState;
+import foundation.e.blisslauncher.quickstep.util.MotionPauseDetector;
+import foundation.e.blisslauncher.quickstep.views.RecentsView;
 
 /**
  * Touch controller which handles swipe and hold to go to Overview
@@ -63,7 +56,7 @@ public class FlingAndHoldTouchController extends PortraitStatesTouchController {
 
     private AnimatorSet mPeekAnim;
 
-    public FlingAndHoldTouchController(Launcher l) {
+    public FlingAndHoldTouchController(TestActivity l) {
         super(l, false /* allowDragToOverview */);
         mMotionPauseDetector = new MotionPauseDetector(l);
         mMotionPauseMinDisplacement = ViewConfiguration.get(l).getScaledTouchSlop();
@@ -118,15 +111,6 @@ public class FlingAndHoldTouchController extends PortraitStatesTouchController {
     @Override
     protected AnimatorSetBuilder getAnimatorSetBuilderForStates(LauncherState fromState,
             LauncherState toState) {
-        if (fromState == NORMAL && toState == ALL_APPS) {
-            AnimatorSetBuilder builder = new AnimatorSetBuilder();
-
-            // Get workspace out of the way quickly, to prepare for potential pause.
-            builder.setInterpolator(ANIM_WORKSPACE_SCALE, DEACCEL_3);
-            builder.setInterpolator(ANIM_WORKSPACE_TRANSLATE, DEACCEL_3);
-            builder.setInterpolator(ANIM_WORKSPACE_FADE, DEACCEL_3);
-            return builder;
-        }
         return super.getAnimatorSetBuilderForStates(fromState, toState);
     }
 
@@ -157,7 +141,7 @@ public class FlingAndHoldTouchController extends PortraitStatesTouchController {
             overviewAnim.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
-                    onSwipeInteractionCompleted(OVERVIEW, Touch.SWIPE);
+                    onSwipeInteractionCompleted(OVERVIEW);
                 }
             });
             overviewAnim.start();

@@ -1,19 +1,17 @@
 package foundation.e.blisslauncher.uioverrides.touchcontrollers;
 
+import static foundation.e.blisslauncher.core.Utilities.EDGE_NAV_BAR;
+import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
+import static foundation.e.blisslauncher.features.test.LauncherState.OVERVIEW;
+
 import android.view.MotionEvent;
-
-import foundation.e.quickstep.RecentsModel;
-
+import foundation.e.blisslauncher.core.customviews.AbstractFloatingView;
 import foundation.e.blisslauncher.core.touch.AbstractStateChangeTouchController;
 import foundation.e.blisslauncher.core.touch.SwipeDetector;
-import foundation.e.blisslauncher.features.quickstep.AbstractFloatingView;
 import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.LauncherStateManager;
 import foundation.e.blisslauncher.features.test.TestActivity;
-
-import static foundation.e.blisslauncher.features.quickstep.TouchInteractionService.EDGE_NAV_BAR;
-import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
-import static foundation.e.blisslauncher.features.test.LauncherState.OVERVIEW;
+import foundation.e.blisslauncher.quickstep.RecentsModel;
 
 /**
  * Touch controller for handling edge swipes in landscape/seascape UI

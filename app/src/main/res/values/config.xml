@@ -12,10 +12,6 @@
     <!-- Tag id used for view scrim -->
     <item type="id" name="view_scrim" />
 
-    <string name="task_overlay_factory_clas" translatable="false" />
-    <string name="overview_callbacks_class" translatable="false"></string>
-    <string name="app_transition_manager_class" translatable="false">foundation.e.blisslauncher.features.quickstep.LauncherAppTransitionManagerImpl</string>
-
     <!-- Recents -->
     <item type="id" name="overview_panel"/>
     <integer name="config_recentsMaxThumbnailCacheSize">6</integer>

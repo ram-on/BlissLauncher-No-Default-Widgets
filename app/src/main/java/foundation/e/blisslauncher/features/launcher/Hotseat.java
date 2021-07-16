@@ -34,7 +34,7 @@ import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 
-public class Hotseat extends FrameLayout implements Insettable {
+public class Hotseat extends CellLayout implements Insettable {
 
     private final TestActivity mLauncher;
     private CellLayout mContent;
@@ -58,21 +58,16 @@ public class Hotseat extends FrameLayout implements Insettable {
         setBackgroundColor(0x33000000);
     }
 
+    // TODO: Remove this later.
     public CellLayout getLayout() {
-        return mContent;
-    }
-
-    @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
-        mContent = findViewById(R.id.dockLayout);
+        return this;
     }
 
     public void resetLayout(boolean hasVerticalHotseat) {
-        mContent.removeAllViewsInLayout();
+        removeAllViewsInLayout();
         mHasVerticalHotseat = hasVerticalHotseat;
         VariantDeviceProfile idp = mLauncher.getDeviceProfile();
-        mContent.setGridSize(idp.getInv().getNumHotseatIcons(), 1);
+        setGridSize(idp.getInv().getNumHotseatIcons(), 1);
     }
 
     @Override
@@ -84,7 +79,7 @@ public class Hotseat extends FrameLayout implements Insettable {
 
     @Override
     public void setInsets(WindowInsets insets) {
-        LayoutParams lp = (LayoutParams) getLayoutParams();
+        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) getLayoutParams();
         VariantDeviceProfile grid = mLauncher.getDeviceProfile();
         lp.gravity = Gravity.BOTTOM;
         lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
@@ -94,5 +89,11 @@ public class Hotseat extends FrameLayout implements Insettable {
         getLayout().setPadding(padding.left, padding.top, padding.right, padding.bottom);
         setLayoutParams(lp);
         InsettableFrameLayout.Companion.dispatchInsets(this, insets);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        // Don't let if follow through to workspace
+        return true;
     }
 }

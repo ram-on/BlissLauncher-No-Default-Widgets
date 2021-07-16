@@ -15,15 +15,14 @@
  */
 package foundation.e.blisslauncher.features.test.anim;
 
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.util.FloatProperty;
-
 import androidx.annotation.FloatRange;
 import androidx.dynamicanimation.animation.SpringForce;
-
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
 
 /**
  * Utility class to build an object animator which follows the same path as a spring animation for

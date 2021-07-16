@@ -15,6 +15,8 @@
  */
 package foundation.e.blisslauncher.features.test.anim;
 
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
+
 import android.animation.Animator;
 import android.animation.Animator.AnimatorListener;
 import android.animation.AnimatorListenerAdapter;
@@ -22,19 +24,14 @@ import android.animation.AnimatorSet;
 import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.util.Log;
-
 import androidx.dynamicanimation.animation.DynamicAnimation;
 import androidx.dynamicanimation.animation.SpringAnimation;
-
+import foundation.e.blisslauncher.core.Flags;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import foundation.e.blisslauncher.core.Flags;
-
-import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
 
 /**
  * Helper class to control the playback of an {@link AnimatorSet}, with custom interpolators

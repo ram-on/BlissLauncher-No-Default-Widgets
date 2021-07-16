@@ -16,9 +16,9 @@ import android.view.View;
 import android.view.ViewDebug;
 import android.view.ViewGroup;
 import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.core.customviews.AbstractFloatingView;
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
 import foundation.e.blisslauncher.core.utils.MultiValueAlpha;
-import foundation.e.blisslauncher.features.quickstep.AbstractFloatingView;
 import java.util.ArrayList;
 
 /**
@@ -60,6 +60,17 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
     public boolean isEventOverView(View view, MotionEvent ev) {
         getDescendantRectRelativeToSelf(view, mHitRect);
         return mHitRect.contains((int) ev.getX(), (int) ev.getY());
+    }
+
+    /**
+     * Given a motion event in evView's coordinates, return whether the event is within another
+     * view's bounds.
+     */
+    public boolean isEventOverView(View view, MotionEvent ev, View evView) {
+        int[] xy = new int[] {(int) ev.getX(), (int) ev.getY()};
+        getDescendantCoordRelativeToSelf(evView, xy);
+        getDescendantRectRelativeToSelf(view, mHitRect);
+        return mHitRect.contains(xy[0], xy[1]);
     }
 
     @Override
@@ -220,6 +231,10 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
         return getDescendantCoordRelativeToSelf(descendant, coord, false);
     }
 
+    public float getDescendantCoordRelativeToSelf(View descendant, float[] coord) {
+        return getDescendantCoordRelativeToSelf(descendant, coord, false);
+    }
+
     /**
      * Given a coordinate relative to the descendant, find the coordinate in this DragLayer's
      * coordinates.
@@ -239,9 +254,34 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
     }
 
     /**
+     * Given a coordinate relative to the descendant, find the coordinate in this DragLayer's
+     * coordinates.
+     *
+     * @param descendant The descendant to which the passed coordinate is relative.
+     * @param coord The coordinate that we want mapped.
+     * @param includeRootScroll Whether or not to account for the scroll of the root descendant:
+     *          sometimes this is relevant as in a child's coordinates within the root descendant.
+     * @return The factor by which this descendant is scaled relative to this DragLayer. Caution
+     *         this scale factor is assumed to be equal in X and Y, and so if at any point this
+     *         assumption fails, we will need to return a pair of scale factors.
+     */
+    public float getDescendantCoordRelativeToSelf(View descendant, float[] coord,
+        boolean includeRootScroll) {
+        return Utilities.getDescendantCoordRelativeToAncestor(descendant, this,
+            coord, includeRootScroll);
+    }
+
+    /**
      * Inverse of {@link #getDescendantCoordRelativeToSelf(View, int[])}.
      */
     public void mapCoordInSelfToDescendant(View descendant, int[] coord) {
+        Utilities.mapCoordInSelfToDescendant(descendant, this, coord);
+    }
+
+    /**
+     * Inverse of {@link #getDescendantCoordRelativeToSelf(View, float[])}.
+     */
+    public void mapCoordInSelfToDescendant(View descendant, float[] coord) {
         Utilities.mapCoordInSelfToDescendant(descendant, this, coord);
     }
 

@@ -27,22 +27,20 @@ import android.content.IntentSender;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.util.Base64;
-
+import com.android.systemui.shared.system.ActivityCompat;
 import foundation.e.blisslauncher.QuickstepAppTransitionManagerImpl;
+import foundation.e.blisslauncher.features.test.LauncherState;
+import foundation.e.blisslauncher.features.test.LauncherStateManager;
+import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.proxy.ProxyActivityStarter;
 import foundation.e.blisslauncher.proxy.StartActivityParams;
-import foundation.e.quickstep.OverviewInteractionState;
-import foundation.e.quickstep.RecentsModel;
-import foundation.e.quickstep.SysUINavigationMode;
-import foundation.e.quickstep.util.RemoteFadeOutAnimationListener;
-import com.android.systemui.shared.system.ActivityCompat;
-
+import foundation.e.blisslauncher.quickstep.OverviewInteractionState;
+import foundation.e.blisslauncher.quickstep.RecentsModel;
+import foundation.e.blisslauncher.quickstep.SysUINavigationMode;
+import foundation.e.blisslauncher.quickstep.util.RemoteFadeOutAnimationListener;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.util.zip.Deflater;
-
-import foundation.e.blisslauncher.features.test.LauncherStateManager;
-import foundation.e.blisslauncher.features.test.TestActivity;
 
 public class UiFactory extends RecentsUiFactory {
 
@@ -193,12 +191,12 @@ public class UiFactory extends RecentsUiFactory {
         launcher.startActivity(ProxyActivityStarter.getLaunchIntent(launcher, null));
     }
 
-    public static ScaleAndTranslation getOverviewScaleAndTranslationForNormalState(TestActivity l) {
+    public static LauncherState.ScaleAndTranslation getOverviewScaleAndTranslationForNormalState(TestActivity l) {
         if (SysUINavigationMode.getMode(l) == SysUINavigationMode.Mode.NO_BUTTON) {
-            float offscreenTranslationX = l.getDeviceProfile().widthPx
+            float offscreenTranslationX = l.getDeviceProfile().getWidthPx()
                     - l.getOverviewPanel().getPaddingStart();
-            return new ScaleAndTranslation(1f, offscreenTranslationX, 0f);
+            return new LauncherState.ScaleAndTranslation(1f, offscreenTranslationX, 0f);
         }
-        return new ScaleAndTranslation(1.1f, 0f, 0f);
+        return new LauncherState.ScaleAndTranslation(1.1f, 0f, 0f);
     }
 }

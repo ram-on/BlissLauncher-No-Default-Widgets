@@ -13,7 +13,7 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<foundation.e.quickstep.views.TaskView
+<foundation.e.blisslauncher.quickstep.views.TaskView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -21,17 +21,17 @@
     android:elevation="4dp"
     android:focusable="true">
 
-    <foundation.e.quickstep.views.TaskThumbnailView
+    <foundation.e.blisslauncher.quickstep.views.TaskThumbnailView
         android:id="@+id/snapshot"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="@dimen/task_thumbnail_top_margin"/>
 
-    <foundation.e.quickstep.views.IconView
+    <foundation.e.blisslauncher.quickstep.views.IconView
         android:id="@+id/icon"
         android:layout_width="@dimen/task_thumbnail_icon_size"
         android:layout_height="@dimen/task_thumbnail_icon_size"
         android:layout_gravity="top|center_horizontal"
         android:focusable="false"
         android:importantForAccessibility="no"/>
-</foundation.e.quickstep.views.TaskView>
+</foundation.e.blisslauncher.quickstep.views.TaskView>

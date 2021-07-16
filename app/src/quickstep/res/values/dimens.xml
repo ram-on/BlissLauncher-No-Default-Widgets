@@ -72,4 +72,5 @@
 
     <!-- Distance to move elements when swiping up to go home from launcher -->
     <dimen name="home_pullback_distance">28dp</dimen>
+    <dimen name="deep_shortcut_drawable_padding">8dp</dimen>
 </resources>

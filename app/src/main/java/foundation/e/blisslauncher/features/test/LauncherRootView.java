@@ -3,16 +3,21 @@ package foundation.e.blisslauncher.features.test;
 import static foundation.e.blisslauncher.features.test.SystemUiController.FLAG_DARK_NAV;
 import static foundation.e.blisslauncher.features.test.SystemUiController.UI_STATE_NORMAL;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewDebug;
 import android.view.WindowInsets;
+import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
+import java.util.Collections;
+import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 public class LauncherRootView extends InsettableFrameLayout {
@@ -24,8 +29,12 @@ public class LauncherRootView extends InsettableFrameLayout {
     @ViewDebug.ExportedProperty(category = "launcher")
     private final Rect mConsumedInsets = new Rect();
 
+    private static final List<Rect> SYSTEM_GESTURE_EXCLUSION_RECT =
+        Collections.singletonList(new Rect());
+
     private View mAlignedView;
     private WindowStateListener mWindowStateListener;
+    private boolean mDisallowBackGesture;
 
     public LauncherRootView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -130,6 +139,17 @@ public class LauncherRootView extends InsettableFrameLayout {
         if (mWindowStateListener != null) {
             mWindowStateListener.onWindowVisibilityChanged(visibility);
         }
+    }
+
+    @TargetApi(Build.VERSION_CODES.Q)
+    public void setDisallowBackGesture(boolean disallowBackGesture) {
+        if (!Utilities.ATLEAST_Q) {
+            return;
+        }
+        mDisallowBackGesture = disallowBackGesture;
+        setSystemGestureExclusionRects(mDisallowBackGesture
+            ? SYSTEM_GESTURE_EXCLUSION_RECT
+            : Collections.emptyList());
     }
 
     public interface WindowStateListener {

@@ -15,40 +15,35 @@
  */
 package foundation.e.blisslauncher.uioverrides.touchcontrollers;
 
-import static com.android.blisslauncher.LauncherState.NORMAL;
-import static com.android.blisslauncher.LauncherState.QUICK_SWITCH;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_ALL_APPS_FADE;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_OVERVIEW_FADE;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_OVERVIEW_SCALE;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_OVERVIEW_TRANSLATE_Y;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_VERTICAL_PROGRESS;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_WORKSPACE_FADE;
-import static com.android.blisslauncher.anim.AnimatorSetBuilder.ANIM_WORKSPACE_TRANSLATE;
-import static com.android.blisslauncher.anim.Interpolators.ACCEL_2;
-import static com.android.blisslauncher.anim.Interpolators.DEACCEL_2;
-import static com.android.blisslauncher.anim.Interpolators.INSTANT;
-import static com.android.blisslauncher.anim.Interpolators.LINEAR;
-import static com.android.blisslauncher.util.SystemUiController.UI_STATE_OVERVIEW;
 import static com.android.systemui.shared.system.QuickStepContract.SYSUI_STATE_OVERVIEW_DISABLED;
+import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
+import static foundation.e.blisslauncher.features.test.LauncherState.QUICK_SWITCH;
+import static foundation.e.blisslauncher.features.test.SystemUiController.UI_STATE_OVERVIEW;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_OVERVIEW_FADE;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_OVERVIEW_SCALE;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_OVERVIEW_TRANSLATE_Y;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_VERTICAL_PROGRESS;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_WORKSPACE_FADE;
+import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_WORKSPACE_TRANSLATE;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.ACCEL_2;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.DEACCEL_2;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.INSTANT;
+import static foundation.e.blisslauncher.features.test.anim.Interpolators.LINEAR;
 
 import android.view.MotionEvent;
-
 import androidx.annotation.Nullable;
-
-import com.android.blisslauncher.Launcher;
-import com.android.blisslauncher.LauncherState;
-import com.android.blisslauncher.LauncherStateManager;
-import com.android.blisslauncher.Utilities;
-import com.android.blisslauncher.anim.AnimatorSetBuilder;
-import com.android.blisslauncher.touch.AbstractStateChangeTouchController;
-import com.android.blisslauncher.touch.SwipeDetector;
-import com.android.blisslauncher.userevent.nano.LauncherLogProto;
-import com.android.blisslauncher.userevent.nano.LauncherLogProto.Action.Direction;
-import foundation.e.quickstep.OverviewInteractionState;
-import foundation.e.quickstep.SysUINavigationMode;
-import foundation.e.quickstep.SysUINavigationMode.Mode;
-import foundation.e.quickstep.views.RecentsView;
-import foundation.e.quickstep.views.TaskView;
+import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.core.touch.AbstractStateChangeTouchController;
+import foundation.e.blisslauncher.core.touch.SwipeDetector;
+import foundation.e.blisslauncher.features.test.LauncherState;
+import foundation.e.blisslauncher.features.test.LauncherStateManager;
+import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
+import foundation.e.blisslauncher.quickstep.OverviewInteractionState;
+import foundation.e.blisslauncher.quickstep.SysUINavigationMode;
+import foundation.e.blisslauncher.quickstep.SysUINavigationMode.Mode;
+import foundation.e.blisslauncher.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.quickstep.views.TaskView;
 
 /**
  * Handles quick switching to a recent task from the home screen.
@@ -58,11 +53,11 @@ public class QuickSwitchTouchController extends AbstractStateChangeTouchControll
     private @Nullable
     TaskView mTaskToLaunch;
 
-    public QuickSwitchTouchController(Launcher launcher) {
+    public QuickSwitchTouchController(TestActivity launcher) {
         this(launcher, SwipeDetector.HORIZONTAL);
     }
 
-    protected QuickSwitchTouchController(Launcher l, SwipeDetector.Direction dir) {
+    protected QuickSwitchTouchController(TestActivity l, SwipeDetector.Direction dir) {
         super(l, dir);
     }
 
@@ -71,7 +66,7 @@ public class QuickSwitchTouchController extends AbstractStateChangeTouchControll
         if (mCurrentAnimation != null) {
             return true;
         }
-        if (!mLauncher.isInState(LauncherState.NORMAL)) {
+        if (!mLauncher.isInState(NORMAL)) {
             return false;
         }
         if ((ev.getEdgeFlags() & Utilities.EDGE_NAV_BAR) == 0) {
@@ -92,13 +87,12 @@ public class QuickSwitchTouchController extends AbstractStateChangeTouchControll
     @Override
     public void onDragStart(boolean start) {
         super.onDragStart(start);
-        mStartContainerType = LauncherLogProto.ContainerType.NAVBAR;
         mTaskToLaunch = mLauncher.<RecentsView>getOverviewPanel().getTaskViewAt(0);
     }
 
     @Override
-    protected void onSwipeInteractionCompleted(LauncherState targetState, int logAction) {
-        super.onSwipeInteractionCompleted(targetState, logAction);
+    protected void onSwipeInteractionCompleted(LauncherState targetState) {
+        super.onSwipeInteractionCompleted(targetState);
         mTaskToLaunch = null;
     }
 
@@ -117,7 +111,6 @@ public class QuickSwitchTouchController extends AbstractStateChangeTouchControll
 
     private void setupInterpolators(AnimatorSetBuilder animatorSetBuilder) {
         animatorSetBuilder.setInterpolator(ANIM_WORKSPACE_FADE, DEACCEL_2);
-        animatorSetBuilder.setInterpolator(ANIM_ALL_APPS_FADE, DEACCEL_2);
         if (SysUINavigationMode.getMode(mLauncher) == Mode.NO_BUTTON) {
             // Overview lives to the left of workspace, so translate down later than over
             animatorSetBuilder.setInterpolator(ANIM_WORKSPACE_TRANSLATE, ACCEL_2);
@@ -149,16 +142,6 @@ public class QuickSwitchTouchController extends AbstractStateChangeTouchControll
 
     @Override
     protected float getShiftRange() {
-        return mLauncher.getDeviceProfile().widthPx / 2f;
-    }
-
-    @Override
-    protected int getLogContainerTypeForNormalState() {
-        return LauncherLogProto.ContainerType.NAVBAR;
-    }
-
-    @Override
-    protected int getDirectionForLog() {
-        return Utilities.isRtl(mLauncher.getResources()) ? Direction.LEFT : Direction.RIGHT;
+        return mLauncher.getDeviceProfile().getWidthPx() / 2f;
     }
 }

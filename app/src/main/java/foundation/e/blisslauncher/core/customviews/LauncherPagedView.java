@@ -1,5 +1,6 @@
 package foundation.e.blisslauncher.core.customviews;
 
+import static foundation.e.blisslauncher.core.utils.Constants.ITEM_TYPE_APPLICATION;
 import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
 import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SPRING_LOADED_TRANSITION_MS;
 
@@ -17,6 +18,8 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.UserHandle;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -547,7 +550,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 false,
                 launcherItem.container != Constants.CONTAINER_HOTSEAT
             );
-        } else if (launcherItem.itemType == Constants.ITEM_TYPE_APPLICATION) {
+        } else if (launcherItem.itemType == ITEM_TYPE_APPLICATION) {
             ApplicationItem applicationItem = (ApplicationItem) launcherItem;
             iconView.applyBadge(
                 false,
@@ -1957,7 +1960,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         boolean aboveShortcut = (dropOverView.getTag() instanceof ShortcutItem || dropOverView
             .getTag() instanceof ApplicationItem);
         boolean willBecomeShortcut =
-            (info.itemType == Constants.ITEM_TYPE_APPLICATION ||
+            (info.itemType == ITEM_TYPE_APPLICATION ||
                 info.itemType == Constants.ITEM_TYPE_SHORTCUT);
 
         return (aboveShortcut && willBecomeShortcut);
@@ -2086,6 +2089,106 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         stepAnimator.setDuration(config.duration);
         stepAnimator.addListener(listener);
         builder.play(stepAnimator);
+    }
+
+    /**
+     * Similar to {@link #getFirstMatch} but optimized to finding a suitable view for the app close
+     * animation.
+     *
+     * @param packageName The package name of the app to match.
+     * @param user The user of the app to match.
+     */
+    public View getFirstMatchForAppClose(String packageName, UserHandle user) {
+        final int curPage = getCurrentPage();
+        final CellLayout currentPage = (CellLayout) getPageAt(curPage);
+        final LauncherPagedView.ItemOperator packageAndUser = (LauncherItem info, View view) -> info != null
+            && info.getTargetComponent() != null
+            && TextUtils.equals(info.getTargetComponent().getPackageName(), packageName)
+            && info.user.equals(user);
+        final LauncherPagedView.ItemOperator packageAndUserAndApp = (LauncherItem info, View view) ->
+            packageAndUser.evaluate(info, view) && info.itemType == ITEM_TYPE_APPLICATION;
+
+        return getFirstMatch(new CellLayout[] { mLauncher.getHotseat(), currentPage },
+            packageAndUserAndApp);
+    }
+
+    /**
+     * @param cellLayouts List of CellLayouts to scan, in order of preference.
+     * @param operators List of operators, in order starting from best matching operator.
+     * @return
+     */
+    private View getFirstMatch(CellLayout[] cellLayouts, final ItemOperator... operators) {
+        // This array is filled with the first match for each operator.
+        final View[] matches = new View[operators.length];
+        // For efficiency, the outer loop should be CellLayout.
+        for (CellLayout cellLayout : cellLayouts) {
+            mapOverCellLayout(MAP_NO_RECURSE, cellLayout, (info, v) -> {
+                for (int i = 0; i < operators.length; ++i) {
+                    if (matches[i] == null && operators[i].evaluate(info, v)) {
+                        matches[i] = v;
+                        if (i == 0) {
+                            // We can return since this is the best match possible.
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            });
+            if (matches[0] != null) {
+                break;
+            }
+        }
+        for (View match : matches) {
+            if (match != null) {
+                return match;
+            }
+        }
+        return null;
+    }
+
+    private boolean mapOverCellLayout(boolean recurse, CellLayout layout, ItemOperator op) {
+        // TODO(b/128460496) Potential race condition where layout is not yet loaded
+        if (layout == null) {
+            return false;
+        }
+        // map over all the shortcuts on the workspace
+        final int itemCount = layout.getChildCount();
+        for (int itemIdx = 0; itemIdx < itemCount; itemIdx++) {
+            View item = layout.getChildAt(itemIdx);
+            LauncherItem info = (LauncherItem) item.getTag();
+            if (recurse && info instanceof FolderItem) {
+                FolderItem folder = (FolderItem) info;
+                List<LauncherItem> folderChildren = folder.items;
+                // map over all the children in the folder
+                final int childCount = folder.items.size();
+                for (int childIdx = 0; childIdx < childCount; childIdx++) {
+                    LauncherItem childItem = folderChildren.get(childIdx);
+                    if (op.evaluate(info, item)) {
+                        return true;
+                    }
+                }
+            } else {
+                if (op.evaluate(info, item)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public Hotseat getHotseat() {
+        return mLauncher.getHotseat();
+    }
+
+    public interface ItemOperator {
+        /**
+         * Process the next itemInfo, possibly with side-effect on the next item.
+         *
+         * @param info info for the shortcut
+         * @param view view for the shortcut
+         * @return true if done, false to continue the map
+         */
+        boolean evaluate(LauncherItem info, View view);
     }
 
     class FolderCreationAlarmListener implements OnAlarmListener {

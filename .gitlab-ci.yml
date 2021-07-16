@@ -15,7 +15,7 @@ cache:
 build:
   stage: build
   script:
-  - ./gradlew build
+  - ./gradlew assmebleApiQ
   artifacts:
     paths:
     - app/build/outputs/apk

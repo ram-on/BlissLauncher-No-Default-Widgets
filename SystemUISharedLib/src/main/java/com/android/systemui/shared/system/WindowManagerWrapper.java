@@ -30,7 +30,6 @@ import android.util.Log;
 import android.view.IPinnedStackListener;
 import android.view.WindowManager;
 import android.view.WindowManagerGlobal;
-
 import com.android.systemui.shared.QuickstepCompat;
 import com.android.systemui.shared.recents.view.AppTransitionAnimationSpecsFuture;
 import com.android.systemui.shared.recents.view.RecentsTransition;

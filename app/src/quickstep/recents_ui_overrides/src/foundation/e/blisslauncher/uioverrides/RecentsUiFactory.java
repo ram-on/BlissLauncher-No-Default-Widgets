@@ -18,37 +18,29 @@ package foundation.e.blisslauncher.uioverrides;
 
 import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
 import static foundation.e.blisslauncher.features.test.LauncherState.OVERVIEW;
-import static foundation.e.quickstep.SysUINavigationMode.Mode.NO_BUTTON;
+import static foundation.e.blisslauncher.quickstep.SysUINavigationMode.Mode.NO_BUTTON;
 
 import android.content.Context;
 import android.graphics.Rect;
 import android.view.Gravity;
-
-import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
-import foundation.e.blisslauncher.uioverrides.touchcontrollers.FlingAndHoldTouchController;
-
+import com.android.systemui.shared.system.WindowManagerWrapper;
 import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.LauncherStateManager;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.TouchController;
 import foundation.e.blisslauncher.features.test.UiThreadHelper;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
+import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
 import foundation.e.blisslauncher.features.test.graphics.RotationMode;
-import foundation.e.blisslauncher.uioverrides.touchcontrollers.LandscapeEdgeSwipeController;
+import foundation.e.blisslauncher.quickstep.SysUINavigationMode;
+import foundation.e.blisslauncher.quickstep.SysUINavigationMode.Mode;
+import foundation.e.blisslauncher.quickstep.TouchInteractionService;
+import foundation.e.blisslauncher.quickstep.views.RecentsView;
+import foundation.e.blisslauncher.uioverrides.touchcontrollers.FlingAndHoldTouchController;
 import foundation.e.blisslauncher.uioverrides.touchcontrollers.NavBarToHomeTouchController;
-import foundation.e.blisslauncher.uioverrides.touchcontrollers.OverviewToAllAppsTouchController;
+import foundation.e.blisslauncher.uioverrides.touchcontrollers.PortraitStatesTouchController;
 import foundation.e.blisslauncher.uioverrides.touchcontrollers.QuickSwitchTouchController;
 import foundation.e.blisslauncher.uioverrides.touchcontrollers.TaskViewTouchController;
-import foundation.e.blisslauncher.uioverrides.touchcontrollers.TransposedQuickSwitchTouchController;
-
-import foundation.e.blisslauncher.uioverrides.touchcontrollers.PortraitStatesTouchController;
-import foundation.e.quickstep.SysUINavigationMode;
-import foundation.e.quickstep.SysUINavigationMode.Mode;
-import foundation.e.quickstep.views.RecentsView;
-import foundation.e.quickstep.TouchInteractionService;
-
-import com.android.systemui.shared.system.WindowManagerWrapper;
-
 import java.util.ArrayList;
 
 /**
@@ -57,7 +49,7 @@ import java.util.ArrayList;
 public abstract class RecentsUiFactory {
 
     public static final boolean GO_LOW_RAM_RECENTS_ENABLED = false;
-    private static final AsyncCommand SET_SHELF_HEIGHT_CMD = (visible, height) ->
+    private static final UiThreadHelper.AsyncCommand SET_SHELF_HEIGHT_CMD = (visible, height) ->
             WindowManagerWrapper.getInstance().setShelfHeight(visible != 0, height);
 
     public static RotationMode ROTATION_LANDSCAPE = new RotationMode(-90) {
@@ -147,19 +139,11 @@ public abstract class RecentsUiFactory {
             list.add(new NavBarToHomeTouchController(launcher));
             list.add(new FlingAndHoldTouchController(launcher));
         } else {
-            if (launcher.getDeviceProfile().isVerticalBarLayout()) {
-                list.add(new OverviewToAllAppsTouchController(launcher));
-                list.add(new LandscapeEdgeSwipeController(launcher));
-                if (mode.hasGestures) {
-                    list.add(new TransposedQuickSwitchTouchController(launcher));
-                }
-            } else {
                 list.add(new PortraitStatesTouchController(launcher,
                         mode.hasGestures /* allowDragToOverview */));
                 if (mode.hasGestures) {
                     list.add(new QuickSwitchTouchController(launcher));
                 }
-            }
         }
 
         list.add(new LauncherTaskViewController(launcher));
@@ -193,7 +177,7 @@ public abstract class RecentsUiFactory {
         VariantDeviceProfile profile = launcher.getDeviceProfile();
         boolean visible = (state == NORMAL || state == OVERVIEW) && launcher.isUserActive();
         UiThreadHelper.runAsyncCommand(launcher, SET_SHELF_HEIGHT_CMD,
-                visible ? 1 : 0, profile.hotseatBarSizePx);
+                visible ? 1 : 0, profile.getHotseatBarSizePx());
 
         if (state == NORMAL) {
             launcher.<RecentsView>getOverviewPanel().setSwipeDownShouldLaunchApp(false);

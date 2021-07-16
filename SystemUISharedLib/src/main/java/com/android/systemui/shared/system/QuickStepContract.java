@@ -26,9 +26,7 @@ import android.content.res.Resources;
 import android.os.Build;
 import android.view.ViewConfiguration;
 import android.view.WindowManagerPolicyConstants;
-
 import com.android.internal.policy.ScreenDecorationsUtils;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.StringJoiner;

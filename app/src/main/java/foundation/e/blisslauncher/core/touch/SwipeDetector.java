@@ -15,19 +15,17 @@
  */
 package foundation.e.blisslauncher.core.touch;
 
+import static android.view.MotionEvent.INVALID_POINTER_ID;
+
 import android.content.Context;
 import android.graphics.PointF;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-
 import foundation.e.blisslauncher.core.Utilities;
-
-import static android.view.MotionEvent.INVALID_POINTER_ID;
 
 /**
  * One dimensional scroll/drag/swipe gesture detector.

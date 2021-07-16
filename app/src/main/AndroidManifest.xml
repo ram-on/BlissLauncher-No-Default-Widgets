@@ -171,7 +171,7 @@
             android:value="true" />
 
         <service
-            android:name=".features.quickstep.TouchInteractionService"
+            android:name=".quickstep.TouchInteractionService"
             android:permission="android.permission.STATUS_BAR_SERVICE"
             android:directBootAware="true">
             <intent-filter>
@@ -181,7 +181,7 @@
 
         <!-- STOPSHIP: Change exported to false once all the integration is complete.
         It is set to true so that the activity can be started from command line -->
-        <activity android:name=".features.quickstep.RecentsActivity"
+        <activity android:name=".quickstep.RecentsActivity"
             android:exported="true"
             android:excludeFromRecents="true"
             android:launchMode="singleTask"

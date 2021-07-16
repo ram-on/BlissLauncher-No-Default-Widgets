@@ -24,24 +24,19 @@ import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.view.MotionEvent;
 import android.view.animation.Interpolator;
-
-import foundation.e.blisslauncher.features.quickstep.AbstractFloatingView;
+import foundation.e.blisslauncher.core.touch.AbstractStateChangeTouchController;
+import foundation.e.blisslauncher.core.touch.SwipeDetector;
 import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.LauncherStateManager;
+import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.anim.AnimatorPlaybackController;
 import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
 import foundation.e.blisslauncher.features.test.anim.Interpolators;
-import foundation.e.quickstep.OverviewInteractionState;
-import foundation.e.quickstep.RecentsModel;
-
+import foundation.e.blisslauncher.quickstep.OverviewInteractionState;
+import foundation.e.blisslauncher.quickstep.RecentsModel;
+import foundation.e.blisslauncher.quickstep.util.LayoutUtils;
 import foundation.e.blisslauncher.uioverrides.states.OverviewState;
-
-import foundation.e.quickstep.util.LayoutUtils;
-
-import foundation.e.blisslauncher.core.touch.AbstractStateChangeTouchController;
-import foundation.e.blisslauncher.core.touch.SwipeDetector;
-import foundation.e.blisslauncher.features.test.TestActivity;
 
 /**
  * Touch controller for handling various state transitions in portrait UI.
@@ -100,9 +95,6 @@ public class PortraitStatesTouchController extends AbstractStateChangeTouchContr
             if (!interceptAnywhere && !isTouchOverHotseat(mLauncher, ev)) {
                 return false;
             }
-        }
-        if (AbstractFloatingView.getTopOpenViewWithType(mLauncher, TYPE_ACCESSIBLE) != null) {
-            return false;
         }
         return true;
     }

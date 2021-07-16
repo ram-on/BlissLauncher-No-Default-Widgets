@@ -15,15 +15,15 @@
  */
 package foundation.e.blisslauncher.uioverrides.states;
 
-import foundation.e.blisslauncher.R;
-import foundation.e.blisslauncher.features.test.LauncherState;
-import foundation.e.blisslauncher.features.test.TestActivity;
-import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
-
 import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_OVERVIEW_FADE;
 import static foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder.ANIM_OVERVIEW_TRANSLATE_X;
 import static foundation.e.blisslauncher.features.test.anim.Interpolators.INSTANT;
 import static foundation.e.blisslauncher.features.test.anim.Interpolators.OVERSHOOT_1_7;
+
+import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.features.test.LauncherState;
+import foundation.e.blisslauncher.features.test.TestActivity;
+import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
 
 public class OverviewPeekState extends OverviewState {
     public OverviewPeekState(int id) {

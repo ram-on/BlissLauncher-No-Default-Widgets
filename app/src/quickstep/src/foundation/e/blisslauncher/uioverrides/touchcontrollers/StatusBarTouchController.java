@@ -22,17 +22,14 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
-
+import com.android.systemui.shared.recents.ISystemUiProxy;
+import foundation.e.blisslauncher.core.customviews.AbstractFloatingView;
 import foundation.e.blisslauncher.core.touch.TouchEventTranslator;
-import foundation.e.blisslauncher.features.quickstep.AbstractFloatingView;
 import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.TouchController;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
-import foundation.e.quickstep.RecentsModel;
-import com.android.systemui.shared.recents.ISystemUiProxy;
-
-import java.io.PrintWriter;
+import foundation.e.blisslauncher.quickstep.RecentsModel;
 
 /**
  * TouchController for handling touch events that get sent to the StatusBar. Once the

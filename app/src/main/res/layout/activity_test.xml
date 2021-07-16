@@ -23,11 +23,6 @@
             android:layout_gravity="center"
             app:pageIndicator="@+id/page_indicator" />
 
-        <include
-            android:id="@+id/overview_panel_container"
-            layout="@layout/overview_panel"
-            android:visibility="gone" />
-
         <foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots
             android:id="@+id/page_indicator"
             android:layout_width="match_parent"
@@ -37,15 +32,14 @@
         <foundation.e.blisslauncher.features.launcher.Hotseat
             android:id="@+id/hotseat"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            launcher:containerType="hotseat"
+            android:layout_gravity="center" />
 
-            <foundation.e.blisslauncher.features.test.CellLayout
-                android:id="@+id/dockLayout"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                launcher:containerType="hotseat"
-                android:layout_gravity="center" />
-        </foundation.e.blisslauncher.features.launcher.Hotseat>
+        <include
+            android:id="@+id/overview_panel"
+            layout="@layout/overview_panel"
+            android:visibility="gone" />
 
     </foundation.e.blisslauncher.features.test.dragndrop.DragLayer>
 </foundation.e.blisslauncher.features.test.LauncherRootView>
