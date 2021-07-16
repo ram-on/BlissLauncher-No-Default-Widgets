@@ -15,6 +15,8 @@
  */
 package foundation.e.blisslauncher.quickstep;
 
+import static com.android.systemui.shared.system.ActivityManagerWrapper.CLOSE_SYSTEM_WINDOWS_REASON_RECENTS;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -31,8 +33,6 @@ import foundation.e.blisslauncher.features.test.BaseDraggingActivity;
 import foundation.e.blisslauncher.quickstep.ActivityControlHelper.ActivityInitListener;
 import foundation.e.blisslauncher.quickstep.views.RecentsView;
 import foundation.e.blisslauncher.quickstep.views.TaskView;
-
-import static com.android.systemui.shared.system.ActivityManagerWrapper.CLOSE_SYSTEM_WINDOWS_REASON_RECENTS;
 
 /**
  * Helper class to handle various atomic commands for switching between Overview.

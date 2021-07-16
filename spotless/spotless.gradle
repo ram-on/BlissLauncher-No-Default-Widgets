@@ -1,0 +1,17 @@
+apply plugin: 'com.diffplug.spotless'
+spotless {
+    java {
+        target '**/*.java'
+        importOrder() // standard import order
+        removeUnusedImports() // removes any unused imports
+    }
+    kotlin {
+        target "**/*.kt"
+        ktlint()
+    }
+    kotlinGradle {
+        // same as kotlin, but for .gradle.kts files (defaults to '*.gradle.kts')
+        target '*.gradle.kts', 'additionalScripts/*.gradle.kts'
+        ktlint()
+    }
+}
