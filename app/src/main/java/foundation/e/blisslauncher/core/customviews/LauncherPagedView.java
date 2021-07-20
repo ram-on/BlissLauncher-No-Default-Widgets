@@ -906,7 +906,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
     }
 
-    void moveToDefaultScreen() {
+   public void moveToDefaultScreen() {
         int page = DEFAULT_PAGE;
         if (getNextPage() != page) {
             snapToPage(page);

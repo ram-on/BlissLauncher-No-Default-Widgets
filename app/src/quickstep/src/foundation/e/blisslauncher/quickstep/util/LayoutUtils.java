@@ -82,7 +82,7 @@ public class LayoutUtils {
             /*paddingHorz = res.getDimension(dp.isVerticalBarLayout()
                     ? R.dimen.landscape_task_card_horz_space
                     : R.dimen.portrait_task_card_horz_space);*/
-            paddingHorz = R.dimen.portrait_task_card_horz_space;
+            paddingHorz = res.getDimension(R.dimen.portrait_task_card_horz_space);
         }
 
         float topIconMargin = res.getDimension(R.dimen.task_thumbnail_top_margin);

@@ -350,13 +350,15 @@ class VariantDeviceProfile(
         )
     }
 
-    fun updateInsets(windowInsets: WindowInsets) {
-        insets.set(
-            Rect(
-                windowInsets.systemWindowInsetLeft, windowInsets.systemWindowInsetTop,
-                windowInsets.systemWindowInsetRight, windowInsets.systemWindowInsetBottom
+    fun updateInsets(windowInsets: WindowInsets?) {
+        windowInsets?.let {
+            insets.set(
+                Rect(
+                    it.systemWindowInsetLeft, it.systemWindowInsetTop,
+                    it.systemWindowInsetRight, it.systemWindowInsetBottom
+                )
             )
-        )
+        }
         updateWorkspacePadding()
     }
 

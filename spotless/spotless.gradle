@@ -7,7 +7,7 @@ spotless {
     }
     kotlin {
         target "**/*.kt"
-        ktlint()
+        ktlint().userData([disabled_rules:"no-wildcard-imports"])
     }
     kotlinGradle {
         // same as kotlin, but for .gradle.kts files (defaults to '*.gradle.kts')
