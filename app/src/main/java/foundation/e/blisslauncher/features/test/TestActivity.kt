@@ -165,12 +165,12 @@ class TestActivity : BaseDraggingActivity() {
         val diff = newConfig.diff(mOldConfig)
 
         if (diff and ActivityInfo.CONFIG_LOCALE != 0) {
-            //Folder.setLocaleDependentFields(resources, true /* force */)
+            // Folder.setLocaleDependentFields(resources, true /* force */)
             // TODO: Update folder here.
         }
 
         if (diff and (ActivityInfo.CONFIG_ORIENTATION or ActivityInfo.CONFIG_SCREEN_SIZE) != 0) {
-            //onIdpChanged(mDeviceProfile.inv)
+            // onIdpChanged(mDeviceProfile.inv)
             // TODO: update device profile here.
         }
 
@@ -367,8 +367,8 @@ class TestActivity : BaseDraggingActivity() {
             != Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT)
 
         // Check this condition before handling isActionMain, as this will get reset.
-        val shouldMoveToDefaultScreen = (alreadyOnHome && isInState(NORMAL)
-            && AbstractFloatingView.getTopOpenView(this) == null)
+        val shouldMoveToDefaultScreen = (alreadyOnHome && isInState(NORMAL) &&
+            AbstractFloatingView.getTopOpenView(this) == null)
         val isActionMain = Intent.ACTION_MAIN == intent!!.action
         val internalStateHandled = InternalStateHandler
             .handleNewIntent(this, intent, isStarted)
