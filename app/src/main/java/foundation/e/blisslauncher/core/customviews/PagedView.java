@@ -87,7 +87,7 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
     @ViewDebug.ExportedProperty(category = "launcher")
     protected int mNextPage = INVALID_PAGE;
     protected int mMaxScroll;
-    private int mMinScroll;
+    protected int mMinScroll;
     public OverScroller mScroller;
     private Interpolator mDefaultInterpolator;
     private VelocityTracker mVelocityTracker;
@@ -118,6 +118,8 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
     protected int mActivePointerId = INVALID_POINTER;
 
     protected boolean mIsPageInTransition = false;
+
+    protected float mSpringOverScrollX;
 
     protected boolean mWasInOverscroll = false;
 
@@ -360,6 +362,11 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
 
         boolean isXBeforeFirstPage = mIsRtl ? (x > mMaxScroll) : (x < 0);
         boolean isXAfterLastPage = mIsRtl ? (x < 0) : (x > mMaxScroll);
+
+        if (!isXBeforeFirstPage && !isXAfterLastPage) {
+            mSpringOverScrollX = 0;
+        }
+
         if (isXBeforeFirstPage) {
             super.scrollTo(mIsRtl ? mMaxScroll : 0, y);
             if (mAllowOverScroll) {
@@ -367,7 +374,7 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
                 if (mIsRtl) {
                     overScroll(x - mMaxScroll);
                 } else {
-                    overScroll(x);
+                    overScroll(x - mMinScroll);
                 }
             }
         } else if (isXAfterLastPage) {
@@ -375,7 +382,7 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
             if (mAllowOverScroll) {
                 mWasInOverscroll = true;
                 if (mIsRtl) {
-                    overScroll(x);
+                    overScroll(x - mMinScroll);
                 } else {
                     overScroll(x - mMaxScroll);
                 }
@@ -385,7 +392,6 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
                 overScroll(0);
                 mWasInOverscroll = false;
             }
-            mOverScrollX = x;
             super.scrollTo(x, y);
         }
     }
@@ -1004,9 +1010,24 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
         invalidate();
     }
 
-    protected void overScroll(float amount) {
-        dampedOverScroll(amount);
-    }
+    protected void overScroll(int amount) {
+        mSpringOverScrollX = amount;
+        if (mScroller.isSpringing()) {
+            invalidate();
+            return;
+        }
+
+        if (amount == 0) return;
+
+        if (mFreeScroll && !mScroller.isFinished()) {
+            if (amount < 0) {
+                super.scrollTo(mMinScroll + amount, getScrollY());
+            } else {
+                super.scrollTo(mMaxScroll + amount, getScrollY());
+            }
+        } else {
+            dampedOverScroll(amount);
+        }    }
 
     protected void enableFreeScroll(boolean settleOnPageInFreeScroll) {
         setEnableFreeScroll(true);

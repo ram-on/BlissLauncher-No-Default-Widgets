@@ -24,6 +24,7 @@ import foundation.e.blisslauncher.features.test.RotationHelper.REQUEST_NONE
 import foundation.e.blisslauncher.features.test.dragndrop.DragController
 import foundation.e.blisslauncher.features.test.dragndrop.DragLayer
 import foundation.e.blisslauncher.features.test.graphics.RotationMode
+import foundation.e.blisslauncher.uioverrides.OverlayCallbackImpl
 import foundation.e.blisslauncher.uioverrides.UiFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -135,6 +136,7 @@ class TestActivity : BaseDraggingActivity() {
             }
         })
         createOrUpdateIconGrid()
+        setLauncherOverlay(OverlayCallbackImpl(this))
     }
 
     /**
@@ -351,6 +353,14 @@ class TestActivity : BaseDraggingActivity() {
         mOnResumeCallback = callback
     }
 
+    /**
+     * Call this after onCreate to set or clear overlay.
+     */
+    fun setLauncherOverlay(overlay: LauncherOverlay) {
+        overlay.setOverlayCallbacks(LauncherOverlayCallbacksImpl())
+        workspace.setLauncherOverlay(overlay)
+    }
+
     fun isInState(state: LauncherState): Boolean {
         return mStateManager.getState() === state
     }
@@ -445,5 +455,41 @@ class TestActivity : BaseDraggingActivity() {
      */
     interface OnResumeCallback {
         fun onLauncherResume()
+    }
+
+    interface LauncherOverlay {
+        /**
+         * Touch interaction leading to overscroll has begun
+         */
+        fun onScrollInteractionBegin()
+
+        /**
+         * Touch interaction related to overscroll has ended
+         */
+        fun onScrollInteractionEnd()
+
+        /**
+         * Scroll progress, between 0 and 100, when the user scrolls beyond the leftmost
+         * screen (or in the case of RTL, the rightmost screen).
+         */
+        fun onScrollChange(progress: Float, rtl: Boolean)
+
+        /**
+         * Called when the launcher is ready to use the overlay
+         * @param callbacks A set of callbacks provided by Launcher in relation to the overlay
+         */
+        fun setOverlayCallbacks(callbacks: LauncherOverlayCallbacks?)
+    }
+
+    interface LauncherOverlayCallbacks {
+        fun onScrollChanged(progress: Float)
+    }
+
+    inner class LauncherOverlayCallbacksImpl : LauncherOverlayCallbacks {
+        override fun onScrollChanged(progress: Float) {
+            if (workspace != null) {
+                workspace.onOverlayScrollChanged(progress)
+            }
+        }
     }
 }

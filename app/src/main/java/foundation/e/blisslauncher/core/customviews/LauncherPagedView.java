@@ -3,7 +3,9 @@ package foundation.e.blisslauncher.core.customviews;
 import static foundation.e.blisslauncher.core.utils.Constants.ITEM_TYPE_APPLICATION;
 import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
 import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SPRING_LOADED_TRANSITION_MS;
+import static foundation.e.blisslauncher.features.test.dragndrop.DragLayer.ALPHA_INDEX_OVERLAY;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.LayoutTransition;
@@ -12,14 +14,21 @@ import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.WallpaperManager;
+import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.location.LocationManager;
 import android.os.UserHandle;
+import android.provider.Settings;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -29,22 +38,38 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowInsets;
+import android.view.inputmethod.EditorInfo;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.Toast;
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.jakewharton.rxbinding3.widget.RxTextView;
+
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.Preferences;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots;
+import foundation.e.blisslauncher.core.database.DatabaseManager;
 import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.FolderItem;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.core.database.model.ShortcutItem;
+import foundation.e.blisslauncher.core.executors.AppExecutors;
 import foundation.e.blisslauncher.core.touch.ItemClickHandler;
 import foundation.e.blisslauncher.core.touch.ItemLongClickListener;
 import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.GraphicsUtil;
 import foundation.e.blisslauncher.core.utils.LongArrayMap;
 import foundation.e.blisslauncher.features.launcher.Hotseat;
+import foundation.e.blisslauncher.features.launcher.SearchInputDisposableObserver;
+import foundation.e.blisslauncher.features.suggestions.AutoCompleteAdapter;
+import foundation.e.blisslauncher.features.suggestions.SuggestionsResult;
 import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.IconTextView;
@@ -55,6 +80,7 @@ import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.WorkspaceStateTransitionAnimation;
 import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
+import foundation.e.blisslauncher.features.test.anim.Interpolators;
 import foundation.e.blisslauncher.features.test.dragndrop.DragController;
 import foundation.e.blisslauncher.features.test.dragndrop.DragOptions;
 import foundation.e.blisslauncher.features.test.dragndrop.DragSource;
@@ -62,8 +88,17 @@ import foundation.e.blisslauncher.features.test.dragndrop.DragView;
 import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
+import foundation.e.blisslauncher.features.widgets.WidgetViewBuilder;
+import foundation.e.blisslauncher.features.widgets.WidgetsActivity;
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
@@ -75,8 +110,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private static final int SNAP_OFF_EMPTY_SCREEN_DURATION = 400;
     private static final int FADE_EMPTY_SCREEN_DURATION = 150;
 
-    /** The value that {@link #mTransitionProgress} must be greater than for
-     * {@link #isFinishedSwitchingState()} ()} to return true. */
+    /**
+     * The value that {@link #mTransitionProgress} must be greater than for
+     * {@link #isFinishedSwitchingState()} ()} to return true.
+     */
     private static final float FINISHED_SWITCHING_STATE_TRANSITION_PROGRESS = 0.5f;
 
     private static final boolean MAP_NO_RECURSE = false;
@@ -150,9 +187,15 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private boolean mForceDrawAdjacentPages;
     private WorkspaceStateTransitionAnimation mStateTransitionAnimation;
 
+    // State related to Launcher Overlay
+    TestActivity.LauncherOverlay mLauncherOverlay;
+    boolean mScrollInteractionBegan;
+    boolean mStartedSendingScrollEvents;
     float mLastOverlayScroll = 0;
     boolean mOverlayShown = false;
     private Runnable mOnOverlayHiddenCallback;
+    // Total over scrollX in the overlay direction.
+    private float mOverlayTranslation;
 
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -906,7 +949,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
     }
 
-   public void moveToDefaultScreen() {
+    public void moveToDefaultScreen() {
         int page = DEFAULT_PAGE;
         if (getNextPage() != page) {
             snapToPage(page);
@@ -988,21 +1031,47 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         updateChildrenLayersEnabled();
     }
 
+    protected void onScrollInteractionBegin() {
+        super.onScrollInteractionBegin();
+        mScrollInteractionBegan = true;
+    }
+
+    protected void onScrollInteractionEnd() {
+        super.onScrollInteractionEnd();
+        mScrollInteractionBegan = false;
+        if (mStartedSendingScrollEvents) {
+            mStartedSendingScrollEvents = false;
+            mLauncherOverlay.onScrollInteractionEnd();
+        }
+    }
+
+    public void setLauncherOverlay(TestActivity.LauncherOverlay overlay) {
+        mLauncherOverlay = overlay;
+        // A new overlay has been set. Reset event tracking
+        mStartedSendingScrollEvents = false;
+        onOverlayScrollChanged(0);
+    }
+
+    private boolean isScrollingOverlay() {
+        return mLauncherOverlay != null &&
+            ((mIsRtl && getUnboundedScrollX() > mMaxScroll)
+                || (!mIsRtl && getUnboundedScrollX() <mMinScroll));
+    }
+
     @Override
     protected void snapToDestination() {
         // If we're overscrolling the overlay, we make sure to immediately reset the PagedView
         // to it's baseline position instead of letting the overscroll settle. The overlay handles
         // it's own settling, and every gesture to the overlay should be self-contained and start
         // from 0, so we zero it out here.
-        /*if (isScrollingOverlay()) {
+        if (isScrollingOverlay()) {
             // We reset mWasInOverscroll so that PagedView doesn't zero out the overscroll
             // interaction when we call snapToPageImmediately.
             mWasInOverscroll = false;
             snapToPageImmediately(0);
         } else {
-
-        }*/
-        super.snapToDestination();
+            super.snapToDestination();
+        }
     }
 
     @Override
@@ -1053,6 +1122,38 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (mPageIndicator != null) {
             mPageIndicator.setScroll(getScrollX(), computeMaxScrollX());
         }
+    }
+
+    @Override
+    protected void overScroll(int amount) {
+        boolean shouldScrollOverlay = mLauncherOverlay != null && !mScroller.isSpringing() &&
+            ((amount <= 0 && !mIsRtl) || (amount >= 0 && mIsRtl));
+
+        boolean shouldZeroOverlay = mLauncherOverlay != null && mLastOverlayScroll != 0 &&
+            ((amount >= 0 && !mIsRtl) || (amount <= 0 && mIsRtl));
+
+        if (shouldScrollOverlay) {
+            if (!mStartedSendingScrollEvents && mScrollInteractionBegan) {
+                mStartedSendingScrollEvents = true;
+                mLauncherOverlay.onScrollInteractionBegin();
+            }
+
+            mLastOverlayScroll = Math.abs(((float) amount) / getMeasuredWidth());
+            mLauncherOverlay.onScrollChange(mLastOverlayScroll, mIsRtl);
+        } else {
+            dampedOverScroll(amount);
+        }
+
+        if (shouldZeroOverlay) {
+            mLauncherOverlay.onScrollChange(0, mIsRtl);
+        }
+    }
+
+    @Override
+    protected boolean shouldFlingForVelocity(int velocityX) {
+        // When the overlay is moving, the fling or settle transition is controlled by the overlay.
+        return Float.compare(Math.abs(mOverlayTranslation), 0) == 0 &&
+            super.shouldFlingForVelocity(velocityX);
     }
 
     @Override
@@ -1224,7 +1325,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                             if (tryRunOverlayCallback() && observer.isAlive()) {
                                 observer.removeOnWindowFocusChangeListener(this);
                             }
-                        }});
+                        }
+                    });
             }
             return true;
         }
@@ -2096,25 +2198,29 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
      * animation.
      *
      * @param packageName The package name of the app to match.
-     * @param user The user of the app to match.
+     * @param user        The user of the app to match.
      */
     public View getFirstMatchForAppClose(String packageName, UserHandle user) {
         final int curPage = getCurrentPage();
         final CellLayout currentPage = (CellLayout) getPageAt(curPage);
-        final LauncherPagedView.ItemOperator packageAndUser = (LauncherItem info, View view) -> info != null
-            && info.getTargetComponent() != null
-            && TextUtils.equals(info.getTargetComponent().getPackageName(), packageName)
-            && info.user.equals(user);
-        final LauncherPagedView.ItemOperator packageAndUserAndApp = (LauncherItem info, View view) ->
-            packageAndUser.evaluate(info, view) && info.itemType == ITEM_TYPE_APPLICATION;
+        final LauncherPagedView.ItemOperator packageAndUser =
+            (LauncherItem info, View view) -> info != null
+                && info.getTargetComponent() != null
+                && TextUtils.equals(info.getTargetComponent().getPackageName(), packageName)
+                && info.user.equals(user);
+        final LauncherPagedView.ItemOperator packageAndUserAndApp =
+            (LauncherItem info, View view) ->
+                packageAndUser.evaluate(info, view) && info.itemType == ITEM_TYPE_APPLICATION;
 
-        return getFirstMatch(new CellLayout[] { mLauncher.getHotseat(), currentPage },
-            packageAndUserAndApp);
+        return getFirstMatch(
+            new CellLayout[]{mLauncher.getHotseat(), currentPage},
+            packageAndUserAndApp
+        );
     }
 
     /**
      * @param cellLayouts List of CellLayouts to scan, in order of preference.
-     * @param operators List of operators, in order starting from best matching operator.
+     * @param operators   List of operators, in order starting from best matching operator.
      * @return
      */
     private View getFirstMatch(CellLayout[] cellLayouts, final ItemOperator... operators) {
@@ -2174,6 +2280,56 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             }
         }
         return false;
+    }
+
+    /**
+     * The overlay scroll is being controlled locally, just update our overlay effect
+     */
+    public void onOverlayScrollChanged(float scroll) {
+        if (Float.compare(scroll, 1f) == 0) {
+            mOverlayShown = true;
+            // Not announcing the overlay page for accessibility since it announces itself.
+        } else if (Float.compare(scroll, 0f) == 0) {
+            if (Float.compare(mOverlayTranslation, 0f) != 0) {
+                // When arriving to 0 overscroll from non-zero overscroll, announce page for
+                // accessibility since default announcements were disabled while in overscroll
+                // state.
+                // Not doing this if mOverlayShown because in that case the accessibility service
+                // will announce the launcher window description upon regaining focus after
+                // switching from the overlay screen.
+                announcePageForAccessibility();
+            }
+            mOverlayShown = false;
+            tryRunOverlayCallback();
+        }
+
+        float offset = 0f;
+
+        scroll = Math.max(scroll - offset, 0);
+        scroll = Math.min(1, scroll / (1 - offset));
+
+        float alpha = 1 - Interpolators.DEACCEL_3.getInterpolation(scroll);
+        float transX = mLauncher.getDragLayer().getMeasuredWidth() * scroll;
+
+        if (mIsRtl) {
+            transX = -transX;
+        }
+        mOverlayTranslation = transX;
+        Log.d(TAG, "onOverlayScrollChanged() called with: scroll = [" + scroll + "]");
+
+        // TODO(adamcohen): figure out a final effect here. We may need to recommend
+        // different effects based on device performance. On at least one relatively high-end
+        // device I've tried, translating the launcher causes things to get quite laggy.
+        mLauncher.getDragLayer().setTranslationX(transX);
+        mLauncher.getDragLayer().getAlphaProperty(ALPHA_INDEX_OVERLAY).setValue(alpha);
+    }
+
+    protected void announcePageForAccessibility() {
+        // TODO: Enable it when supporting accessibility.
+        /*if (isAccessibilityEnabled(getContext())) {
+            // Notify the user when the page changes
+            announceForAccessibility(getCurrentPageDescription());
+        }*/
     }
 
     public Hotseat getHotseat() {
