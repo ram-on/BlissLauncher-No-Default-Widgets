@@ -17,6 +17,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.features.launcher.LauncherActivity;
+import foundation.e.blisslauncher.features.test.TestActivity;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -30,7 +32,7 @@ public class AutoCompleteAdapter extends
 
     public AutoCompleteAdapter(Context context) {
         super();
-        mOnSuggestionClickListener = (LauncherActivity) context;
+        mOnSuggestionClickListener = (TestActivity) context;
         mInflater = LayoutInflater.from(context);
     }
 

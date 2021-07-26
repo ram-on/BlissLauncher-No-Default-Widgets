@@ -75,7 +75,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
-import com.jakewharton.rxbinding3.widget.RxTextView;
 import foundation.e.blisslauncher.BlissLauncher;
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
@@ -133,7 +132,6 @@ import foundation.e.blisslauncher.features.weather.WeatherSourceListenerService;
 import foundation.e.blisslauncher.features.weather.WeatherUpdateService;
 import foundation.e.blisslauncher.features.weather.WeatherUtils;
 import foundation.e.blisslauncher.features.widgets.WidgetManager;
-import foundation.e.blisslauncher.features.widgets.WidgetViewBuilder;
 import foundation.e.blisslauncher.features.widgets.WidgetsActivity;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
@@ -150,7 +148,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import me.relex.circleindicator.CircleIndicator;
 
 public class LauncherActivity extends AppCompatActivity implements
@@ -456,11 +453,11 @@ public class LauncherActivity extends AppCompatActivity implements
             }
 
             RoundedWidgetView widgetView = widgetManager.dequeAddWidgetView();
-            while (widgetView != null) {
+            /*while (widgetView != null) {
                 widgetView = WidgetViewBuilder.create(this, widgetView);
                 addWidgetToContainer(widgetView);
                 widgetView = widgetManager.dequeAddWidgetView();
-            }
+            }*/
         }
     }
 
@@ -1397,7 +1394,7 @@ public class LauncherActivity extends AppCompatActivity implements
             DividerItemDecoration.VERTICAL
         );
         suggestionRecyclerView.addItemDecoration(dividerItemDecoration);
-        getCompositeDisposable().add(RxTextView.textChanges(mSearchInput)
+        /*getCompositeDisposable().add(RxTextView.textChanges(mSearchInput)
             .debounce(300, TimeUnit.MILLISECONDS)
             .map(CharSequence::toString)
             .distinctUntilChanged()
@@ -1412,7 +1409,7 @@ public class LauncherActivity extends AppCompatActivity implements
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeWith(
-                new SearchInputDisposableObserver(this, suggestionAdapter, widgetsPage)));
+                new SearchInputDisposableObserver(this, suggestionAdapter, widgetsPage)));*/
 
         mSearchInput.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
@@ -1500,7 +1497,7 @@ public class LauncherActivity extends AppCompatActivity implements
                     .subscribeOn(Schedulers.from(AppExecutors.getInstance().diskIO()))
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(height -> {
-                        RoundedWidgetView widgetView = WidgetViewBuilder.create(this, hostView);
+                        RoundedWidgetView widgetView = null;
                         if (height != 0) {
                             int minHeight = hostView.getAppWidgetInfo().minResizeHeight;
                             int maxHeight = mDeviceProfile.availableHeightPx * 3 / 4;
@@ -3180,7 +3177,7 @@ public class LauncherActivity extends AppCompatActivity implements
                                     R.id.search_input);
                                 ImageView clearSuggestions = swipeSearchContainer.findViewById(
                                     R.id.clearSuggestionImageView);
-                                searchDisposableObserver = RxTextView.textChanges(searchEditText)
+                                /*searchDisposableObserver = RxTextView.textChanges(searchEditText)
                                     .debounce(300, TimeUnit.MILLISECONDS)
                                     .map(CharSequence::toString)
                                     .distinctUntilChanged()
@@ -3204,7 +3201,7 @@ public class LauncherActivity extends AppCompatActivity implements
                                             ((RecyclerView) swipeSearchContainer.findViewById(
                                                 R.id.suggestionRecyclerView)).getAdapter(),
                                             swipeSearchContainer
-                                        ));
+                                        ));*/
                                 searchEditText.requestFocus();
                                 refreshSuggestedApps(swipeSearchContainer, true);
                             }

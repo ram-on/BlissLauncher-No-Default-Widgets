@@ -99,6 +99,10 @@ class VariantDeviceProfile(
 
     val verticalDragHandleSizePx: Int
 
+    // Widget
+    val maxWidgetWidth: Int
+    val maxWidgetHeight: Int
+
     // Widgets
     val appWidgetScale = PointF(1.0f, 1.0f)
 
@@ -239,6 +243,9 @@ class VariantDeviceProfile(
         updateWorkspacePadding()
         // This is done last, after iconSizePx is calculated above.
         // TODO: mBadgeRenderer = BadgeRenderer(iconSizePx)
+
+        maxWidgetWidth = availableWidthPx - 2 * Utilities.pxFromDp(8f, dm)
+        maxWidgetHeight = cellHeightPx * inv.numRows
     }
 
     private fun updateAvailableDimensions(

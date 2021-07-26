@@ -1,7 +1,5 @@
 package com.android.systemui.shared;
 
-import android.os.Build;
-
 import xyz.paphonb.quickstep.compat.ActivityManagerCompat;
 import xyz.paphonb.quickstep.compat.InputCompat;
 import xyz.paphonb.quickstep.compat.QuickstepCompatFactory;

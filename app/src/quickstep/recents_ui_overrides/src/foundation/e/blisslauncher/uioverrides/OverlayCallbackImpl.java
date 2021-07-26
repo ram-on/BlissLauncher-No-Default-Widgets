@@ -10,6 +10,7 @@ public class OverlayCallbackImpl implements TestActivity.LauncherOverlay {
 
     private final TestActivity mLauncher;
     private static final String TAG = "OverlayCallbackImpl";
+    private float mProgress = 0;
 
     private TestActivity.LauncherOverlayCallbacks mLauncherOverlayCallbacks;
 
@@ -20,12 +21,14 @@ public class OverlayCallbackImpl implements TestActivity.LauncherOverlay {
     @Override
     public void onScrollInteractionBegin() {
         Log.d(TAG, "onScrollInteractionBegin() called");
-
+        mLauncherOverlayCallbacks.onScrollBegin();
     }
 
     @Override
     public void onScrollInteractionEnd() {
         Log.d(TAG, "onScrollInteractionEnd() called");
+        if(mProgress > 0.5f) mLauncherOverlayCallbacks.onScrollChanged(1f);
+        else mLauncherOverlayCallbacks.onScrollChanged(0f);
     }
 
     @Override
@@ -36,6 +39,7 @@ public class OverlayCallbackImpl implements TestActivity.LauncherOverlay {
         );
         if(mLauncherOverlayCallbacks != null) {
             mLauncherOverlayCallbacks.onScrollChanged(progress);
+            mProgress = progress;
         }
     }
 

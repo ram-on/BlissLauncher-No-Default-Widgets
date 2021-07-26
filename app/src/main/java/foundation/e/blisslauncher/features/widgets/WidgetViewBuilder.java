@@ -12,10 +12,12 @@ import foundation.e.blisslauncher.BlissLauncher;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.customviews.RoundedWidgetView;
 import foundation.e.blisslauncher.features.launcher.LauncherActivity;
+import foundation.e.blisslauncher.features.test.TestActivity;
 
 public class WidgetViewBuilder {
 
-    public static RoundedWidgetView create(LauncherActivity launcherActivity,
+    public static RoundedWidgetView create(
+        TestActivity launcherActivity,
             @NonNull RoundedWidgetView roundedWidgetView) {
         if (BlissLauncher.getApplication(launcherActivity).getAppWidgetHost() == null) return null;
         roundedWidgetView.post(() -> updateWidgetOption(launcherActivity, roundedWidgetView,

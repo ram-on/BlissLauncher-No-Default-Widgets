@@ -95,7 +95,7 @@ android {
             res.srcDirs += ['src/quickstep/res', 'src/quickstep/recents_ui_overrides/res']
         }
         apiQ {
-            java.srcDirs = ['src/apiOreo/java/foundation/e']
+            java.srcDirs = ['src/apiOreo/java/']
             res.srcDirs = ['src/apiOreo/res']
             manifest.srcFile "src/apiOreo/AndroidManifest.xml"
         }

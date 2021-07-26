@@ -5,7 +5,6 @@ import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
 import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SPRING_LOADED_TRANSITION_MS;
 import static foundation.e.blisslauncher.features.test.dragndrop.DragLayer.ALPHA_INDEX_OVERLAY;
 
-import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.LayoutTransition;
@@ -14,21 +13,14 @@ import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.WallpaperManager;
-import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.location.LocationManager;
 import android.os.UserHandle;
-import android.provider.Settings;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -38,38 +30,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowInsets;
-import android.view.inputmethod.EditorInfo;
 import android.widget.GridLayout;
-import android.widget.ImageView;
 import android.widget.Toast;
-
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import com.jakewharton.rxbinding3.widget.RxTextView;
-
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
-import foundation.e.blisslauncher.core.Preferences;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots;
-import foundation.e.blisslauncher.core.database.DatabaseManager;
 import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.FolderItem;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.core.database.model.ShortcutItem;
-import foundation.e.blisslauncher.core.executors.AppExecutors;
 import foundation.e.blisslauncher.core.touch.ItemClickHandler;
 import foundation.e.blisslauncher.core.touch.ItemLongClickListener;
 import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.GraphicsUtil;
 import foundation.e.blisslauncher.core.utils.LongArrayMap;
 import foundation.e.blisslauncher.features.launcher.Hotseat;
-import foundation.e.blisslauncher.features.launcher.SearchInputDisposableObserver;
-import foundation.e.blisslauncher.features.suggestions.AutoCompleteAdapter;
-import foundation.e.blisslauncher.features.suggestions.SuggestionsResult;
 import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.IconTextView;
@@ -88,17 +64,8 @@ import foundation.e.blisslauncher.features.test.dragndrop.DragView;
 import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
-import foundation.e.blisslauncher.features.widgets.WidgetViewBuilder;
-import foundation.e.blisslauncher.features.widgets.WidgetsActivity;
-import io.reactivex.Observable;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.schedulers.Schedulers;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
@@ -130,7 +97,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private LayoutTransition mLayoutTransition;
     final WallpaperManager mWallpaperManager;
 
-    final LongArrayMap<CellLayout> mWorkspaceScreens = new LongArrayMap<>();
+    public final LongArrayMap<CellLayout> mWorkspaceScreens = new LongArrayMap<>();
     final ArrayList<Long> mScreenOrder = new ArrayList<>();
 
     // Variables relating to touch disambiguation (scrolling workspace vs. scrolling a widget)

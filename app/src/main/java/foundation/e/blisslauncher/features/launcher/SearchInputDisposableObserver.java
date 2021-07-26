@@ -9,16 +9,17 @@ import foundation.e.blisslauncher.core.customviews.BlissFrameLayout;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.features.suggestions.AutoCompleteAdapter;
 import foundation.e.blisslauncher.features.suggestions.SuggestionsResult;
+import foundation.e.blisslauncher.features.test.TestActivity;
 import io.reactivex.observers.DisposableObserver;
 import java.util.ArrayList;
 
 public class SearchInputDisposableObserver extends DisposableObserver<SuggestionsResult> {
 
     private AutoCompleteAdapter networkSuggestionAdapter;
-    private LauncherActivity launcherActivity;
+    private TestActivity launcherActivity;
     private ViewGroup appSuggestionsViewGroup;
 
-    public SearchInputDisposableObserver(LauncherActivity activity, RecyclerView.Adapter autoCompleteAdapter, ViewGroup viewGroup) {
+    public SearchInputDisposableObserver(TestActivity activity, RecyclerView.Adapter autoCompleteAdapter, ViewGroup viewGroup) {
         this.networkSuggestionAdapter = (AutoCompleteAdapter) autoCompleteAdapter;
         this.launcherActivity = activity;
         this.appSuggestionsViewGroup = viewGroup;
