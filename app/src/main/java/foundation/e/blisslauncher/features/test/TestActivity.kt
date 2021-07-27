@@ -145,7 +145,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
     private lateinit var mAppWidgetManager: AppWidgetManager
     private lateinit var mAppWidgetHost: WidgetHost
-    private val widgetContainer: LinearLayout? = null
+    private lateinit var widgetContainer: LinearLayout
     private var activeRoundedWidgetView: RoundedWidgetView? = null
 
     private lateinit var mWeatherPanel: View
@@ -309,6 +309,9 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     private fun setupWidgetPage() {
         widgetPage = layoutInflater.inflate(R.layout.widgets_page, rootView, false) as InsettableFrameLayout
         rootView.addView(widgetPage)
+
+        widgetContainer = widgetPage.findViewById(R.id.widget_container)
+
         widgetPage.visibility = View.GONE
         widgetPage.translationX = (widgetPage.measuredWidth * -1.00f)
         val scrollView: InsettableScrollLayout =
@@ -323,18 +326,18 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             false
         }
         widgetPage.findViewById<View>(R.id.used_apps_layout).clipToOutline = true
+        widgetPage.tag = "Widget page"
 
         // TODO: replace with app predictions
         // Prepare app suggestions view
         // [[BEGIN]]
-        widgetPage.findViewById<View>(R.id.openUsageAccessSettings).setOnClickListener(
-            View.OnClickListener { view: View? ->
-                startActivity(
-                    Intent(
-                        Settings.ACTION_USAGE_ACCESS_SETTINGS
-                    )
+        widgetPage.findViewById<View>(R.id.openUsageAccessSettings).setOnClickListener {
+            startActivity(
+                Intent(
+                    Settings.ACTION_USAGE_ACCESS_SETTINGS
                 )
-            })
+            )
+        }
 
         // divided by 2 because of left and right padding.
 
@@ -350,7 +353,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         mSearchInput = widgetPage.findViewById(R.id.search_input)
         val clearSuggestions: ImageView =
             widgetPage.findViewById(R.id.clearSuggestionImageView)
-        clearSuggestions.setOnClickListener { v: View? ->
+        clearSuggestions.setOnClickListener {
             mSearchInput.setText("")
             mSearchInput.clearFocus()
         }
@@ -384,7 +387,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 .debounce(300, TimeUnit.MILLISECONDS)
                 .map { obj: CharSequence -> obj.toString() }
                 .distinctUntilChanged()
-                .switchMap(Function<String, ObservableSource<out SuggestionsResult?>> { charSequence: String? ->
+                .switchMap { charSequence: String? ->
                     if (charSequence != null && charSequence.isNotEmpty()) {
                         searchForQuery(charSequence)
                     } else {
@@ -392,7 +395,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                             SuggestionsResult(charSequence)
                         )
                     }
-                })
+                }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeWith(
@@ -496,10 +499,10 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         }
         // [[END]]
 
-        val widgetIds: IntArray = mAppWidgetHost.getAppWidgetIds()
+        val widgetIds: IntArray = mAppWidgetHost.appWidgetIds
         Arrays.sort(widgetIds)
         for (id in widgetIds) {
-            val appWidgetInfo: AppWidgetProviderInfo = mAppWidgetManager.getAppWidgetInfo(id)
+            val appWidgetInfo: AppWidgetProviderInfo? = mAppWidgetManager.getAppWidgetInfo(id)
             if (appWidgetInfo != null) {
                 val hostView: RoundedWidgetView = mAppWidgetHost.createView(
                     applicationContext, id,

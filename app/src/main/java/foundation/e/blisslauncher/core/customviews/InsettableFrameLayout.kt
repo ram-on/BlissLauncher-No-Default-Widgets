@@ -47,10 +47,12 @@ open class InsettableFrameLayout(mContext: Context, attrs: AttributeSet?) : Fram
     override fun onApplyWindowInsets(insets: WindowInsets?): WindowInsets? {
         // BlissLauncher.getApplication(mContext).resetDeviceProfile()
         setInsets(insets)
+        Log.d("InsettableFrameLayout", "On applyWindowInsets insets with: insets = $tag")
         return insets
     }
 
     override fun setInsets(insets: WindowInsets?) {
+        Log.d("InsettableFrameLayout", "Setting insets with: insets = $tag")
         if (insets == null) return
         for (i in 0 until childCount) {
             val child = getChildAt(i)
