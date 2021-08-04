@@ -27,6 +27,8 @@ import android.os.Build;
 import android.view.ViewConfiguration;
 import android.view.WindowManagerPolicyConstants;
 import com.android.internal.policy.ScreenDecorationsUtils;
+import com.android.systemui.shared.R;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.StringJoiner;
@@ -222,7 +224,7 @@ public class QuickStepContract {
      */
     public static float getWindowCornerRadius(Resources resources) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            return ScreenDecorationsUtils.getWindowCornerRadius(resources);
+            return resources.getDimension(R.dimen.rounded_corner);
         } else {
             return 0;
         }
@@ -233,7 +235,7 @@ public class QuickStepContract {
      */
     public static boolean supportsRoundedCornersOnWindows(Resources resources) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            return ScreenDecorationsUtils.supportsRoundedCornersOnWindows(resources);
+            return true;
         } else {
             return true;
         }

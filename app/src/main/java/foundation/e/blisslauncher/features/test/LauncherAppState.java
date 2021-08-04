@@ -16,24 +16,22 @@
 
 package foundation.e.blisslauncher.features.test;
 
+import static foundation.e.blisslauncher.core.utils.SecureSettingsObserver.newNotificationSettingsObserver;
+
 import android.content.ComponentName;
-import android.content.ContentProviderClient;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Looper;
 import android.util.Log;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-
-import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.ConfigMonitor;
-import foundation.e.blisslauncher.core.SettingsObserver;
 import foundation.e.blisslauncher.core.UserManagerCompat;
 import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
 import foundation.e.blisslauncher.core.utils.Preconditions;
-
+import foundation.e.blisslauncher.core.utils.SecureSettingsObserver;
+import foundation.e.blisslauncher.features.notification.NotificationListener;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 public class LauncherAppState {
 
@@ -50,7 +48,7 @@ public class LauncherAppState {
     private final Context mContext;
     private final InvariantDeviceProfile mInvariantDeviceProfile;
 
-    private final SettingsObserver mNotificationBadgingObserver;
+    private final SecureSettingsObserver mNotificationDotsObserver;
     private TestActivity launcher;
 
     public static LauncherAppState getInstance(final Context context) {
@@ -102,19 +100,18 @@ public class LauncherAppState {
         UserManagerCompat.getInstance(mContext).enableAndResetCache();
         new ConfigMonitor(mContext).register();
 
-        // Register an observer to rebind the notification listener when badging is re-enabled.
-        mNotificationBadgingObserver = new SettingsObserver.Secure(
-            mContext.getContentResolver()) {
-            @Override
-            public void onSettingChanged(boolean isNotificationBadgingEnabled) {
-                if (isNotificationBadgingEnabled) {
-                    // TODO: Fix this when adding notification badging.
-                    /*NotificationListener.requestRebind(new ComponentName(
-                        mContext, NotificationListener.class));*/
-                }
-            }
-        };
-        mNotificationBadgingObserver.register(NOTIFICATION_BADGING);
+        // Register an observer to rebind the notification listener when dots are re-enabled.
+        mNotificationDotsObserver =
+            newNotificationSettingsObserver(mContext, this::onNotificationSettingsChanged);
+        mNotificationDotsObserver.register();
+        mNotificationDotsObserver.dispatchOnChange();
+    }
+
+    protected void onNotificationSettingsChanged(boolean areNotificationDotsEnabled) {
+        if (areNotificationDotsEnabled) {
+            NotificationListener.requestRebind(new ComponentName(
+                mContext, NotificationListener.class));
+        }
     }
 
     public void setLauncher(TestActivity launcher) {
@@ -129,8 +126,8 @@ public class LauncherAppState {
      * Call from Application.onTerminate(), which is not guaranteed to ever be called.
      */
     public void onTerminate() {
-        if (mNotificationBadgingObserver != null) {
-            mNotificationBadgingObserver.unregister();
+        if (mNotificationDotsObserver != null) {
+            mNotificationDotsObserver.unregister();
         }
     }
 

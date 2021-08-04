@@ -30,6 +30,7 @@ import android.view.WindowManager
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.utils.Constants
+import foundation.e.blisslauncher.features.notification.DotRenderer
 import kotlin.math.max
 import kotlin.math.min
 
@@ -44,6 +45,8 @@ class VariantDeviceProfile(
     @JvmField
     var isMultiWindowMode: Boolean
 ) {
+
+    val mDotRenderer: DotRenderer
 
     // Device properties
     val isTablet: Boolean
@@ -242,7 +245,7 @@ class VariantDeviceProfile(
         }
         updateWorkspacePadding()
         // This is done last, after iconSizePx is calculated above.
-        // TODO: mBadgeRenderer = BadgeRenderer(iconSizePx)
+        mDotRenderer = DotRenderer(context, iconSizePx)
 
         maxWidgetWidth = availableWidthPx - 2 * Utilities.pxFromDp(8f, dm)
         maxWidgetHeight = cellHeightPx * inv.numRows

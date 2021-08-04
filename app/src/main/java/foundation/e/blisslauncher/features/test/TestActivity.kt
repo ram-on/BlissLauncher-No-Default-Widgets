@@ -11,6 +11,7 @@ import android.app.usage.UsageStats
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -20,6 +21,7 @@ import android.content.res.Configuration
 import android.graphics.Point
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.Handler
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
 import android.provider.Settings
@@ -46,6 +48,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.jakewharton.rxbinding3.widget.textChanges
 import foundation.e.blisslauncher.BlissLauncher
+import foundation.e.blisslauncher.BuildConfig
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Preferences
 import foundation.e.blisslauncher.core.Utilities
@@ -65,9 +68,14 @@ import foundation.e.blisslauncher.core.executors.AppExecutors
 import foundation.e.blisslauncher.core.utils.AppUtils
 import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.core.utils.ListUtil
+import foundation.e.blisslauncher.core.utils.PackageUserKey
 import foundation.e.blisslauncher.core.utils.UserHandle
 import foundation.e.blisslauncher.features.launcher.Hotseat
 import foundation.e.blisslauncher.features.launcher.SearchInputDisposableObserver
+import foundation.e.blisslauncher.features.notification.DotInfo
+import foundation.e.blisslauncher.features.notification.NotificationDataProvider
+import foundation.e.blisslauncher.features.notification.NotificationListener
+import foundation.e.blisslauncher.features.notification.NotificationService
 import foundation.e.blisslauncher.features.suggestions.AutoCompleteAdapter
 import foundation.e.blisslauncher.features.suggestions.SearchSuggestionUtil
 import foundation.e.blisslauncher.features.suggestions.SuggestionsResult
@@ -91,7 +99,6 @@ import io.reactivex.Observable
 import io.reactivex.ObservableSource
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.functions.Function
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.schedulers.Schedulers
 import java.util.ArrayList
@@ -99,6 +106,7 @@ import java.util.Arrays
 import java.util.Comparator
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import java.util.function.Predicate
 
 class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionClickListener {
 
@@ -167,6 +175,11 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         }
     }
 
+    private lateinit var notificationDataProvider: NotificationDataProvider
+    val mHandler = Handler()
+    private val mHandleDeferredResume = Runnable { this.handleDeferredResume() }
+    private var mDeferredResumePending = false
+
     private val TAG = "TestActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -207,6 +220,10 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         launcherView = LayoutInflater.from(this).inflate(R.layout.activity_test, null)
         setupViews()
 
+        askForNotificationIfFirstTime()
+
+        notificationDataProvider = NotificationDataProvider(this)
+
         mAppTransitionManager = LauncherAppTransitionManager.newInstance(this)
 
         val internalStateHandled = InternalStateHandler.handleCreate(this, intent)
@@ -239,6 +256,63 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         })
         createOrUpdateIconGrid()
         setLauncherOverlay(OverlayCallbackImpl(this))
+    }
+
+    private fun askForNotificationIfFirstTime() {
+        if (Preferences.shouldAskForNotificationAccess(this)) {
+            val cr = contentResolver
+            val setting = "enabled_notification_listeners"
+            var permissionString = Settings.Secure.getString(cr, setting)
+            if (permissionString == null || !permissionString.contains(packageName)) {
+                if (BuildConfig.DEBUG) {
+                    startActivity(
+                        Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+                    )
+                } else if (!Preferences.shouldAskForNotificationAccess(this)) {
+                    val cn = ComponentName(
+                        this,
+                        NotificationService::class.java
+                    )
+                    if (permissionString == null) {
+                        permissionString = ""
+                    } else {
+                        permissionString += ":"
+                    }
+                    permissionString += cn.flattenToString()
+                    val success = Settings.Secure.putString(cr, setting, permissionString)
+                    if (success) {
+                        Preferences.setNotToAskForNotificationAccess(this)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleDeferredResume() {
+        mDeferredResumePending = if (hasBeenResumed() && !mStateManager.state.disableInteraction) {
+            UiFactory.onLauncherStateOrResumeChanged(this)
+
+            // Process any items that were added while Launcher was away.
+            // TODO: Enable it when adding folder support
+            /*InstallShortcutReceiver.disableAndFlushInstallQueue(
+                InstallShortcutReceiver.FLAG_ACTIVITY_PAUSED, this
+            )*/
+
+            // Refresh shortcuts if the permission changed.
+            // mModel.refreshShortcutsIfRequired()
+
+            // Set the notification listener and fetch updated notifications when we resume
+            NotificationListener.setNotificationsChangedListener(notificationDataProvider)
+            false
+        } else {
+            true
+        }
+    }
+
+    fun onStateSet(state: LauncherState) {
+        if (mDeferredResumePending) {
+            handleDeferredResume()
+        }
     }
 
     /**
@@ -845,6 +919,9 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
     override fun onResume() {
         super.onResume()
+        mHandler.removeCallbacks(mHandleDeferredResume)
+        Utilities.postAsyncCallback(mHandler, mHandleDeferredResume)
+
         if (mOnResumeCallbacks.isNotEmpty()) {
             val resumeCallbacks = ArrayList(mOnResumeCallbacks)
             mOnResumeCallbacks.clear()
@@ -885,6 +962,14 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 widgetView = widgetManager.dequeAddWidgetView()
             }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        NotificationListener.removeNotificationsChangedListener()
+        getStateManager().moveToRestState()
+
+        UiFactory.onLauncherStateOrResumeChanged(this)
     }
 
     override fun onDestroy() {
@@ -1204,10 +1289,8 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
     inner class LauncherOverlayCallbacksImpl : LauncherOverlayCallbacks {
         override fun onScrollChanged(progress: Float) {
-            if (workspace != null) {
-                workspace.onOverlayScrollChanged(progress)
-                widgetPage.translationX = widgetPage.measuredWidth * (progress - 1)
-            }
+            workspace.onOverlayScrollChanged(progress)
+            widgetPage.translationX = widgetPage.measuredWidth * (progress - 1)
         }
 
         override fun onScrollBegin() {
@@ -1220,5 +1303,13 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         runSearch(suggestion)
         mSearchInput.clearFocus()
         mSearchInput.setText("")
+    }
+
+    fun updateNotificationDots(updatedDots: Predicate<PackageUserKey>) {
+        workspace.updateNotificationBadge(updatedDots)
+    }
+
+    fun getDotInfoForItem(info: LauncherItem?): DotInfo? {
+        return notificationDataProvider.getDotInfoForItem(info)
     }
 }

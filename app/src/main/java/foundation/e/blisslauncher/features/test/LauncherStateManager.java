@@ -366,6 +366,7 @@ public class LauncherStateManager {
         mState.onStateDisabled(mLauncher);
         mState = state;
         mState.onStateEnabled(mLauncher);
+        mLauncher.onStateSet(mState);
 
         if (state.disablePageClipping) {
             // Only disable clipping if needed, otherwise leave it as previous value.

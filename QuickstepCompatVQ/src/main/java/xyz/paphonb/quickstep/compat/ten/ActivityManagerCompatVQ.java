@@ -99,7 +99,7 @@ public class ActivityManagerCompatVQ extends ActivityManagerCompat {
 
     @Override
     public void registerTaskStackListener(ITaskStackListener listener) throws RemoteException {
-        ActivityTaskManager.getService().registerTaskStackListener(listener);
+        //ActivityTaskManager.getService().registerTaskStackListener(listener);
     }
 
     @Override

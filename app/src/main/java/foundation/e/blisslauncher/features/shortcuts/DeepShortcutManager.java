@@ -17,6 +17,8 @@
 package foundation.e.blisslauncher.features.shortcuts;
 
 
+import static foundation.e.blisslauncher.core.utils.Constants.ITEM_TYPE_APPLICATION;
+
 import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Context;
@@ -29,6 +31,7 @@ import android.os.Bundle;
 import android.os.UserHandle;
 import android.util.Log;
 import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -235,5 +238,9 @@ public class DeepShortcutManager {
             }
         }
         return false;
+    }
+
+    public static boolean supportsShortcuts(LauncherItem info) {
+        return info.itemType == ITEM_TYPE_APPLICATION;
     }
 }

@@ -45,7 +45,9 @@ import foundation.e.blisslauncher.core.touch.ItemLongClickListener;
 import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.GraphicsUtil;
 import foundation.e.blisslauncher.core.utils.LongArrayMap;
+import foundation.e.blisslauncher.core.utils.PackageUserKey;
 import foundation.e.blisslauncher.features.launcher.Hotseat;
+import foundation.e.blisslauncher.features.notification.FolderDotInfo;
 import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.IconTextView;
@@ -65,7 +67,10 @@ import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
@@ -1022,7 +1027,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private boolean isScrollingOverlay() {
         return mLauncherOverlay != null &&
             ((mIsRtl && getUnboundedScrollX() > mMaxScroll)
-                || (!mIsRtl && getUnboundedScrollX() <mMinScroll));
+                || (!mIsRtl && getUnboundedScrollX() < mMinScroll));
     }
 
     @Override
@@ -2219,6 +2224,20 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         return null;
     }
 
+    /**
+     * Map the operator over the shortcuts and widgets, return the first-non-null value.
+     *
+     * @param recurse true: iterate over folder children. false: op get the folders themselves.
+     * @param op      the operator to map over the shortcuts
+     */
+    public void mapOverItems(boolean recurse, ItemOperator op) {
+        for (CellLayout layout : getWorkspaceAndHotseatCellLayouts()) {
+            if (mapOverCellLayout(recurse, layout, op)) {
+                return;
+            }
+        }
+    }
+
     private boolean mapOverCellLayout(boolean recurse, CellLayout layout, ItemOperator op) {
         // TODO(b/128460496) Potential race condition where layout is not yet loaded
         if (layout == null) {
@@ -2247,6 +2266,36 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             }
         }
         return false;
+    }
+
+    public void updateNotificationBadge(Predicate<PackageUserKey> updatedDots) {
+        final PackageUserKey packageUserKey = new PackageUserKey(null, null);
+        final Set<String> folderIds = new HashSet<>();
+        mapOverItems(MAP_RECURSE, (info, v) -> {
+            if ((info instanceof ApplicationItem || info instanceof ShortcutItem) && v instanceof IconTextView) {
+                if (!packageUserKey.updateFromItemInfo(info)
+                    || updatedDots.test(packageUserKey)) {
+                    ((IconTextView) v).applyDotState(info, true /* animate */);
+                    folderIds.add(String.valueOf(info.container));
+                }
+            }
+            // process all the shortcuts
+            return false;
+        });
+
+        // Update folder icons
+        mapOverItems(MAP_NO_RECURSE, (info, v) -> {
+            if (info instanceof FolderItem && folderIds.contains(info.id)
+                && v instanceof IconTextView) {
+                FolderDotInfo folderDotInfo = new FolderDotInfo();
+                for (LauncherItem si : ((FolderItem) info).items) {
+                    folderDotInfo.addDotInfo(mLauncher.getDotInfoForItem(si));
+                }
+                ((IconTextView) v).applyDotState(info, true /* animate */);
+            }
+            // process all the shortcuts
+            return false;
+        });
     }
 
     /**
