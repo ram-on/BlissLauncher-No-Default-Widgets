@@ -1935,6 +1935,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     public void startDrag(CellLayout.CellInfo cellInfo, DragOptions dragOptions) {
         View child = cellInfo.getCell();
         mDragInfo = cellInfo;
+        // Clear any running animation.
+        child.clearAnimation();
         child.setVisibility(GONE);
         beginDragShared(child, this, dragOptions);
     }
@@ -2382,13 +2384,15 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 if(info instanceof ApplicationItem) {
                     ApplicationItem applicationItem = (ApplicationItem) info;
                     if (applicationItem.isSystemApp != ApplicationItem.FLAG_SYSTEM_UNKNOWN) {
-                        if ((applicationItem.isSystemApp & ApplicationItem.FLAG_SYSTEM_NO) == 0) {
-                            return false;
+                        if ((applicationItem.isSystemApp & ApplicationItem.FLAG_SYSTEM_NO) != 0) {
+                            ((IconTextView)v).applyUninstallIconState(true);
                         }
+                    } else {
+                        ((IconTextView)v).applyUninstallIconState(true);
                     }
+                } else {
+                    ((IconTextView)v).applyUninstallIconState(true);
                 }
-                Log.d(TAG, "wobbleLayouts: "+info);
-                ((IconTextView)v).applyUninstallIconState(true);
             }
 
             if(itemIdx % 2 == 0) {
