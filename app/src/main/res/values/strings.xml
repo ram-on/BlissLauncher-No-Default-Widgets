@@ -185,4 +185,6 @@
 
     <string name="app_info_drop_target_label">App Info</string>
     <string name="activity_not_available">App isn\'t available</string>
+
+    <string name="uninstall_system_app_text">This is a system app and can\'t be uninstalled.</string>
 </resources>

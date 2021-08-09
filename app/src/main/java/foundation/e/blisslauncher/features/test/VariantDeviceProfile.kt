@@ -31,6 +31,7 @@ import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.features.notification.DotRenderer
+import foundation.e.blisslauncher.features.test.uninstall.UninstallButtonRenderer
 import kotlin.math.max
 import kotlin.math.min
 
@@ -47,6 +48,7 @@ class VariantDeviceProfile(
 ) {
 
     val mDotRenderer: DotRenderer
+    val uninstallRenderer: UninstallButtonRenderer
 
     // Device properties
     val isTablet: Boolean
@@ -246,6 +248,7 @@ class VariantDeviceProfile(
         updateWorkspacePadding()
         // This is done last, after iconSizePx is calculated above.
         mDotRenderer = DotRenderer(context, iconSizePx)
+        uninstallRenderer = UninstallButtonRenderer(context, iconSizePx)
 
         maxWidgetWidth = availableWidthPx - 2 * Utilities.pxFromDp(8f, dm)
         maxWidgetHeight = cellHeightPx * inv.numRows

@@ -17,9 +17,13 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
+import android.content.pm.ApplicationInfo
+import android.content.pm.LauncherActivityInfo
+import android.content.pm.LauncherApps
 import android.content.res.Configuration
 import android.graphics.Point
 import android.location.LocationManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.StrictMode
@@ -27,6 +31,8 @@ import android.os.StrictMode.VmPolicy
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
+import android.view.ContextThemeWrapper
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -62,8 +68,10 @@ import foundation.e.blisslauncher.core.customviews.RoundedWidgetView
 import foundation.e.blisslauncher.core.customviews.SquareFrameLayout
 import foundation.e.blisslauncher.core.customviews.WidgetHost
 import foundation.e.blisslauncher.core.database.DatabaseManager
+import foundation.e.blisslauncher.core.database.model.ApplicationItem
 import foundation.e.blisslauncher.core.database.model.FolderItem
 import foundation.e.blisslauncher.core.database.model.LauncherItem
+import foundation.e.blisslauncher.core.database.model.ShortcutItem
 import foundation.e.blisslauncher.core.executors.AppExecutors
 import foundation.e.blisslauncher.core.utils.AppUtils
 import foundation.e.blisslauncher.core.utils.Constants
@@ -76,6 +84,8 @@ import foundation.e.blisslauncher.features.notification.DotInfo
 import foundation.e.blisslauncher.features.notification.NotificationDataProvider
 import foundation.e.blisslauncher.features.notification.NotificationListener
 import foundation.e.blisslauncher.features.notification.NotificationService
+import foundation.e.blisslauncher.features.shortcuts.DeepShortcutManager
+import foundation.e.blisslauncher.features.shortcuts.ShortcutKey
 import foundation.e.blisslauncher.features.suggestions.AutoCompleteAdapter
 import foundation.e.blisslauncher.features.suggestions.SearchSuggestionUtil
 import foundation.e.blisslauncher.features.suggestions.SuggestionsResult
@@ -101,6 +111,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.schedulers.Schedulers
+import java.net.URISyntaxException
 import java.util.ArrayList
 import java.util.Arrays
 import java.util.Comparator
@@ -1311,5 +1322,98 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
     fun getDotInfoForItem(info: LauncherItem?): DotInfo? {
         return notificationDataProvider.getDotInfoForItem(info)
+    }
+
+    fun removeShortcut(shortcut: ShortcutItem): Boolean {
+        val dialog: AlertDialog = AlertDialog.Builder(
+            ContextThemeWrapper(
+                this,
+                R.style.AlertDialogCustom
+            )
+        )
+            .setTitle(shortcut.title)
+            .setMessage(R.string.uninstall_shortcut_dialog)
+            .setPositiveButton(R.string.ok) { dialog1, which ->
+                if (shortcut.packageName != null) {
+                    DeepShortcutManager.getInstance(this)
+                        .unpinShortcut(ShortcutKey.fromItem(shortcut))
+                    if (DeepShortcutManager.getInstance(this).wasLastCallSuccess()) {
+                        deleteShortcutFromProvider(shortcut.id)
+                        // TODO: Enable when adding shortcut support
+                        // removeShortcutView(shortcut, blissFrameLayout)
+                    }
+                } else {
+                    // Null package name generally comes for nougat shortcuts so don't unpin here, just directly delete it.
+                    deleteShortcutFromProvider(shortcut.id)
+                    // TODO: Enable when adding shortcut support
+                    // removeShortcutView(shortcut, blissFrameLayout)
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .setIcon(shortcut.icon)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setTextColor(resources.getColor(R.color.color_blue))
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                .setTextColor(resources.getColor(R.color.color_blue))
+        }
+        dialog.show()
+        return true
+    }
+
+    private fun deleteShortcutFromProvider(id: String) {
+        val resolver = contentResolver
+        val count = resolver.delete(
+            Uri.parse("content://foundation.e.pwaplayer.provider/pwa"),
+            null, arrayOf(id)
+        )
+        Log.d("LauncherActivity", "Items deleted from pwa provider: $count")
+    }
+
+    /**
+     * @return the component name that should be uninstalled or null.
+     */
+    private fun getUninstallTarget(item: LauncherItem?): ComponentName? {
+        var intent: Intent? = null
+        var user: android.os.UserHandle? = null
+        if (item != null && item.itemType == Constants.ITEM_TYPE_APPLICATION) {
+            intent = item.intent
+            user = item.user.realHandle
+        }
+        if (intent != null) {
+            val launcherApps = getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
+            val info: LauncherActivityInfo = launcherApps.resolveActivity(intent, user)
+            if (info.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
+                return info.componentName
+            }
+        }
+        return null
+    }
+
+    fun uninstallApplication(applicationItem: ApplicationItem): Boolean {
+        val cn = getUninstallTarget(applicationItem)
+        if (cn == null) {
+            // System applications cannot be installed. For now, show a toast explaining that.
+            // We may give them the option of disabling apps this way.
+            Toast.makeText(this, R.string.uninstall_system_app_text, Toast.LENGTH_SHORT)
+                .show()
+            return true
+        }
+
+        return try {
+            val i: Intent =
+                Intent.parseUri(getString(R.string.delete_package_intent), 0)
+                    .setData(Uri.fromParts("package", cn.packageName, cn.className))
+                    .putExtra(Intent.EXTRA_USER, applicationItem.user.realHandle)
+            startActivity(i)
+            true
+        } catch (e: URISyntaxException) {
+            Log.e(
+                "IconTextView",
+                "Failed to parse intent to start uninstall activity for item=$applicationItem"
+            )
+            true
+        }
     }
 }

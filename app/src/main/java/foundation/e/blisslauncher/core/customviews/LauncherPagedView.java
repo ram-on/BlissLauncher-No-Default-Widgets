@@ -30,6 +30,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowInsets;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.GridLayout;
 import android.widget.Toast;
 import foundation.e.blisslauncher.BuildConfig;
@@ -66,6 +68,7 @@ import foundation.e.blisslauncher.features.test.dragndrop.DragView;
 import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
+import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -75,7 +78,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
     Insettable, DropTarget, DragSource, DragController.DragListener,
-    LauncherStateManager.StateHandler {
+    LauncherStateManager.StateHandler, OnAlarmListener {
 
     private static final String TAG = "LauncherPagedView";
     private static final int DEFAULT_PAGE = 0;
@@ -169,6 +172,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     // Total over scrollX in the overlay direction.
     private float mOverlayTranslation;
 
+    private Alarm wobbleExpireAlarm = new Alarm();
+    private static final int WOBBLE_EXPIRATION_TIMEOUT = 25000;
+
+
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
     }
@@ -184,6 +191,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         setMotionEventSplittingEnabled(true);
         setOnTouchListener((v, event) -> false);
+
+        wobbleExpireAlarm.setOnAlarmListener(this);
     }
 
     private void initWorkspace() {
@@ -1881,6 +1890,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void onDragExit(DragObject dragObject) {
+        Log.d(TAG, "onDragExit() called with: dragObject = [" + dragObject + "]");
         // Here we store the final page that will be dropped to, if the workspace in fact
         // receives the drop
         mDropToLayout = mDragTargetLayout;
@@ -1895,6 +1905,9 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         setCurrentDragOverlappingLayout(null);
 
         mSpringLoadedDragController.cancel();
+
+        // Reset the grid state by stopping the animation and removing uninstall icon after 25 seconds
+        wobbleExpireAlarm.setAlarm(WOBBLE_EXPIRATION_TIMEOUT);
     }
 
     @Override
@@ -2176,13 +2189,13 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         final int curPage = getCurrentPage();
         final CellLayout currentPage = (CellLayout) getPageAt(curPage);
         final LauncherPagedView.ItemOperator packageAndUser =
-            (LauncherItem info, View view) -> info != null
+            (LauncherItem info, View view, int index) -> info != null
                 && info.getTargetComponent() != null
                 && TextUtils.equals(info.getTargetComponent().getPackageName(), packageName)
                 && info.user.equals(user);
         final LauncherPagedView.ItemOperator packageAndUserAndApp =
-            (LauncherItem info, View view) ->
-                packageAndUser.evaluate(info, view) && info.itemType == ITEM_TYPE_APPLICATION;
+            (LauncherItem info, View view, int index) ->
+                packageAndUser.evaluate(info, view, index) && info.itemType == ITEM_TYPE_APPLICATION;
 
         return getFirstMatch(
             new CellLayout[]{mLauncher.getHotseat(), currentPage},
@@ -2200,9 +2213,9 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         final View[] matches = new View[operators.length];
         // For efficiency, the outer loop should be CellLayout.
         for (CellLayout cellLayout : cellLayouts) {
-            mapOverCellLayout(MAP_NO_RECURSE, cellLayout, (info, v) -> {
+            mapOverCellLayout(MAP_NO_RECURSE, cellLayout, (info, v, idx) -> {
                 for (int i = 0; i < operators.length; ++i) {
-                    if (matches[i] == null && operators[i].evaluate(info, v)) {
+                    if (matches[i] == null && operators[i].evaluate(info, v, idx)) {
                         matches[i] = v;
                         if (i == 0) {
                             // We can return since this is the best match possible.
@@ -2255,12 +2268,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 final int childCount = folder.items.size();
                 for (int childIdx = 0; childIdx < childCount; childIdx++) {
                     LauncherItem childItem = folderChildren.get(childIdx);
-                    if (op.evaluate(info, item)) {
+                    if (op.evaluate(info, item, itemIdx)) {
                         return true;
                     }
                 }
             } else {
-                if (op.evaluate(info, item)) {
+                if (op.evaluate(info, item, itemIdx)) {
                     return true;
                 }
             }
@@ -2271,7 +2284,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     public void updateNotificationBadge(Predicate<PackageUserKey> updatedDots) {
         final PackageUserKey packageUserKey = new PackageUserKey(null, null);
         final Set<String> folderIds = new HashSet<>();
-        mapOverItems(MAP_RECURSE, (info, v) -> {
+        mapOverItems(MAP_RECURSE, (info, v, itemIdx) -> {
             if ((info instanceof ApplicationItem || info instanceof ShortcutItem) && v instanceof IconTextView) {
                 if (!packageUserKey.updateFromItemInfo(info)
                     || updatedDots.test(packageUserKey)) {
@@ -2284,7 +2297,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         });
 
         // Update folder icons
-        mapOverItems(MAP_NO_RECURSE, (info, v) -> {
+        mapOverItems(MAP_NO_RECURSE, (info, v, itemIdx) -> {
             if (info instanceof FolderItem && folderIds.contains(info.id)
                 && v instanceof IconTextView) {
                 FolderDotInfo folderDotInfo = new FolderDotInfo();
@@ -2352,15 +2365,72 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         return mLauncher.getHotseat();
     }
 
+    /**
+     * It starts to animate all the grid item and also add uninstall button to each item if the item supports it.
+     */
+    public void wobbleLayouts() {
+        // Adds uninstall icon.
+        Animation wobbleAnimation = AnimationUtils.loadAnimation(getContext(), R.anim.wobble);
+        Animation reverseWobbleAnimation = AnimationUtils.loadAnimation(getContext(), R.anim.wobble_reverse);
+        mapOverItems(MAP_NO_RECURSE, (info, v, itemIdx) -> {
+            if ((info instanceof ApplicationItem || info instanceof ShortcutItem)
+                && v instanceof IconTextView
+                && !UninstallHelper.INSTANCE
+                .isUninstallDisabled(info.user.getRealHandle(), getContext())) {
+
+                // Return early if this app is system app
+                if(info instanceof ApplicationItem) {
+                    ApplicationItem applicationItem = (ApplicationItem) info;
+                    if (applicationItem.isSystemApp != ApplicationItem.FLAG_SYSTEM_UNKNOWN) {
+                        if ((applicationItem.isSystemApp & ApplicationItem.FLAG_SYSTEM_NO) == 0) {
+                            return false;
+                        }
+                    }
+                }
+                Log.d(TAG, "wobbleLayouts: "+info);
+                ((IconTextView)v).applyUninstallIconState(true);
+            }
+
+            if(itemIdx % 2 == 0) {
+                v.startAnimation(wobbleAnimation);
+            } else {
+                v.startAnimation(reverseWobbleAnimation);
+            }
+            // process all the items
+            return false;
+        });
+    }
+
+    /**
+     * Triggered when wobble animation expire after timeout.
+     * @param alarm
+     */
+    @Override
+    public void onAlarm(Alarm alarm) {
+        // Adds uninstall icon.
+        mapOverItems(MAP_NO_RECURSE, (info, v, idx) -> {
+            if (v instanceof IconTextView) {
+                ((IconTextView)v).applyUninstallIconState(false);
+            }
+
+            // Clears if there is any running animation on the view.
+            v.clearAnimation();
+
+            // process all the items
+            return false;
+        });
+    }
+
     public interface ItemOperator {
         /**
          * Process the next itemInfo, possibly with side-effect on the next item.
          *
          * @param info info for the shortcut
          * @param view view for the shortcut
+         * @param index index of the view in the parent layout.
          * @return true if done, false to continue the map
          */
-        boolean evaluate(LauncherItem info, View view);
+        boolean evaluate(LauncherItem info, View view, int index);
     }
 
     class FolderCreationAlarmListener implements OnAlarmListener {

@@ -1,6 +1,5 @@
 package foundation.e.blisslauncher.features.test
 
-import android.R
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
@@ -13,6 +12,7 @@ import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.text.TextUtils.TruncateAt
 import android.util.AttributeSet
+import android.util.Log
 import android.util.Property
 import android.util.TypedValue
 import android.view.MotionEvent
@@ -21,10 +21,13 @@ import android.view.ViewConfiguration
 import android.widget.TextView
 import androidx.core.graphics.ColorUtils
 import foundation.e.blisslauncher.core.Utilities
+import foundation.e.blisslauncher.core.database.model.ApplicationItem
 import foundation.e.blisslauncher.core.database.model.LauncherItem
+import foundation.e.blisslauncher.core.database.model.ShortcutItem
+import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.features.notification.DotInfo
 import foundation.e.blisslauncher.features.notification.DotRenderer
-import java.lang.IllegalArgumentException
+import foundation.e.blisslauncher.features.test.uninstall.UninstallButtonRenderer
 import kotlin.math.roundToInt
 
 /**
@@ -40,7 +43,9 @@ class IconTextView @JvmOverloads constructor(
     companion object {
         private const val DISPLAY_WORKSPACE = 1
         private const val DISPLAY_FOLDER = 2
-        private val STATE_PRESSED = intArrayOf(R.attr.state_pressed)
+        private val STATE_PRESSED = intArrayOf(android.R.attr.state_pressed)
+
+        private const val TAG = "IconTextView"
 
         private val DOT_SCALE_PROPERTY: Property<IconTextView, Float> =
             object : Property<IconTextView, Float>(
@@ -59,9 +64,28 @@ class IconTextView @JvmOverloads constructor(
                     iconTextView.invalidate()
                 }
             }
+
+        private val UNINSTALL_SCALE_PROPERTY: Property<IconTextView, Float> =
+            object : Property<IconTextView, Float>(
+                java.lang.Float.TYPE,
+                "uninstallButtonScale"
+            ) {
+                override fun get(iconTextView: IconTextView): Float {
+                    return iconTextView.uninstallButtonScale
+                }
+
+                override fun set(
+                    iconTextView: IconTextView,
+                    value: Float
+                ) {
+                    iconTextView.uninstallButtonScale = value
+                    iconTextView.invalidate()
+                }
+            }
     }
 
     private lateinit var mDotRenderer: DotRenderer
+    private lateinit var mUninstallRenderer: UninstallButtonRenderer
     private val mActivity: TestActivity = if (context is TestActivity) context
     else throw IllegalArgumentException("Cannot find TestActivity in context tree")
     private var mStayPressed: Boolean = false
@@ -78,6 +102,7 @@ class IconTextView @JvmOverloads constructor(
     private val defaultIconSize = dp.iconSizePx
 
     private var dotScale: Float = 0f
+    private var uninstallButtonScale: Float = 0f
 
     private var mTextAlpha = 1f
     private var mTextColor = Color.WHITE
@@ -92,6 +117,12 @@ class IconTextView @JvmOverloads constructor(
     private var mDotInfo: DotInfo? = null
     private var mDotScaleAnim: Animator? = null
     private var mForceHideDot = false
+
+    private var isUninstallVisible: Boolean = false
+    private var mUninstallIconScaleAnim: Animator? = null
+
+    private var touchX = 0
+    private var touchY = 0
 
     constructor(context: Context) : this(context, null, 0)
 
@@ -132,6 +163,7 @@ class IconTextView @JvmOverloads constructor(
         applyIconAndLabel(item)
         tag = item
         applyDotState(item, false)
+        applyUninstallIconState(false)
     }
 
     private fun applyIconAndLabel(item: LauncherItem) {
@@ -144,10 +176,6 @@ class IconTextView @JvmOverloads constructor(
             // TODO: Check Item info locked
         }
         super.setTag(tag)
-    }
-
-    override fun refreshDrawableState() {
-        super.refreshDrawableState()
     }
 
     override fun onCreateDrawableState(extraSpace: Int): IntArray? {
@@ -186,6 +214,15 @@ class IconTextView @JvmOverloads constructor(
         cancelDotScaleAnim()
         dotScale = 0f
         mForceHideDot = false
+
+        isUninstallVisible = false
+        cancelUninstallScaleAnim()
+        uninstallButtonScale = 0f
+    }
+
+    private fun cancelUninstallScaleAnim() {
+        Log.d(TAG, "cancelUninstallScaleAnim() called")
+        mUninstallIconScaleAnim?.cancel()
     }
 
     private fun cancelDotScaleAnim() {
@@ -196,7 +233,7 @@ class IconTextView @JvmOverloads constructor(
         cancelDotScaleAnim()
         mDotScaleAnim = ObjectAnimator.ofFloat(
             this,
-            DOT_SCALE_PROPERTY,
+            UNINSTALL_SCALE_PROPERTY,
             *dotScales
         ).apply {
             addListener(object : AnimatorListenerAdapter() {
@@ -255,6 +292,11 @@ class IconTextView @JvmOverloads constructor(
         var result = super.onTouchEvent(event)
 
         when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                // We store these value to check if the click has been made on uninstallIcon or not.
+                touchX = event.x.toInt()
+                touchY = event.y.toInt()
+            }
             MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> longPressHelper.cancelLongPress()
             MotionEvent.ACTION_MOVE -> if (!Utilities.pointInView(this, event.x, event.y, slop)) {
                 longPressHelper.cancelLongPress()
@@ -281,6 +323,7 @@ class IconTextView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
         drawDotIfNecessary(canvas)
+        drawUninstallIcon(canvas)
     }
 
     /**
@@ -303,15 +346,89 @@ class IconTextView @JvmOverloads constructor(
         return mDotInfo != null
     }
 
-    fun getIconBounds(outBounds: Rect) {
+    private fun getIconBounds(outBounds: Rect) {
         getIconBounds(this, outBounds, defaultIconSize)
     }
 
-    fun getIconBounds(iconView: View, outBounds: Rect, iconSize: Int) {
+    private fun getIconBounds(iconView: View, outBounds: Rect, iconSize: Int) {
         val top = iconView.paddingTop
         val left = (iconView.width - iconSize) / 2
         val right = left + iconSize
         val bottom = top + iconSize
         outBounds[left, top, right] = bottom
+    }
+
+    /**
+     * Draws the uninstall button in the top right corner of the icon bounds.
+     * @param canvas The canvas to draw to.
+     */
+    private fun drawUninstallIcon(canvas: Canvas?) {
+        if (isUninstallVisible || uninstallButtonScale > 0) {
+            Log.d(TAG, "drawUninstallIcon() called with: $isUninstallVisible $uninstallButtonScale")
+            val tempBounds = Rect()
+            getIconBounds(tempBounds)
+            val scrollX = scrollX
+            val scrollY = scrollY
+            canvas?.translate(scrollX.toFloat(), scrollY.toFloat())
+            mUninstallRenderer.draw(canvas, tempBounds)
+            canvas?.translate(-scrollX.toFloat(), -scrollY.toFloat())
+        }
+    }
+
+    fun applyUninstallIconState(showUninstallIcon: Boolean) {
+        Log.d(TAG, "applyUninstallIconState() called with: showUninstallIcon = $showUninstallIcon")
+        val wasUninstallVisible = isUninstallVisible
+        isUninstallVisible = showUninstallIcon
+        val newScale: Float = if (isUninstallVisible) 1f else 0f
+        mUninstallRenderer = mActivity.deviceProfile.uninstallRenderer
+        if (wasUninstallVisible || isUninstallVisible) {
+            // Animate when a dot is first added or when it is removed.
+            if (wasUninstallVisible xor isUninstallVisible && isShown) {
+                animateUninstallScale(newScale)
+            } else {
+                cancelUninstallScaleAnim()
+                uninstallButtonScale = newScale
+                invalidate()
+            }
+        }
+    }
+
+    private fun animateUninstallScale(vararg scales: Float) {
+        cancelUninstallScaleAnim()
+        mUninstallIconScaleAnim = ObjectAnimator.ofFloat(
+            this,
+            UNINSTALL_SCALE_PROPERTY,
+            *scales
+        ).apply {
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    mUninstallIconScaleAnim = null
+                }
+            })
+        }
+        mUninstallIconScaleAnim?.start()
+    }
+
+    fun tryToHandleUninstallClick(launcher: TestActivity): Boolean {
+        if (!isUninstallVisible) {
+            return false
+        }
+        val iconBounds = Rect()
+        getIconBounds(iconBounds)
+        val uninstallIconBounds = mUninstallRenderer.getBoundsScaled(iconBounds)
+        if (uninstallIconBounds.contains(touchX, touchY)) {
+            val tag = tag as LauncherItem
+            if (tag.itemType == Constants.ITEM_TYPE_APPLICATION) {
+                launcher.uninstallApplication(tag as ApplicationItem)
+            } else if (tag.itemType == Constants.ITEM_TYPE_SHORTCUT) {
+                launcher.removeShortcut(tag as ShortcutItem)
+            }
+
+            // Reset touch coordinates
+            touchX = 0
+            touchY = 0
+            return true
+        }
+        return false
     }
 }

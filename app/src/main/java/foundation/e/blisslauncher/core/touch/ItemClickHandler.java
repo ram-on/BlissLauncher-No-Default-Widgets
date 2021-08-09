@@ -16,6 +16,7 @@
 package foundation.e.blisslauncher.core.touch;
 
 import android.content.Intent;
+import android.graphics.drawable.Icon;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -49,6 +50,11 @@ public class ItemClickHandler {
         /*if (!launcher.getWorkspace().isFinishedSwitchingState()) {
             return;
         }*/
+
+        if(v instanceof IconTextView) {
+            boolean result = ((IconTextView) v).tryToHandleUninstallClick(launcher);
+            if(result) return;
+        }
 
         Object tag = v.getTag();
         if (tag instanceof ShortcutItem) {

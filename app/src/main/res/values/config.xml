@@ -16,4 +16,7 @@
     <item type="id" name="overview_panel"/>
     <integer name="config_recentsMaxThumbnailCacheSize">6</integer>
     <integer name="config_recentsMaxIconCacheSize">12</integer>
+
+    <!-- String representing the intent to delete a package.-->
+    <string name="delete_package_intent" translatable="false">#Intent;action=android.intent.action.DELETE;launchFlags=0x10800000;end</string>
 </resources>

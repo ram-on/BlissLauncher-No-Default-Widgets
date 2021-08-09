@@ -15,10 +15,11 @@
  */
 package foundation.e.blisslauncher.core.touch;
 
-import android.util.Log;
+import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
+import static foundation.e.blisslauncher.features.test.LauncherState.OVERVIEW;
+
 import android.view.View;
 import android.view.View.OnLongClickListener;
-
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
@@ -37,17 +38,19 @@ public class ItemLongClickListener {
     private static boolean onWorkspaceItemLongClick(View v) {
         int[] temp = new int[2];
         v.getLocationOnScreen(temp);
-        Log.i(TAG,
-            "onWorkspaceItemLongClick: [" + v.getLeft() + ", " + v.getTop() + "] ["+temp[0]+", "+temp[1]+"]"
-        );
         TestActivity launcher = TestActivity.Companion.getLauncher(v.getContext());
         if (!canStartDrag(launcher)) return false;
-        //if (!launcher.isInState(NORMAL) && !launcher.isInState(OVERVIEW)) return false;
+        if (!launcher.isInState(NORMAL) && !launcher.isInState(OVERVIEW)) return false;
         if (!(v.getTag() instanceof LauncherItem)) return false;
 
         //launcher.setWaitingForResult(null);
+        addWobbleAnimation(launcher);
         beginDrag(v, launcher, (LauncherItem) v.getTag(), new DragOptions());
         return true;
+    }
+
+    private static void addWobbleAnimation(TestActivity launcher) {
+        launcher.getLauncherPagedView().wobbleLayouts();
     }
 
     public static void beginDrag(
