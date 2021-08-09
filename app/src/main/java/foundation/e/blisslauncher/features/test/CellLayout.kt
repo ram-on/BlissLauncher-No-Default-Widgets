@@ -16,6 +16,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
 import android.widget.GridLayout
 import androidx.annotation.IntDef
 import foundation.e.blisslauncher.R
@@ -785,7 +786,7 @@ open class CellLayout @JvmOverloads constructor(
         minSpanY: Int,
         spanX: Int,
         spanY: Int,
-        dragView: View?,
+        dragView: View,
         result: IntArray?,
         resultSpan: IntArray?,
         mode: Int
@@ -812,7 +813,7 @@ open class CellLayout @JvmOverloads constructor(
         // committing anything or animating anything as we just want to determine if a solution
         // exists
         if (mode == MODE_DRAG_OVER || mode == MODE_ON_DROP || mode == MODE_ON_DROP_EXTERNAL) {
-            val parent = (dragView?.parent as ViewGroup?)
+            val parent = (dragView.parent as ViewGroup?)
             parent?.removeView(dragView)
 
             if (childCount == mCountX * mCountY) {
@@ -835,10 +836,10 @@ open class CellLayout @JvmOverloads constructor(
             iconLayoutParams.height = if (mContainerType == HOTSEAT)
                 dp.hotseatCellHeightPx else dp.cellHeightPx
             iconLayoutParams.width = dp.cellWidthPx
-            dragView?.also {
+            dragView.also {
                 if (it is IconTextView) it.setTextVisibility(mContainerType != HOTSEAT)
             }
-            dragView?.setLayoutParams(iconLayoutParams)
+            dragView.layoutParams = iconLayoutParams
             addView(dragView, index)
 
             /*copySolutionToTempState(finalSolution, dragView)
@@ -856,13 +857,16 @@ open class CellLayout @JvmOverloads constructor(
                     ReorderPreviewAnimation.MODE_PREVIEW
                 )
             }*/
-        }
 
-        // May consider this later.
-        /*if ((mode == MODE_ON_DROP || !foundSolution)) {
-            setUseTempCoords(false)
-        }*/
-        // requestLayout()
+            if ((mode == MODE_ON_DROP)) {
+                if (index % 2 == 0) {
+                    dragView.startAnimation(AnimationUtils.loadAnimation(context, R.anim.wobble))
+                } else {
+                    dragView.startAnimation(AnimationUtils.loadAnimation(context, R.anim.wobble_reverse))
+                }
+            }
+        }
+        requestLayout()
         return result
     }
 

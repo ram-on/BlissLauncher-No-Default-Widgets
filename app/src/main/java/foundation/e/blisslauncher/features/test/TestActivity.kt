@@ -1228,8 +1228,13 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             return
         }
 
-        if (dragController.isDragging()) {
+        if (dragController.isDragging) {
             dragController.cancelDrag()
+            return
+        }
+
+        // We expire wobble animation as soon a back press is done and return if the animation was running.
+        if(getLauncherPagedView().setWobbleExpirationAlarm(0)) {
             return
         }
 

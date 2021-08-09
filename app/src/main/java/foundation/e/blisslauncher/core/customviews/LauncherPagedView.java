@@ -724,18 +724,26 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
      * @param screenId The screen in which to add the child.
      * @param x        The X position of the child in the screen's grid.
      * @param y        The Y position of the child in the screen's grid.
+     * @param animate  If the view should start to animate after drag and drop.
      */
-    private void addInScreen(View child, long container, long screenId, int x, int y) {
-        Log.d(
-            TAG,
-            "addInScreen() called with: child = [" + child + "], container = [" + container + "], screenId = [" + screenId + "], x = [" + x + "], y = [" + y + "]"
-        );
+    private void addInScreen(View child, long container, long screenId, int x, int y, boolean animate) {
+        int index = y * mLauncher.getDeviceProfile().getInv().getNumColumns() + x;
         addInScreen(
             child,
             container,
             screenId,
-            y * mLauncher.getDeviceProfile().getInv().getNumColumns() + x
+            index
         );
+
+        post(() -> {
+            if(animate) {
+                if(index % 2 == 0) {
+                    child.startAnimation(AnimationUtils.loadAnimation(getContext(), R.anim.wobble));
+                } else {
+                    child.startAnimation(AnimationUtils.loadAnimation(getContext(), R.anim.wobble_reverse));
+                }
+            }
+        });
     }
 
     /**
@@ -1406,8 +1414,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
                 boolean foundCell = mTargetCell[0] >= 0 && mTargetCell[1] >= 0;
 
-                Log.d(TAG, "Found cell " + foundCell + " " + mTargetCell[0] + " " + mTargetCell[0]);
-
                 if (foundCell) {
                     if (getScreenIdForPageIndex(mCurrentPage) != screenId && !hasMovedIntoHotseat) {
                         snapScreen = getPageIndexForScreenId(screenId);
@@ -1419,12 +1425,13 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                         // Reparent the view
                         CellLayout parentCell = getParentCellLayoutForView(cell);
                         if (parentCell != null) {
+                            cell.clearAnimation();
                             parentCell.removeView(cell);
                         } else if (BuildConfig.DEBUG) {
                             throw new NullPointerException("mDragInfo.cell has null parent");
                         }
 
-                        addInScreen(cell, container, screenId, mTargetCell[0], mTargetCell[1]);
+                        addInScreen(cell, container, screenId, mTargetCell[0], mTargetCell[1], true);
                     }
 
                     // update the item's position after drop
@@ -1456,7 +1463,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     // spring-loaded mode so the page meets the icon where it was picked up.
                     mLauncher.getDragController().animateDragViewToOriginalPosition(
                         onCompleteRunnable, cell, SPRING_LOADED_TRANSITION_MS);
-                    //mLauncher.getStateManager().goToState(NORMAL);
+                    mLauncher.getStateManager().goToState(NORMAL);
                     parent.onDropChild(cell);
                     return;
                 }
@@ -1907,7 +1914,18 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         mSpringLoadedDragController.cancel();
 
         // Reset the grid state by stopping the animation and removing uninstall icon after 25 seconds
-        wobbleExpireAlarm.setAlarm(WOBBLE_EXPIRATION_TIMEOUT);
+        setWobbleExpirationAlarm(WOBBLE_EXPIRATION_TIMEOUT);
+    }
+
+    /**
+     * @param timeoutInMillis Expire wobble animation after the given timeout
+     * @return true if there was any pending alarm otherwise false.
+     */
+    public boolean setWobbleExpirationAlarm(long timeoutInMillis) {
+        boolean alarmPending = wobbleExpireAlarm.alarmPending();
+        wobbleExpireAlarm.cancelAlarm();
+        wobbleExpireAlarm.setAlarm(timeoutInMillis);
+        return alarmPending;
     }
 
     @Override
