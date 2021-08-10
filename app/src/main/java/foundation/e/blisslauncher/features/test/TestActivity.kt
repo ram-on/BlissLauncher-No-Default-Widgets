@@ -26,6 +26,7 @@ import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.os.Process
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
 import android.provider.Settings
@@ -274,28 +275,36 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             val cr = contentResolver
             val setting = "enabled_notification_listeners"
             var permissionString = Settings.Secure.getString(cr, setting)
-            if (permissionString == null || !permissionString.contains(packageName)) {
-                if (BuildConfig.DEBUG) {
+            val cn = ComponentName(this, NotificationListener::class.java)
+
+            val enabled = permissionString != null && (permissionString.contains(cn.flattenToString()) || permissionString.contains(cn.flattenToShortString()))
+
+            if (!enabled) {
+                val launcherApps: LauncherApps = getSystemService(LAUNCHER_APPS_SERVICE) as LauncherApps
+                val launcherInfo = launcherApps.getApplicationInfo(packageName, 0, Process.myUserHandle())
+                if(launcherInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
+                    val args = Bundle()
+                    args.putString(":settings:fragment_args_key", cn.flattenToString())
+                    val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra(":settings:fragment_args_key", cn.flattenToString())
+                        .putExtra(":settings:show_fragment_args", args)
                     startActivity(
-                        Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+                        intent
                     )
-                } else if (!Preferences.shouldAskForNotificationAccess(this)) {
-                    val cn = ComponentName(
-                        this,
-                        NotificationService::class.java
-                    )
+                } else {
                     if (permissionString == null) {
                         permissionString = ""
                     } else {
                         permissionString += ":"
                     }
                     permissionString += cn.flattenToString()
-                    val success = Settings.Secure.putString(cr, setting, permissionString)
-                    if (success) {
-                        Preferences.setNotToAskForNotificationAccess(this)
-                    }
+
+                    // Requires WRITE_SECURE_SETTINGS permission.
+                    Settings.Secure.putString(cr, setting, permissionString)
                 }
             }
+            Preferences.setNotToAskForNotificationAccess(this)
         }
     }
 

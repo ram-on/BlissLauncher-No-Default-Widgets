@@ -6,6 +6,11 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.VectorDrawable;
+
+import androidx.core.content.res.ResourcesCompat;
+import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
 
 import foundation.e.blisslauncher.R;
 
@@ -27,14 +32,10 @@ public class UninstallButtonRenderer {
     }
 
     public void draw(Canvas canvas, Rect iconBounds) {
-        Bitmap myBitmap = BitmapFactory.decodeResource(
-                mContext.getResources(),
-                R.drawable.ic_minus);
-        Bitmap scaledBitmap = Bitmap.createScaledBitmap(myBitmap, mSize, mSize, true);
-
-        canvas.drawBitmap(scaledBitmap, iconBounds.right - scaledBitmap.getWidth() / 2,
-                iconBounds.top - scaledBitmap.getHeight() / 2, mPaint);
-        //canvas.drawCircle(badgeCenterX, badgeCenterY, mSize/2, mPaint);
+        Drawable uninstallDrawable = ResourcesCompat.getDrawable(mContext.getResources(), R.drawable.ic_minus_white_16dp, mContext.getTheme());
+        uninstallDrawable.setBounds(iconBounds.right - mSize / 2,
+            iconBounds.top - mSize / 2, iconBounds.right + mSize / 2, iconBounds.top + mSize / 2);
+        uninstallDrawable.draw(canvas);
     }
 
     /**

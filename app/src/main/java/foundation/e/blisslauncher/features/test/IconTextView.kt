@@ -233,7 +233,7 @@ class IconTextView @JvmOverloads constructor(
         cancelDotScaleAnim()
         mDotScaleAnim = ObjectAnimator.ofFloat(
             this,
-            UNINSTALL_SCALE_PROPERTY,
+            DOT_SCALE_PROPERTY,
             *dotScales
         ).apply {
             addListener(object : AnimatorListenerAdapter() {
