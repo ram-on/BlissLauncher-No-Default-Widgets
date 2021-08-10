@@ -42,6 +42,7 @@ build/
 .idea/navEditor.xml
 .idea/tasks.xml
 .idea/modules.xml
+.idea/misc.xml
 .idea/assetWizardSettings.xml
 .idea/markdown-navigator*
 .idea/compiler.xml
