@@ -327,7 +327,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 Log.i(TAG, "bindItems: " + appView);
                 workspaceScreen.addView(appView);
             } else if (launcherItem.container == Constants.CONTAINER_HOTSEAT) {
-                //appView.findViewById(R.id.app_label).setVisibility(GONE);
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.LayoutParams iconLayoutParams =
@@ -1513,6 +1512,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             LauncherItem destItem = (LauncherItem) v.getTag();
 
             Rect folderLocation = new Rect();
+            target.clearAnimation();
             target.removeView(v);
             FolderItem fi = new FolderItem();
             fi.title = getResources().getString(R.string.untitled);

@@ -60,7 +60,7 @@ public class ItemClickHandler {
         if (tag instanceof ShortcutItem) {
             onClickAppShortcut(v, (ShortcutItem) tag, launcher);
         } else if (tag instanceof FolderItem) {
-            onClickFolderIcon(v);
+            onClickFolderIcon(v, launcher);
         } else if (tag instanceof ApplicationItem) {
             startAppShortcutOrInfoActivity(v, (ApplicationItem) tag, launcher);
         }
@@ -70,14 +70,14 @@ public class ItemClickHandler {
      * Event handler for a folder icon click.
      *
      * @param v The view that was clicked. Must be an instance of {@link IconTextView}.
+     * @param launcher Launcher activity to pass actions.
      */
-    private static void onClickFolderIcon(View v) {
+    private static void onClickFolderIcon(
+        View v,
+        TestActivity launcher
+    ) {
         Log.d("ItemClick", "onClickFolderIcon() called with: v = [" + v + "]");
-        /*Folder folder = ((FolderIcon) v).getFolder();
-        if (!folder.isOpen() && !folder.isDestroyed()) {
-            // Open the requested folder
-            folder.animateOpen();
-        }*/
+        launcher.openFolder(v);
     }
 
     /**

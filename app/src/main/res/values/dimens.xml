@@ -68,4 +68,5 @@
     <dimen name="bg_popup_item_width">220dp</dimen>
     <dimen name="bg_popup_item_height">56dp</dimen>
     <dimen name="default_dialog_corner_radius">8dp</dimen>
+    <dimen name="folder_padding">16dp</dimen>
 </resources>

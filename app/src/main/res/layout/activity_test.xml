@@ -41,6 +41,9 @@
             layout="@layout/overview_panel"
             android:visibility="gone" />
 
+        <include layout="@layout/layout_folder"
+            />
+
     </foundation.e.blisslauncher.features.test.dragndrop.DragLayer>
 
 </foundation.e.blisslauncher.features.test.LauncherRootView>

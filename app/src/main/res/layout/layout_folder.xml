@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/folder_window_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clickable="true"
+    android:focusable="true"
+    android:visibility="gone">
+
+    <foundation.e.blisslauncher.core.customviews.BlissInput
+        android:id="@+id/folder_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/folder_apps_background"
+        android:layout_centerHorizontal="true"
+        android:background="@null"
+        android:imeOptions="actionDone"
+        android:inputType="textNoSuggestions|textCapSentences"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:text="@string/untitled"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        android:textSize="18sp" />
+
+    <LinearLayout
+        android:id="@+id/folder_apps_background"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:background="@drawable/folder_window"
+        android:orientation="vertical">
+
+        <androidx.viewpager.widget.ViewPager
+            android:id="@+id/folder_apps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <me.relex.circleindicator.CircleIndicator
+            android:id="@+id/indicator"
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            android:paddingBottom="4dp" />
+
+    </LinearLayout>
+
+</RelativeLayout>
