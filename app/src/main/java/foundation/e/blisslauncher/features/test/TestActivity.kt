@@ -113,7 +113,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.schedulers.Schedulers
-import me.relex.circleindicator.CircleIndicator
 import java.net.URISyntaxException
 import java.util.ArrayList
 import java.util.Arrays
@@ -121,6 +120,7 @@ import java.util.Comparator
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
+import me.relex.circleindicator.CircleIndicator
 
 class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionClickListener {
 
@@ -295,7 +295,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             if (!enabled) {
                 val launcherApps: LauncherApps = getSystemService(LAUNCHER_APPS_SERVICE) as LauncherApps
                 val launcherInfo = launcherApps.getApplicationInfo(packageName, 0, Process.myUserHandle())
-                if(launcherInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
+                if (launcherInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
                     val args = Bundle()
                     args.putString(":settings:fragment_args_key", cn.flattenToString())
                     val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
@@ -1223,7 +1223,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 // In all these cases, only animate if we're already on home
                 AbstractFloatingView.closeAllOpenViews(this, isStarted)
 
-                if(folderContainer.visibility == View.VISIBLE) {
+                if (folderContainer.visibility == View.VISIBLE) {
                     closeFolder()
                     return
                 }
@@ -1262,7 +1262,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         }
 
         // We expire wobble animation as soon a back press is done and return if the animation was running.
-        if(getLauncherPagedView().setWobbleExpirationAlarm(0)) {
+        if (getLauncherPagedView().setWobbleExpirationAlarm(0)) {
             return
         }
 
@@ -1274,7 +1274,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             // Handled by the floating view.
         } else if (folderContainer.visibility == View.VISIBLE) {
             closeFolder()
-        }else {
+        } else {
             mStateManager.state.onBackPressed(this)
         }
     }
@@ -1534,7 +1534,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 )
             )
             .with(ObjectAnimator.ofFloat<View>(getLauncherPagedView(), View.ALPHA, 0f))
-            //.with(ObjectAnimator.ofFloat<View>(mIndicator, View.ALPHA, 0f))
+            // .with(ObjectAnimator.ofFloat<View>(mIndicator, View.ALPHA, 0f))
             .with(ObjectAnimator.ofFloat(hotseat, View.ALPHA, 0f))
         set.duration = 300
         set.interpolator = LinearInterpolator()
@@ -1548,12 +1548,12 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 // is the center of the view).
                 folderContainer.pivotX = 0f
                 folderContainer.pivotY = 0f
-                //BlurWallpaperProvider.getInstance(LauncherActivity.this).clear();
+                // BlurWallpaperProvider.getInstance(LauncherActivity.this).clear();
             }
 
             override fun onAnimationEnd(animation: Animator) {
                 currentAnimator = null
-                //blurLayer.setAlpha(1f)
+                // blurLayer.setAlpha(1f)
                 getLauncherPagedView().alpha = 0f
                 hotseat.alpha = 0f
             }
@@ -1561,9 +1561,9 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             override fun onAnimationCancel(animation: Animator) {
                 currentAnimator = null
                 folderContainer.visibility = View.GONE
-                //blurLayer.setAlpha(0f)
+                // blurLayer.setAlpha(0f)
                 getLauncherPagedView().alpha = 1f
-                //mIndicator.setAlpha(1f)
+                // mIndicator.setAlpha(1f)
                 hotseat.alpha = 1f
             }
         })
@@ -1585,7 +1585,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             mFolderAppsViewPager
         )
     }
-
 
     fun closeFolder() {
         mFolderTitleInput?.clearFocus()
@@ -1626,11 +1625,11 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                         View.SCALE_Y, startScaleFinal
                     )
             )
-            //.with(ObjectAnimator.ofFloat<View>(blurLayer, View.ALPHA, 0f))
+            // .with(ObjectAnimator.ofFloat<View>(blurLayer, View.ALPHA, 0f))
             .with(ObjectAnimator.ofFloat<View>(getLauncherPagedView(), View.ALPHA, 1f))
             .with(ObjectAnimator.ofFloat<View>(getLauncherPagedView().pageIndicator, View.ALPHA, 1f))
             .with(ObjectAnimator.ofFloat<View>(hotseat, View.ALPHA, 1f))
-        //.with(valueAnimator);
+        // .with(valueAnimator);
         set.duration = 300
         set.interpolator = LinearInterpolator()
         set.addListener(object : AnimatorListenerAdapter() {
@@ -1643,7 +1642,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             override fun onAnimationEnd(animation: Animator) {
                 folderContainer.setVisibility(View.GONE)
                 currentAnimator = null
-                //blurLayer.setAlpha(0f)
+                // blurLayer.setAlpha(0f)
                 getLauncherPagedView().setAlpha(1f)
                 getLauncherPagedView().pageIndicator.setAlpha(1f)
                 hotseat.setAlpha(1f)
@@ -1652,7 +1651,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             override fun onAnimationCancel(animation: Animator) {
                 folderContainer.setVisibility(View.GONE)
                 currentAnimator = null
-                //blurLayer.setAlpha(0f)
+                // blurLayer.setAlpha(0f)
                 getLauncherPagedView().setAlpha(1f)
                 getLauncherPagedView().pageIndicator.setAlpha(1f)
                 hotseat.setAlpha(1f)

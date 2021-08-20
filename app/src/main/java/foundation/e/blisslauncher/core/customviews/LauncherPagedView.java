@@ -1488,7 +1488,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         int[] targetCell, float distance, boolean external, DragView dragView
     ) {
         if (distance > mMaxDistanceForFolderCreation) return false;
-        View v = target.getChildAt(targetCell[0], targetCell[1]);
+        View targetView = target.getChildAt(targetCell[0], targetCell[1]);
 
         boolean hasntMoved = false;
         if (mDragInfo != null) {
@@ -1498,22 +1498,22 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     .getMCountX() == targetCell[1]) && (cellParent == target);
         }
 
-        if (v == null || hasntMoved || !mCreateUserFolderOnDrop) return false;
+        if (targetView == null || hasntMoved || !mCreateUserFolderOnDrop) return false;
         mCreateUserFolderOnDrop = false;
         final long screenId = getIdForScreen(target);
 
         boolean aboveShortcut =
-            (v.getTag() instanceof ApplicationItem) || (v.getTag() instanceof ShortcutItem);
+            (targetView.getTag() instanceof ApplicationItem) || (targetView.getTag() instanceof ShortcutItem);
         boolean willBecomeShortcut =
-            (v.getTag() instanceof ApplicationItem) || (v.getTag() instanceof ShortcutItem);
+            (targetView.getTag() instanceof ApplicationItem) || (targetView.getTag() instanceof ShortcutItem);
 
         if (aboveShortcut && willBecomeShortcut) {
             LauncherItem sourceItem = (LauncherItem) newView.getTag();
-            LauncherItem destItem = (LauncherItem) v.getTag();
+            LauncherItem destItem = (LauncherItem) targetView.getTag();
 
             Rect folderLocation = new Rect();
-            target.clearAnimation();
-            target.removeView(v);
+            targetView.clearAnimation();
+            target.removeView(targetView);
             FolderItem fi = new FolderItem();
             fi.title = getResources().getString(R.string.untitled);
             fi.id = String.valueOf(System.currentTimeMillis());
