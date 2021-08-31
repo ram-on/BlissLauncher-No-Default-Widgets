@@ -514,7 +514,7 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
     }
 
     @Override
-    public void setInsets(WindowInsets insets) {
+    public void setInsets(Rect insets) {
         super.setInsets(insets);
     }
 }

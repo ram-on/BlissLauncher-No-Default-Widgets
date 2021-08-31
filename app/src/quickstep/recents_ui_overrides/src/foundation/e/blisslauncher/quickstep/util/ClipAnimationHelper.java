@@ -269,7 +269,7 @@ public class ClipAnimationHelper {
             updateStackBoundsToMultiWindowTaskSize(activity);
         } else {
             mSourceStackBounds.set(mHomeStackBounds);
-            Rect fallback = dl.getInsets();
+            Rect fallback = dl.mInsets;
             mSourceInsets.set(ttv.getInsets(fallback));
         }
 

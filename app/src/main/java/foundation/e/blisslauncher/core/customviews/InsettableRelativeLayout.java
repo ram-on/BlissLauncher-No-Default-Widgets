@@ -3,6 +3,7 @@ package foundation.e.blisslauncher.core.customviews;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,7 +15,7 @@ import foundation.e.blisslauncher.R;
 public class InsettableRelativeLayout extends RelativeLayout {
 
     private final Context mContext;
-    protected WindowInsets mInsets;
+    protected Rect mInsets;
 
 
     public InsettableRelativeLayout(Context context, AttributeSet attrs) {
@@ -25,12 +26,12 @@ public class InsettableRelativeLayout extends RelativeLayout {
     @Override
     public WindowInsets onApplyWindowInsets(WindowInsets insets) {
         BlissLauncher.getApplication(mContext).resetDeviceProfile();
-        updateChildInsets(insets);
-        mInsets = new WindowInsets(insets);
+        mInsets.set(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(), insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+        updateChildInsets(mInsets);
         return insets;
     }
 
-    private void updateChildInsets(WindowInsets insets) {
+    private void updateChildInsets(Rect insets) {
         if(insets == null) return;
         int childCount = getChildCount();
         for (int index = 0; index < childCount; ++index){

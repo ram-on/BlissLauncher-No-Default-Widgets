@@ -172,7 +172,7 @@ public class TaskMenuView extends AbstractFloatingView {
     private void orientAroundTaskView(TaskView taskView) {
         measure(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED);
         mActivity.getDragLayer().getDescendantRectRelativeToSelf(taskView, sTempRect);
-        Rect insets = mActivity.getDragLayer().getInsets();
+        Rect insets = mActivity.getDragLayer().mInsets;
         BaseDragLayer.LayoutParams params = (BaseDragLayer.LayoutParams) getLayoutParams();
         params.width = taskView.getMeasuredWidth();
         params.gravity = Gravity.START;

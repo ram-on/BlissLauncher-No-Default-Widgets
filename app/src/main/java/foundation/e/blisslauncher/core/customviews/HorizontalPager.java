@@ -62,7 +62,7 @@ public class HorizontalPager extends ViewGroup implements Insettable {
     private Set<OnScrollListener> mListeners = new HashSet<>();
     private boolean mIsUiCreated;
     private GestureDetectorCompat gestureDetectorCompat;
-    private WindowInsets insets;
+    private Rect insets;
     private float mLastMotionRawY;
 
     public HorizontalPager(Context context, AttributeSet attrs) {
@@ -540,10 +540,10 @@ public class HorizontalPager extends ViewGroup implements Insettable {
     }
 
     @Override
-    public void setInsets(WindowInsets insets) {
+    public void setInsets(Rect insets) {
         if(insets == null) return;
         InsettableRelativeLayout.LayoutParams lp = (InsettableRelativeLayout.LayoutParams) getLayoutParams();
-        lp.topMargin = insets.getSystemWindowInsetTop();
+        lp.topMargin = insets.top;
         setLayoutParams(lp);
         updateInsetsForChildren();
         this.insets = insets;

@@ -9,13 +9,13 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Outline
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.util.Property
 import android.view.Gravity
 import android.view.View
 import android.view.ViewOutlineProvider
-import android.view.WindowInsets
 import android.view.animation.Interpolator
 import android.view.animation.OvershootInterpolator
 import foundation.e.blisslauncher.R
@@ -315,12 +315,12 @@ class PageIndicatorDots(context: Context, attrs: AttributeSet?, defStyleAttr: In
         // mIsRtl = Utilities.isRtl(getResources())
     }
 
-    override fun setInsets(insets: WindowInsets) {
+    override fun setInsets(insets: Rect) {
         val deviceProfile = mLauncher.deviceProfile
         val lp = layoutParams as BaseDragLayer.LayoutParams
         lp.leftMargin = 0.also { lp.rightMargin = it }
         lp.gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
-        lp.bottomMargin = deviceProfile.hotseatBarSizePx + resources.getDimensionPixelSize(R.dimen.dotPadding) * 2 + insets.systemWindowInsetBottom
+        lp.bottomMargin = deviceProfile.hotseatBarSizePx + resources.getDimensionPixelSize(R.dimen.dotPadding) * 2 + insets.bottom
         layoutParams = lp
     }
 }

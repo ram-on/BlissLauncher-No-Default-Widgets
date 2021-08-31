@@ -2,6 +2,7 @@ package foundation.e.blisslauncher.core.customviews
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
@@ -76,5 +77,5 @@ class BlurBackgroundView(context: Context, attrs: AttributeSet?) : View(context,
         createFullBlurDrawable()
     }
 
-    override fun setInsets(insets: WindowInsets) {}
+    override fun setInsets(insets: Rect) {}
 }

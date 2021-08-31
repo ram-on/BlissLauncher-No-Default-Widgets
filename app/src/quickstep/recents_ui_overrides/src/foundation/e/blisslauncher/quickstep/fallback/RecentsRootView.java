@@ -17,6 +17,7 @@ package foundation.e.blisslauncher.quickstep.fallback;
 
 import android.content.Context;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.WindowInsets;
 
@@ -67,22 +68,27 @@ public class RecentsRootView extends BaseDragLayer<RecentsActivity> {
     @Override
     public WindowInsets onApplyWindowInsets(@Nullable WindowInsets insets) {
         // Update device profile before notifying the children.
-        mActivity.getDeviceProfile().updateInsets(insets);
-        setInsets(insets);
+        Rect tmpInsets = new Rect();
+        if(insets != null) {
+            tmpInsets.set(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
+                insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+        }
+        mActivity.getDeviceProfile().updateInsets(tmpInsets);
+        setInsets(tmpInsets);
         return insets;
     }
 
     @Override
-    public void setInsets(WindowInsets insets) {
+    public void setInsets(Rect insets) {
         // If the insets haven't changed, this is a no-op. Avoid unnecessary layout caused by
         // modifying child layout params.
-        if (!insets.equals(getWindowInsets())) {
+        if (!insets.equals(mInsets)) {
             super.setInsets(insets);
-        };
+        }
     }
 
     public void dispatchInsets() {
-        mActivity.getDeviceProfile().updateInsets(getWindowInsets());
-        super.setInsets(getWindowInsets());
+        mActivity.getDeviceProfile().updateInsets(mInsets);
+        super.setInsets(mInsets);
     }
 }

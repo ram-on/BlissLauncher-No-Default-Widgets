@@ -50,6 +50,7 @@ import android.widget.RelativeLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.isVisible
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -263,7 +264,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
         systemUiController.updateUiState(
             SystemUiController.UI_STATE_BASE_WINDOW,
-            false
+            true
         )
         rotationHelper.initialize()
         TraceHelper.endSection("Launcher-onCreate")
@@ -1578,9 +1579,9 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         // We use same size for height and width as we want to look it like sqaure
         val height = mDeviceProfile.cellHeightPx * 3 + resources.getDimensionPixelSize(R.dimen.folder_padding)
         mFolderAppsViewPager?.layoutParams?.width =
-            height
+            mDeviceProfile.cellHeightPx * 3 + resources.getDimensionPixelSize(R.dimen.folder_padding) * 2
         mFolderAppsViewPager?.layoutParams?.height =
-            height
+            (mDeviceProfile.cellHeightPx + mDeviceProfile.iconDrawablePaddingPx * 2)*3 + resources.getDimensionPixelSize(R.dimen.folder_padding) * 2
         (launcherView.findViewById<View>(R.id.indicator) as CircleIndicator).setViewPager(
             mFolderAppsViewPager
         )
@@ -1601,11 +1602,11 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         valueAnimator.addUpdateListener(animation ->
                 BlurWallpaperProvider.getInstance(this).blurWithLauncherView(mergedView, (Integer) animation.getAnimatedValue()));*/set.play(
             ObjectAnimator
-                .ofFloat<View>(folderContainer, View.X, activeFolderStartBounds.left.toFloat())
+                .ofFloat(folderContainer, View.X, activeFolderStartBounds.left.toFloat())
         )
             .with(
                 ObjectAnimator
-                    .ofFloat<View>(
+                    .ofFloat(
                         folderContainer,
                         View.Y, activeFolderStartBounds.top
                             .toFloat()
@@ -1620,41 +1621,41 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             )
             .with(
                 ObjectAnimator
-                    .ofFloat<View>(
+                    .ofFloat(
                         folderContainer,
                         View.SCALE_Y, startScaleFinal
                     )
             )
             // .with(ObjectAnimator.ofFloat<View>(blurLayer, View.ALPHA, 0f))
-            .with(ObjectAnimator.ofFloat<View>(getLauncherPagedView(), View.ALPHA, 1f))
-            .with(ObjectAnimator.ofFloat<View>(getLauncherPagedView().pageIndicator, View.ALPHA, 1f))
-            .with(ObjectAnimator.ofFloat<View>(hotseat, View.ALPHA, 1f))
+            .with(ObjectAnimator.ofFloat(getLauncherPagedView(), View.ALPHA, 1f))
+            .with(ObjectAnimator.ofFloat(getLauncherPagedView().pageIndicator, View.ALPHA, 1f))
+            .with(ObjectAnimator.ofFloat(hotseat, View.ALPHA, 1f))
         // .with(valueAnimator);
         set.duration = 300
         set.interpolator = LinearInterpolator()
         set.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationStart(animation: Animator) {
-                getLauncherPagedView().setVisibility(View.VISIBLE)
-                hotseat.setVisibility(View.VISIBLE)
-                getLauncherPagedView().pageIndicator.setVisibility(View.VISIBLE)
+                getLauncherPagedView().isVisible = true
+                hotseat.visibility = View.VISIBLE
+                getLauncherPagedView().pageIndicator.visibility = View.VISIBLE
             }
 
             override fun onAnimationEnd(animation: Animator) {
-                folderContainer.setVisibility(View.GONE)
+                folderContainer.visibility = View.GONE
                 currentAnimator = null
                 // blurLayer.setAlpha(0f)
-                getLauncherPagedView().setAlpha(1f)
-                getLauncherPagedView().pageIndicator.setAlpha(1f)
-                hotseat.setAlpha(1f)
+                getLauncherPagedView().alpha = 1f
+                getLauncherPagedView().pageIndicator.alpha = 1f
+                hotseat.alpha = 1f
             }
 
             override fun onAnimationCancel(animation: Animator) {
-                folderContainer.setVisibility(View.GONE)
+                folderContainer.visibility = View.GONE
                 currentAnimator = null
                 // blurLayer.setAlpha(0f)
-                getLauncherPagedView().setAlpha(1f)
-                getLauncherPagedView().pageIndicator.setAlpha(1f)
-                hotseat.setAlpha(1f)
+                getLauncherPagedView().alpha = 1f
+                getLauncherPagedView().pageIndicator.alpha = 1f
+                hotseat.alpha = 1f
             }
         })
         set.start()

@@ -4,6 +4,7 @@ import static foundation.e.blisslauncher.features.test.SystemUiController.FLAG_D
 import static foundation.e.blisslauncher.features.test.SystemUiController.UI_STATE_NORMAL;
 
 import android.annotation.TargetApi;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -11,6 +12,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewDebug;
 import android.view.WindowInsets;
@@ -21,6 +23,8 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 public class LauncherRootView extends InsettableFrameLayout {
+
+    private final Rect mTempRect = new Rect();
 
     private final TestActivity mLauncher;
 
@@ -56,18 +60,30 @@ public class LauncherRootView extends InsettableFrameLayout {
         super.onFinishInflate();
     }
 
-    @Nullable
-    @Override
-    public WindowInsets onApplyWindowInsets(@Nullable WindowInsets insets) {
+    private void handleSystemWindowInsets(Rect insets) {
         mConsumedInsets.setEmpty();
         boolean drawInsetBar = false;
+        if (mLauncher.isInMultiWindowMode()
+            && (insets.left > 0 || insets.right > 0 || insets.bottom > 0)) {
+            mConsumedInsets.left = insets.left;
+            mConsumedInsets.right = insets.right;
+            mConsumedInsets.bottom = insets.bottom;
+            insets.set(0, insets.top, 0, 0);
+            drawInsetBar = true;
+        } else  if ((insets.right > 0 || insets.left > 0) &&
+            getContext().getSystemService(ActivityManager.class).isLowRamDevice()) {
+            mConsumedInsets.left = insets.left;
+            mConsumedInsets.right = insets.right;
+            insets.set(0, insets.top, 0, insets.bottom);
+            drawInsetBar = true;
+        }
 
         mLauncher.getSystemUiController().updateUiState(
             UI_STATE_NORMAL, drawInsetBar ? FLAG_DARK_NAV : 0);
 
         // Update device profile before notifying th children.
         mLauncher.getDeviceProfile().updateInsets(insets);
-        boolean resetState = !insets.equals(insets);
+        boolean resetState = !insets.equals(mInsets);
         setInsets(insets);
 
         if (mAlignedView != null) {
@@ -85,22 +101,35 @@ public class LauncherRootView extends InsettableFrameLayout {
         if (resetState) {
             mLauncher.getStateManager().reapplyState(true /* cancelCurrentAnimation */);
         }
+    }
 
-        return insets; // I'll take it from here
+    @Nullable
+    @Override
+    public WindowInsets onApplyWindowInsets(@Nullable WindowInsets insets) {
+        mTempRect.set(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
+            insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+
+        handleSystemWindowInsets(mTempRect);
+        if (Utilities.ATLEAST_Q) {
+            return insets.inset(mConsumedInsets.left, mConsumedInsets.top,
+                mConsumedInsets.right, mConsumedInsets.bottom);
+        } else {
+            return insets.replaceSystemWindowInsets(mTempRect);
+        }
     }
 
     @Override
-    public void setInsets(WindowInsets insets) {
+    public void setInsets(Rect insets) {
         // If the insets haven't changed, this is a no-op. Avoid unnecessary layout caused by
         // modifying child layout params.
-        if (!insets.equals(getWindowInsets())) {
+        if (!insets.equals(mInsets)) {
             super.setInsets(insets);
         }
     }
 
     public void dispatchInsets() {
-        mLauncher.getDeviceProfile().updateInsets(getWindowInsets());
-        super.setInsets(getWindowInsets());
+        mLauncher.getDeviceProfile().updateInsets(mInsets);
+        super.setInsets(mInsets);
     }
 
     @Override

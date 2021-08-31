@@ -3,10 +3,8 @@ package foundation.e.blisslauncher.core.customviews
 import android.content.Context
 import android.graphics.Rect
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowInsets
 import android.widget.FrameLayout
 import foundation.e.blisslauncher.R
 
@@ -14,9 +12,7 @@ open class InsettableFrameLayout(mContext: Context, attrs: AttributeSet?) : Fram
     mContext, attrs
 ), Insettable {
 
-    var windowInsets: WindowInsets? = null
-
-    val insets: Rect
+    /*val insets: Rect
         get() {
             var tempInsets = Rect()
             if (this.windowInsets != null) {
@@ -26,55 +22,40 @@ open class InsettableFrameLayout(mContext: Context, attrs: AttributeSet?) : Fram
                 tempInsets.bottom = this.windowInsets!!.systemWindowInsetBottom
             }
             return tempInsets
-        }
+        }*/
 
-    private fun setFrameLayoutChildInsets(child: View, newInsets: WindowInsets?, oldInsets: Rect) {
-        if (newInsets == null) return
+    @JvmField
+    val mInsets = Rect()
+
+    private fun setFrameLayoutChildInsets(child: View, newInsets: Rect, oldInsets: Rect) {
         val lp: FrameLayout.LayoutParams =
             child.layoutParams as FrameLayout.LayoutParams
         if (child is Insettable) {
-            Log.i("Insettable", "setIsnets for child")
             (child as Insettable).setInsets(newInsets)
-        } /*else {
-            lp.topMargin += newInsets.systemWindowInsetTop - oldInsets.top
-            lp.leftMargin += newInsets.systemWindowInsetLeft - oldInsets.left
-            lp.rightMargin += newInsets.systemWindowInsetRight - oldInsets.right
-            lp.bottomMargin += newInsets.systemWindowInsetBottom - oldInsets.bottom
-        }*/
+        } else {
+            lp.topMargin += newInsets.top - oldInsets.top
+            lp.leftMargin += newInsets.left - oldInsets.left
+            lp.rightMargin += newInsets.right - oldInsets.right
+            lp.bottomMargin += newInsets.bottom - oldInsets.bottom
+        }
         child.layoutParams = lp
     }
 
-    override fun onApplyWindowInsets(insets: WindowInsets?): WindowInsets? {
-        // BlissLauncher.getApplication(mContext).resetDeviceProfile()
-        setInsets(insets)
-        Log.d("InsettableFrameLayout", "On applyWindowInsets insets with: insets = $tag")
-        return insets
-    }
-
-    override fun setInsets(insets: WindowInsets?) {
-        Log.d("InsettableFrameLayout", "Setting insets with: insets = $tag")
-        if (insets == null) return
+    override fun setInsets(insets: Rect) {
         for (i in 0 until childCount) {
             val child = getChildAt(i)
-            var oldInsets = Rect()
-            if (this.windowInsets != null) {
-                oldInsets.left = this.windowInsets!!.systemWindowInsetLeft
-                oldInsets.top = this.windowInsets!!.systemWindowInsetTop
-                oldInsets.right = this.windowInsets!!.systemWindowInsetRight
-                oldInsets.bottom = this.windowInsets!!.systemWindowInsetBottom
-            }
-            setFrameLayoutChildInsets(child, insets, oldInsets)
+            setFrameLayoutChildInsets(child, insets, mInsets)
         }
-        this.windowInsets = insets
+        mInsets.set(insets)
     }
 
     override fun onViewAdded(child: View) {
         super.onViewAdded(child)
-        setFrameLayoutChildInsets(child, windowInsets, Rect())
+        setFrameLayoutChildInsets(child, mInsets, Rect())
     }
 
     companion object {
-        fun dispatchInsets(parent: ViewGroup, insets: WindowInsets) {
+        fun dispatchInsets(parent: ViewGroup, insets: Rect) {
             val n = parent.childCount
             for (i in 0 until n) {
                 val child = parent.getChildAt(i)
@@ -98,7 +79,7 @@ open class InsettableFrameLayout(mContext: Context, attrs: AttributeSet?) : Fram
             a.recycle()
         }
 
-        constructor(width: Int, height: Int) : super(width, height) {}
-        constructor(lp: ViewGroup.LayoutParams?) : super(lp!!) {}
+        constructor(width: Int, height: Int) : super(width, height)
+        constructor(lp: ViewGroup.LayoutParams?) : super(lp!!)
     }
 }

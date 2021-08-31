@@ -6,9 +6,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridLayout;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.viewpager.widget.PagerAdapter;
+import androidx.viewpager.widget.ViewPager;
 
 import java.util.List;
 
@@ -45,11 +47,14 @@ public class FolderPagerAdapter extends PagerAdapter {
         viewGroup.setRowCount(3);
         viewGroup.setColumnCount(3);
         viewGroup.setPadding(
-            mDeviceProfile.getIconDrawablePaddingPx() / 2,
-            mDeviceProfile.getIconDrawablePaddingPx() / 2,
-            mDeviceProfile.getIconDrawablePaddingPx() / 2,
-            mDeviceProfile.getIconDrawablePaddingPx() / 2
+            mContext.getResources().getDimensionPixelSize(R.dimen.folder_padding) ,
+            mContext.getResources().getDimensionPixelSize(R.dimen.folder_padding),
+            mContext.getResources().getDimensionPixelSize(R.dimen.folder_padding),
+            mContext.getResources().getDimensionPixelSize(R.dimen.folder_padding)
         );
+        ViewPager.LayoutParams params = (ViewPager.LayoutParams) viewGroup.getLayoutParams();
+        params.width = GridLayout.LayoutParams.WRAP_CONTENT;
+        params.height = GridLayout.LayoutParams.WRAP_CONTENT;
         int i = 0;
         while (9 * position + i < mFolderAppItems.size() && i < 9) {
             LauncherItem appItem = mFolderAppItems.get(9 * position + i);
@@ -60,7 +65,7 @@ public class FolderPagerAdapter extends PagerAdapter {
             appView.setOnClickListener(ItemClickHandler.INSTANCE);
             appView.setOnLongClickListener(ItemLongClickListener.INSTANCE_WORKSPACE);
             GridLayout.LayoutParams iconLayoutParams = new GridLayout.LayoutParams();
-            iconLayoutParams.height = mDeviceProfile.getCellHeightPx();
+            iconLayoutParams.height = mDeviceProfile.getCellHeightPx() + mDeviceProfile.getIconDrawablePaddingPx()*2;
             iconLayoutParams.width = mDeviceProfile.getCellHeightPx();
             iconLayoutParams.setGravity(Gravity.CENTER);
             appView.setLayoutParams(iconLayoutParams);

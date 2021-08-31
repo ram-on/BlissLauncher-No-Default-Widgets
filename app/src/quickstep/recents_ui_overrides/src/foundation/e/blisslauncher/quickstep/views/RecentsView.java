@@ -595,15 +595,8 @@ public abstract class RecentsView<T extends BaseActivity> extends PagedView impl
     }
 
     @Override
-    public void setInsets(WindowInsets insets) {
-        Rect rectInsets = new Rect();
-        if (insets != null) {
-            rectInsets.left = insets.getSystemWindowInsetLeft();
-            rectInsets.top = insets.getSystemWindowInsetTop();
-            rectInsets.right = insets.getSystemWindowInsetRight();
-            rectInsets.bottom = insets.getSystemWindowInsetBottom();
-        }
-        mInsets.set(rectInsets);
+    public void setInsets(Rect insets) {
+        mInsets.set(insets);
         VariantDeviceProfile dp = mActivity.getDeviceProfile();
         getTaskSize(dp, mTempRect);
 

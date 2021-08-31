@@ -2,6 +2,7 @@ package foundation.e.blisslauncher.core.customviews
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.WindowInsets
@@ -73,15 +74,15 @@ class DockGridLayout @JvmOverloads constructor(
         }
     }
 
-    override fun setInsets(insets: WindowInsets?) {
+    override fun setInsets(insets: Rect) {
         if (insets == null) return
         val deviceProfile = BlissLauncher.getApplication(context).deviceProfile
         val lp =
             layoutParams as InsettableRelativeLayout.LayoutParams
-        lp.height = deviceProfile.hotseatCellHeightPx + insets.systemWindowInsetBottom
+        lp.height = deviceProfile.hotseatCellHeightPx + insets.bottom
         setPadding(
             deviceProfile.iconDrawablePaddingPx / 2, 0,
-            deviceProfile.iconDrawablePaddingPx / 2, insets.systemWindowInsetBottom
+            deviceProfile.iconDrawablePaddingPx / 2, insets.bottom
         )
         layoutParams = lp
     }
