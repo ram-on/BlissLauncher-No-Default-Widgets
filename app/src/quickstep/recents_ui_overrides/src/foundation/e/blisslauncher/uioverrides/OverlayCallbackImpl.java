@@ -11,6 +11,7 @@ public class OverlayCallbackImpl implements TestActivity.LauncherOverlay {
     private final TestActivity mLauncher;
     private static final String TAG = "OverlayCallbackImpl";
     private float mProgress = 0;
+    private boolean scrollFromWorkspace = false;
 
     private TestActivity.LauncherOverlayCallbacks mLauncherOverlayCallbacks;
 
@@ -26,20 +27,22 @@ public class OverlayCallbackImpl implements TestActivity.LauncherOverlay {
 
     @Override
     public void onScrollInteractionEnd() {
-        Log.d(TAG, "onScrollInteractionEnd() called");
-        if(mProgress > 0.5f) mLauncherOverlayCallbacks.onScrollChanged(1f);
-        else mLauncherOverlayCallbacks.onScrollChanged(0f);
+        Log.d(TAG, "onScrollInteractionEnd() called "+mProgress);
+        if(scrollFromWorkspace) {
+            if(mProgress >= 0.5f) mLauncherOverlayCallbacks.onScrollEnd(1f, true);
+            else mLauncherOverlayCallbacks.onScrollEnd(0f, true);
+        } else {
+            if(mProgress < 0.5f) mLauncherOverlayCallbacks.onScrollEnd(0f, false);
+            else mLauncherOverlayCallbacks.onScrollEnd(1f, false);
+        }
     }
 
     @Override
-    public void onScrollChange(float progress, boolean rtl) {
-        Log.d(
-            TAG,
-            "onScrollChange() called with: progress = [" + progress + "], rtl = [" + rtl + "]"
-        );
+    public void onScrollChange(float progress, boolean scrollFromWorkspace, boolean rtl) {
         if(mLauncherOverlayCallbacks != null) {
-            mLauncherOverlayCallbacks.onScrollChanged(progress);
+            mLauncherOverlayCallbacks.onScrollChanged(progress, scrollFromWorkspace);
             mProgress = progress;
+            this.scrollFromWorkspace = scrollFromWorkspace;
         }
     }
 

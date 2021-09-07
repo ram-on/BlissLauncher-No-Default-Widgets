@@ -5,7 +5,6 @@ import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
-import android.view.WindowInsets
 import android.widget.GridLayout
 import foundation.e.blisslauncher.BlissLauncher
 import foundation.e.blisslauncher.core.blur.BlurWallpaperProvider

@@ -6,7 +6,6 @@ import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
-import android.view.WindowInsets
 import foundation.e.blisslauncher.core.blur.BlurWallpaperProvider
 import foundation.e.blisslauncher.core.blur.ShaderBlurDrawable
 import foundation.e.blisslauncher.core.runOnMainThread

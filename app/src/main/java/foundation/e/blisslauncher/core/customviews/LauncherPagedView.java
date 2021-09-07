@@ -29,12 +29,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.WindowInsets;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.GridLayout;
 import android.widget.Toast;
-
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
@@ -70,13 +68,11 @@ import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
-
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
@@ -1126,19 +1122,20 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             ((amount >= 0 && !mIsRtl) || (amount <= 0 && mIsRtl));
 
         if (shouldScrollOverlay) {
+            Log.d(TAG, "overScroll() called with: amount = [" + amount + "]");
             if (!mStartedSendingScrollEvents && mScrollInteractionBegan) {
                 mStartedSendingScrollEvents = true;
                 mLauncherOverlay.onScrollInteractionBegin();
             }
 
             mLastOverlayScroll = Math.abs(((float) amount) / getMeasuredWidth());
-            mLauncherOverlay.onScrollChange(mLastOverlayScroll, mIsRtl);
+            mLauncherOverlay.onScrollChange(mLastOverlayScroll, true, mIsRtl);
         } else {
             dampedOverScroll(amount);
         }
 
         if (shouldZeroOverlay) {
-            mLauncherOverlay.onScrollChange(0, mIsRtl);
+            mLauncherOverlay.onScrollChange(0, true, mIsRtl);
         }
     }
 
@@ -2351,6 +2348,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
      * The overlay scroll is being controlled locally, just update our overlay effect
      */
     public void onOverlayScrollChanged(float scroll) {
+        Log.d(TAG, "onOverlayScrollChanged() called with: scroll = [" + scroll + "]");
         if (Float.compare(scroll, 1f) == 0) {
             mOverlayShown = true;
             // Not announcing the overlay page for accessibility since it announces itself.
@@ -2459,6 +2457,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             // process all the items
             return false;
         });
+    }
+
+    public void computeScrollWithoutInvalidation() {
+        computeScrollHelper(false);
     }
 
     public interface ItemOperator {

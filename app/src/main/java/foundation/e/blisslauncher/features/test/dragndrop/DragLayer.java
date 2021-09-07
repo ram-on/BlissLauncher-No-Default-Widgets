@@ -38,6 +38,7 @@ import foundation.e.blisslauncher.features.test.BaseDragLayer;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.TouchController;
 import foundation.e.blisslauncher.features.test.anim.Interpolators;
+import foundation.e.blisslauncher.features.test.graphics.WorkspaceAndHotseatScrim;
 
 /**
  * A ViewGroup that coordinates dragging across its descendants
@@ -52,6 +53,7 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
 
     public static final int ANIMATION_END_DISAPPEAR = 0;
     public static final int ANIMATION_END_REMAIN_VISIBLE = 2;
+    private WorkspaceAndHotseatScrim mScrim;
 
     DragController mDragController;
 
@@ -80,10 +82,13 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
         // Disable multitouch across the workspace/all apps/customize tray
         setMotionEventSplittingEnabled(false);
         setChildrenDrawingOrderEnabled(true);
+
+        //mScrim = new WorkspaceAndHotseatScrim(this);
     }
 
     public void setup(DragController dragController, LauncherPagedView workspace) {
         mDragController = dragController;
+        //mScrim.setWorkspace(workspace);
         recreateControllers();
     }
 
@@ -516,5 +521,23 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
     @Override
     public void setInsets(Rect insets) {
         super.setInsets(insets);
+        //mScrim.onInsetsChanged(insets);
+    }
+
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        // Draw the background below children.
+        //mScrim.draw(canvas);
+        super.dispatchDraw(canvas);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        //mScrim.setSize(w, h);
+    }
+
+    public WorkspaceAndHotseatScrim getScrim() {
+        return mScrim;
     }
 }

@@ -109,7 +109,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation "androidx.dynamicanimation:dynamicanimation:1.0.0"
-    compileOnly files('libs/framework.jar')
+    //compileOnly files('libs/framework.jar')
     implementation project(':SystemUISharedLib')
     apiNougatImplementation 'org.cyanogenmod:platform.sdk:6.0'
     apiOreoImplementation files('libs/lineage-sdk-oreo.jar')

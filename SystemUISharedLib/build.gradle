@@ -33,7 +33,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    compileOnly fileTree(dir: "../app/libs", include: 'framework.jar')
+    //compileOnly fileTree(dir: "../app/libs", include: 'framework.jar')
     implementation project(':QuickstepCompat')
     implementation project(':QuickstepCompatVQ')
 

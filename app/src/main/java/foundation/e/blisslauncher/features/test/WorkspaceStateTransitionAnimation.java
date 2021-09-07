@@ -127,7 +127,16 @@ public class WorkspaceStateTransitionAnimation {
             hotseatScaleAndTranslation.translationY, hotseatTranslationInterpolator);
         propertySetter.setFloat(mWorkspace.getPageIndicator(), View.TRANSLATION_Y,
             hotseatScaleAndTranslation.translationY, hotseatTranslationInterpolator);
+        setScrim(propertySetter, state);
+    }
 
+
+    // TODO: Enable it when find a fix for Tonal class.
+    public void setScrim(PropertySetter propertySetter, LauncherState state) {
+        /*WorkspaceAndHotseatScrim scrim = mLauncher.getDragLayer().getScrim();
+        propertySetter.setFloat(scrim, SCRIM_PROGRESS, state.getWorkspaceScrimAlpha(mLauncher),
+            LINEAR);
+        propertySetter.setFloat(scrim, SYSUI_PROGRESS, state.hasSysUiScrim ? 1 : 0, LINEAR);*/
     }
 
     public void applyChildState(LauncherState state, CellLayout cl, int childIndex) {

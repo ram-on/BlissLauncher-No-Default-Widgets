@@ -16,17 +16,14 @@
 
 package foundation.e.blisslauncher.quickstep.util;
 
-import android.os.Binder;
-import android.os.IBinder;
-import android.os.Looper;
-import android.util.Log;
+
 
 /**
  * Utility class to test and check binder calls during development.
  */
 public class BinderTracker {
 
-    private static final String TAG = "BinderTracker";
+    /*private static final String TAG = "BinderTracker";
     private static final boolean IS_DOGFOOD_BUILD = true;
 
     public static void start() {
@@ -58,5 +55,5 @@ public class BinderTracker {
 
         @Override
         public void onTransactEnded(Object session) { }
-    }
+    }*/
 }

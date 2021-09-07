@@ -28,8 +28,6 @@ import foundation.e.blisslauncher.features.test.anim.Interpolators
 import foundation.e.blisslauncher.features.test.dragndrop.DropTarget
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider
 import java.lang.Double.MAX_VALUE
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
 import java.util.ArrayList
 import java.util.Arrays
 import java.util.Stack
@@ -64,7 +62,7 @@ open class CellLayout @JvmOverloads constructor(
     // return an (x, y) value from helper functions. Do NOT use them to maintain other state.
     private val mTmpCellXY = IntArray(2)
 
-    @Retention(RetentionPolicy.SOURCE)
+    @Retention(AnnotationRetention.SOURCE)
     @IntDef(WORKSPACE, HOTSEAT)
     annotation class ContainerType
 

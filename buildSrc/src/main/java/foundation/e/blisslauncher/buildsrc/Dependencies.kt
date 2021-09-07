@@ -4,7 +4,7 @@ object Versions {
     const val compile_sdk = 29
     const val min_sdk = 25
     const val target_sdk = 29
-    const val android_gradle_plugin = "4.2.2"
+    const val android_gradle_plugin = "7.0.2"
     const val dexcount_gradle_plugin = "2.0.0"
     const val kotlin = "1.5.10"
     const val timber = "4.7.1"

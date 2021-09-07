@@ -57,23 +57,23 @@ class PageIndicatorDots(context: Context, attrs: AttributeSet?, defStyleAttr: In
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
 
     override fun setScroll(currentScroll: Int, totalScroll: Int) {
-        var currentScroll = currentScroll
+        var currScroll = currentScroll
         if (mNumPages > 1) {
             // Ignore this as of now.
             if (mIsRtl) {
-                currentScroll = totalScroll - currentScroll
+                currScroll = totalScroll - currScroll
             }
             val scrollPerPage = totalScroll / (mNumPages - 1)
-            val pageToLeft = currentScroll / scrollPerPage
+            val pageToLeft = currScroll / scrollPerPage
             val pageToLeftScroll = pageToLeft * scrollPerPage
             val pageToRightScroll = pageToLeftScroll + scrollPerPage
             val scrollThreshold =
                 SHIFT_THRESHOLD * scrollPerPage
             when {
-                currentScroll < pageToLeftScroll + scrollThreshold -> { // scroll is within the left page's threshold
+                currScroll < pageToLeftScroll + scrollThreshold -> { // scroll is within the left page's threshold
                     animateToPosition(pageToLeft.toFloat())
                 }
-                currentScroll > pageToRightScroll - scrollThreshold -> { // scroll is far enough from left page to go to the right page
+                currScroll > pageToRightScroll - scrollThreshold -> { // scroll is far enough from left page to go to the right page
                     animateToPosition(pageToLeft + 1.toFloat())
                 }
                 else -> { // scroll is between left and right page
@@ -247,7 +247,7 @@ class PageIndicatorDots(context: Context, attrs: AttributeSet?, defStyleAttr: In
             if (mEntryAnimationRadiusFactors == null) {
                 val activeRect = activeRect
                 outline!!.setRoundRect(
-                    activeRect!!.left.toInt(),
+                    activeRect.left.toInt(),
                     activeRect.top.toInt(),
                     activeRect.right.toInt(),
                     activeRect.bottom.toInt(),

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <attr name="workspaceStatusBarScrim" format="reference" />
+
     <declare-styleable name="HorizontalPager">
         <attr name="pageWidth" format="dimension" />
     </declare-styleable>

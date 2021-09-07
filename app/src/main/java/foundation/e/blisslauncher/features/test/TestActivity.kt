@@ -5,6 +5,7 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.app.ActivityOptions
 import android.app.AlertDialog
 import android.app.usage.UsageStats
@@ -40,6 +41,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -65,7 +67,6 @@ import foundation.e.blisslauncher.core.customviews.AbstractFloatingView
 import foundation.e.blisslauncher.core.customviews.BlissFrameLayout
 import foundation.e.blisslauncher.core.customviews.BlissInput
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout
-import foundation.e.blisslauncher.core.customviews.InsettableScrollLayout
 import foundation.e.blisslauncher.core.customviews.LauncherPagedView
 import foundation.e.blisslauncher.core.customviews.RoundedWidgetView
 import foundation.e.blisslauncher.core.customviews.SquareFrameLayout
@@ -106,6 +107,7 @@ import foundation.e.blisslauncher.features.weather.WeatherUpdateService
 import foundation.e.blisslauncher.features.widgets.WidgetManager
 import foundation.e.blisslauncher.features.widgets.WidgetViewBuilder
 import foundation.e.blisslauncher.features.widgets.WidgetsActivity
+import foundation.e.blisslauncher.features.widgets.WidgetsRootView
 import foundation.e.blisslauncher.uioverrides.OverlayCallbackImpl
 import foundation.e.blisslauncher.uioverrides.UiFactory
 import io.reactivex.Observable
@@ -124,6 +126,9 @@ import java.util.function.Predicate
 import me.relex.circleindicator.CircleIndicator
 
 class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionClickListener {
+
+    private lateinit var widgetRootView: WidgetsRootView
+    private lateinit var overlayCallbackImpl: OverlayCallbackImpl
 
     // Folder start scale
     private var startScaleFinal: Float = 0f
@@ -281,7 +286,8 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             }
         })
         createOrUpdateIconGrid()
-        setLauncherOverlay(OverlayCallbackImpl(this))
+        overlayCallbackImpl = OverlayCallbackImpl(this)
+        setLauncherOverlay(overlayCallbackImpl)
     }
 
     private fun askForNotificationIfFirstTime() {
@@ -291,11 +297,16 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             var permissionString = Settings.Secure.getString(cr, setting)
             val cn = ComponentName(this, NotificationListener::class.java)
 
-            val enabled = permissionString != null && (permissionString.contains(cn.flattenToString()) || permissionString.contains(cn.flattenToShortString()))
+            val enabled =
+                permissionString != null && (permissionString.contains(cn.flattenToString()) || permissionString.contains(
+                    cn.flattenToShortString()
+                ))
 
             if (!enabled) {
-                val launcherApps: LauncherApps = getSystemService(LAUNCHER_APPS_SERVICE) as LauncherApps
-                val launcherInfo = launcherApps.getApplicationInfo(packageName, 0, Process.myUserHandle())
+                val launcherApps: LauncherApps =
+                    getSystemService(LAUNCHER_APPS_SERVICE) as LauncherApps
+                val launcherInfo =
+                    launcherApps.getApplicationInfo(packageName, 0, Process.myUserHandle())
                 if (launcherInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
                     val args = Bundle()
                     args.putString(":settings:fragment_args_key", cn.flattenToString())
@@ -416,24 +427,17 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     }
 
     private fun setupWidgetPage() {
-        widgetPage = layoutInflater.inflate(R.layout.widgets_page, rootView, false) as InsettableFrameLayout
+        widgetPage =
+            layoutInflater.inflate(R.layout.widgets_page, rootView, false) as InsettableFrameLayout
         rootView.addView(widgetPage)
 
         widgetContainer = widgetPage.findViewById(R.id.widget_container)
 
-        widgetPage.visibility = View.GONE
-        widgetPage.translationX = (widgetPage.measuredWidth * -1.00f)
-        val scrollView: InsettableScrollLayout =
-            widgetPage.findViewById(R.id.widgets_scroll_container)
-        scrollView.setOnTouchListener { v: View?, event: MotionEvent? ->
-            if (widgetPage.findViewById<View>(R.id.widget_resizer_container)
-                    .visibility
-                == View.VISIBLE
-            ) {
-                hideWidgetResizeContainer()
-            }
-            false
+        widgetPage.visibility = View.VISIBLE
+        widgetPage.post {
+            widgetPage.translationX = -(widgetPage.measuredWidth * 1.00f)
         }
+        widgetRootView = widgetPage.findViewById(R.id.widgets_scroll_container)
         widgetPage.findViewById<View>(R.id.used_apps_layout).clipToOutline = true
         widgetPage.tag = "Widget page"
 
@@ -453,7 +457,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         // divided by 2 because of left and right padding.
         val padding = (mDeviceProfile.availableWidthPx / 2 - Utilities.pxFromDp(8, this) -
             (2 *
-            mDeviceProfile.cellWidthPx)).toInt()
+                mDeviceProfile.cellWidthPx)).toInt()
         widgetPage.findViewById<View>(R.id.suggestedAppGrid).setPadding(padding, 0, padding, 0)
         // [[END]]
 
@@ -512,11 +516,12 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 )
         )
 
-        mSearchInput.onFocusChangeListener = View.OnFocusChangeListener { v: View, hasFocus: Boolean ->
-            if (!hasFocus) {
-                hideKeyboard(v)
+        mSearchInput.onFocusChangeListener =
+            View.OnFocusChangeListener { v: View, hasFocus: Boolean ->
+                if (!hasFocus) {
+                    hideKeyboard(v)
+                }
             }
-        }
 
         mSearchInput.setOnEditorActionListener { _: TextView?, action: Int, _: KeyEvent? ->
             if (action == EditorInfo.IME_ACTION_SEARCH) {
@@ -638,7 +643,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
     private fun addWidgetToContainer(widgetView: RoundedWidgetView) {
         widgetView.setPadding(0, 0, 0, 0)
-        widgetContainer!!.addView(widgetView)
+        widgetContainer.addView(widgetView)
     }
 
     private fun updateWeatherPanel() {
@@ -900,7 +905,8 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 val newHeight = minHeight + normalisedDifference * progress
-                val layoutParams = activeRoundedWidgetView!!.layoutParams as LinearLayout.LayoutParams
+                val layoutParams =
+                    activeRoundedWidgetView!!.layoutParams as LinearLayout.LayoutParams
                 layoutParams.height = newHeight
                 activeRoundedWidgetView!!.layoutParams = layoutParams
                 val newOps = Bundle()
@@ -1123,9 +1129,10 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     /**
      * Call this after onCreate to set or clear overlay.
      */
-    fun setLauncherOverlay(overlay: LauncherOverlay) {
+    private fun setLauncherOverlay(overlay: LauncherOverlay) {
         overlay.setOverlayCallbacks(LauncherOverlayCallbacksImpl())
         workspace.setLauncherOverlay(overlay)
+        widgetRootView.setLauncherOverlay(overlay)
     }
 
     fun isInState(state: LauncherState): Boolean {
@@ -1321,7 +1328,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
          * Scroll progress, between 0 and 100, when the user scrolls beyond the leftmost
          * screen (or in the case of RTL, the rightmost screen).
          */
-        fun onScrollChange(progress: Float, rtl: Boolean)
+        fun onScrollChange(progress: Float, scrollFromWorkspace: Boolean, rtl: Boolean)
 
         /**
          * Called when the launcher is ready to use the overlay
@@ -1331,18 +1338,99 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     }
 
     interface LauncherOverlayCallbacks {
-        fun onScrollChanged(progress: Float)
+        fun onScrollChanged(progress: Float, scrollFromWorkspace: Boolean)
         fun onScrollBegin()
+        fun onScrollEnd(finalProgress: Float, scrollFromWorkspace: Boolean)
     }
 
+    // TODO: Maybe we need to simplify the logic here.
     inner class LauncherOverlayCallbacksImpl : LauncherOverlayCallbacks {
-        override fun onScrollChanged(progress: Float) {
-            workspace.onOverlayScrollChanged(progress)
-            widgetPage.translationX = widgetPage.measuredWidth * (progress - 1)
+
+        private var currentProgress = 0f
+        private var isScrolling = false
+        private var animator: ValueAnimator? = null
+
+        override fun onScrollChanged(progress: Float, scrollFromWorkspace: Boolean) {
+            this.currentProgress = progress
+
+            if (animator == null && isScrolling) {
+                Log.d(
+                    TAG,
+                    "onScrollChanged() called with: progress = $progress, scrollFromWorkspace = $scrollFromWorkspace, ${animator == null}, $isScrolling"
+                )
+                if (scrollFromWorkspace) {
+                    workspace.onOverlayScrollChanged(progress)
+                    widgetPage.translationX = widgetPage.measuredWidth * (progress - 1)
+                } else {
+                    workspace.onOverlayScrollChanged(progress)
+                }
+            }
         }
 
         override fun onScrollBegin() {
-            widgetPage.visibility = View.VISIBLE
+            Log.d(TAG, "onScrollBegin() called")
+            isScrolling = true
+        }
+
+        override fun onScrollEnd(finalProgress: Float, scrollFromWorkspace: Boolean) {
+            Log.d(
+                TAG,
+                "onScrollEnd() called with: finalProgress = $finalProgress, scrollFromWorkspace = $scrollFromWorkspace, currentProhgress = $currentProgress"
+            )
+            isScrolling = false
+            if (scrollFromWorkspace) {
+                val workspaceAnim = ValueAnimator.ofFloat(currentProgress, finalProgress)
+                workspaceAnim.addUpdateListener {
+                    workspace.onOverlayScrollChanged(it.animatedValue as Float)
+                    widgetPage.translationX =
+                        widgetPage.measuredWidth * (it.animatedValue as Float - 1)
+                }
+                workspaceAnim.duration = 300
+                workspaceAnim.interpolator = AccelerateDecelerateInterpolator()
+                workspaceAnim.addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        animator = null
+                    }
+
+                    override fun onAnimationCancel(animation: Animator) {
+                        workspace.onOverlayScrollChanged(0f)
+                        widgetPage.translationX = (-widgetPage.measuredWidth).toFloat()
+                        animator = null
+                    }
+                })
+                animator = workspaceAnim
+            } else {
+                Log.d(
+                    TAG,
+                    "onScrollEnd() 2"
+                )
+                val finalProgressOpposite = finalProgress - 1
+                val workspaceAnim = ValueAnimator.ofFloat(currentProgress, finalProgress)
+                workspaceAnim.addUpdateListener {
+                    workspace.onOverlayScrollChanged(it.animatedValue as Float)
+                    widgetPage.translationX =
+                        widgetPage.measuredWidth * (it.animatedValue as Float - 1)
+                }
+                workspaceAnim.duration = 300
+                workspaceAnim.interpolator = AccelerateDecelerateInterpolator()
+                workspaceAnim.addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        animator = null
+                    }
+
+                    override fun onAnimationCancel(animation: Animator) {
+                        workspace.onOverlayScrollChanged(1f)
+                        widgetPage.translationX = 0f
+                        animator = null
+                    }
+                })
+                animator = workspaceAnim
+            }
+            Log.d(
+                TAG,
+                "onScrollEnd() 3 ${animator == null}"
+            )
+            animator?.start()
         }
     }
 
@@ -1575,13 +1663,17 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         mFolderTitleInput?.setText(activeFolder?.title)
         mFolderTitleInput?.isCursorVisible = false
 
-        mFolderAppsViewPager?.adapter = FolderPagerAdapter(this, activeFolder?.items, mDeviceProfile)
+        mFolderAppsViewPager?.adapter =
+            FolderPagerAdapter(this, activeFolder?.items, mDeviceProfile)
         // We use same size for height and width as we want to look it like sqaure
-        val height = mDeviceProfile.cellHeightPx * 3 + resources.getDimensionPixelSize(R.dimen.folder_padding)
+        val height =
+            mDeviceProfile.cellHeightPx * 3 + resources.getDimensionPixelSize(R.dimen.folder_padding)
         mFolderAppsViewPager?.layoutParams?.width =
             mDeviceProfile.cellHeightPx * 3 + resources.getDimensionPixelSize(R.dimen.folder_padding) * 2
         mFolderAppsViewPager?.layoutParams?.height =
-            (mDeviceProfile.cellHeightPx + mDeviceProfile.iconDrawablePaddingPx * 2)*3 + resources.getDimensionPixelSize(R.dimen.folder_padding) * 2
+            (mDeviceProfile.cellHeightPx + mDeviceProfile.iconDrawablePaddingPx * 2) * 3 + resources.getDimensionPixelSize(
+                R.dimen.folder_padding
+            ) * 2
         (launcherView.findViewById<View>(R.id.indicator) as CircleIndicator).setViewPager(
             mFolderAppsViewPager
         )

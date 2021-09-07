@@ -21,6 +21,8 @@
             android:background="@android:color/transparent"
             android:drawableStart="@drawable/ic_search_white_24dp"
             android:drawablePadding="8dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:hint="@string/search"
             android:imeOptions="actionSearch"
             android:inputType="text"
