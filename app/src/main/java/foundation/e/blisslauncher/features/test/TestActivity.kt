@@ -1354,10 +1354,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             this.currentProgress = progress
 
             if (animator == null && isScrolling) {
-                Log.d(
-                    TAG,
-                    "onScrollChanged() called with: progress = $progress, scrollFromWorkspace = $scrollFromWorkspace, ${animator == null}, $isScrolling"
-                )
                 if (scrollFromWorkspace) {
                     workspace.onOverlayScrollChanged(progress)
                     widgetPage.translationX = widgetPage.measuredWidth * (progress - 1)
@@ -1368,15 +1364,10 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         }
 
         override fun onScrollBegin() {
-            Log.d(TAG, "onScrollBegin() called")
             isScrolling = true
         }
 
         override fun onScrollEnd(finalProgress: Float, scrollFromWorkspace: Boolean) {
-            Log.d(
-                TAG,
-                "onScrollEnd() called with: finalProgress = $finalProgress, scrollFromWorkspace = $scrollFromWorkspace, currentProhgress = $currentProgress"
-            )
             isScrolling = false
             if (scrollFromWorkspace) {
                 val workspaceAnim = ValueAnimator.ofFloat(currentProgress, finalProgress)
@@ -1400,10 +1391,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 })
                 animator = workspaceAnim
             } else {
-                Log.d(
-                    TAG,
-                    "onScrollEnd() 2"
-                )
                 val finalProgressOpposite = finalProgress - 1
                 val workspaceAnim = ValueAnimator.ofFloat(currentProgress, finalProgress)
                 workspaceAnim.addUpdateListener {
@@ -1426,10 +1413,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 })
                 animator = workspaceAnim
             }
-            Log.d(
-                TAG,
-                "onScrollEnd() 3 ${animator == null}"
-            )
             animator?.start()
         }
     }

@@ -21,13 +21,11 @@ public class OverlayCallbackImpl implements TestActivity.LauncherOverlay {
 
     @Override
     public void onScrollInteractionBegin() {
-        Log.d(TAG, "onScrollInteractionBegin() called");
         mLauncherOverlayCallbacks.onScrollBegin();
     }
 
     @Override
     public void onScrollInteractionEnd() {
-        Log.d(TAG, "onScrollInteractionEnd() called "+mProgress);
         if(scrollFromWorkspace) {
             if(mProgress >= 0.5f) mLauncherOverlayCallbacks.onScrollEnd(1f, true);
             else mLauncherOverlayCallbacks.onScrollEnd(0f, true);
