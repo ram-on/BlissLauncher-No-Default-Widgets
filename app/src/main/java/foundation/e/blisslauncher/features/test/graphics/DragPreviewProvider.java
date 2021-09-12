@@ -154,13 +154,10 @@ public class DragPreviewProvider {
     public float getScaleAndPosition(Bitmap preview, int[] outPos) {
         float scale = TestActivity.Companion.getLauncher(mView.getContext())
                 .getDragLayer().getLocationInDragLayer(mView, outPos);
-        Log.i("DragPreview", "getScaleAndPosition: "+outPos[0]+" "+outPos[1]+" "+preview.getWidth()+" "+mView.getWidth());
         outPos[0] = Math.round(outPos[0] -
                 (preview.getWidth() - scale * mView.getWidth() * mView.getScaleX()) / 2);
         outPos[1] = Math.round(outPos[1] - (1 - scale) * preview.getHeight() / 2
                 - previewPadding / 2);
-        Log.i("DragPreview", "getScaleAndPosition: "+outPos[0]+" "+outPos[1] + " "+scale);
-
 
         return scale;
     }

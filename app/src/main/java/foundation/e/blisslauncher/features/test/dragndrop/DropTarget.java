@@ -94,18 +94,17 @@ public interface DropTarget {
         public final float[] getVisualCenter(float[] recycle) {
             final float res[] = (recycle == null) ? new float[2] : recycle;
 
+            Rect dragRegion = dragView.getDragRegion();
+
             // These represent the visual top and left of drag view if a dragRect was provided.
             // If a dragRect was not provided, then they correspond to the actual view left and
             // top, as the dragRect is in that case taken to be the entire dragView.
-            // R.dimen.dragViewOffsetY.
-
-            Log.d("DropTarget", "X: "+x+", Y: "+y+", xoffset: "+xOffset+", yoffset: "+yOffset);
-            int left = x - xOffset;
-            int top = y - yOffset;
+            int left = x - xOffset - dragRegion.left;
+            int top = y - yOffset - dragRegion.top;
 
             // In order to find the visual center, we shift by half the dragRect
-            res[0] = left + dragView.getWidth() / 2;
-            res[1] = top + dragView.getHeight() / 2;
+            res[0] = left + dragRegion.width() / 2;
+            res[1] = top + dragRegion.height() / 2;
 
             return res;
         }

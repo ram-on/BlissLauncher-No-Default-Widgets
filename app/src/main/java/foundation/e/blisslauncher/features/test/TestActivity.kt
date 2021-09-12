@@ -1391,7 +1391,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 })
                 animator = workspaceAnim
             } else {
-                val finalProgressOpposite = finalProgress - 1
                 val workspaceAnim = ValueAnimator.ofFloat(currentProgress, finalProgress)
                 workspaceAnim.addUpdateListener {
                     workspace.onOverlayScrollChanged(it.animatedValue as Float)
