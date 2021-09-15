@@ -453,8 +453,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         }
 
         // divided by 2 because of left and right padding.
-
-        // divided by 2 because of left and right padding.
         val padding = (mDeviceProfile.availableWidthPx / 2 - Utilities.pxFromDp(8, this) -
             (2 *
                 mDeviceProfile.cellWidthPx)).toInt()

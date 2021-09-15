@@ -33,6 +33,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.GridLayout;
 import android.widget.Toast;
+
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
@@ -68,11 +69,13 @@ import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
@@ -2301,7 +2304,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 final int childCount = folder.items.size();
                 for (int childIdx = 0; childIdx < childCount; childIdx++) {
                     LauncherItem childItem = folderChildren.get(childIdx);
-                    if (op.evaluate(info, item, itemIdx)) {
+                    if (op.evaluate(childItem, item, itemIdx)) {
                         return true;
                     }
                 }
@@ -2321,7 +2324,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             if ((info instanceof ApplicationItem || info instanceof ShortcutItem) && v instanceof IconTextView) {
                 if (!packageUserKey.updateFromItemInfo(info)
                     || updatedDots.test(packageUserKey)) {
-                    ((IconTextView) v).applyDotState(info, true /* animate */);
+                    ((IconTextView) v).applyDotState(info, true);
                     folderIds.add(String.valueOf(info.container));
                 }
             }
@@ -2337,7 +2340,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 for (LauncherItem si : ((FolderItem) info).items) {
                     folderDotInfo.addDotInfo(mLauncher.getDotInfoForItem(si));
                 }
-                ((IconTextView) v).applyDotState(info, true /* animate */);
+                ((IconTextView) v).setDotInfo((FolderItem) info, folderDotInfo);
             }
             // process all the shortcuts
             return false;

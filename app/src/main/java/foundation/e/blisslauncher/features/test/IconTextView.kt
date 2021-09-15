@@ -12,7 +12,6 @@ import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.text.TextUtils.TruncateAt
 import android.util.AttributeSet
-import android.util.Log
 import android.util.Property
 import android.util.TypedValue
 import android.view.MotionEvent
@@ -22,11 +21,13 @@ import android.widget.TextView
 import androidx.core.graphics.ColorUtils
 import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.database.model.ApplicationItem
+import foundation.e.blisslauncher.core.database.model.FolderItem
 import foundation.e.blisslauncher.core.database.model.LauncherItem
 import foundation.e.blisslauncher.core.database.model.ShortcutItem
 import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.features.notification.DotInfo
 import foundation.e.blisslauncher.features.notification.DotRenderer
+import foundation.e.blisslauncher.features.notification.FolderDotInfo
 import foundation.e.blisslauncher.features.test.uninstall.UninstallButtonRenderer
 import kotlin.math.roundToInt
 
@@ -189,14 +190,26 @@ class IconTextView @JvmOverloads constructor(
     fun getIcon() = mIcon
 
     fun applyDotState(itemInfo: LauncherItem, animate: Boolean) {
-        val wasDotted = mDotInfo != null
-        mDotInfo = mActivity.getDotInfoForItem(itemInfo)
-        val isDotted = mDotInfo != null
+        if (tag !is FolderItem) {
+            val wasDotted = mDotInfo != null
+            mDotInfo = mActivity.getDotInfoForItem(itemInfo)
+            val isDotted = mDotInfo != null
+            updateDotScale(wasDotted, isDotted, animate)
+        }
+    }
+
+    fun setDotInfo(item: FolderItem, dotInfo: FolderDotInfo) {
+        val wasDotted = mDotInfo is FolderDotInfo && (mDotInfo as FolderDotInfo).hasDot()
+        updateDotScale(wasDotted, dotInfo.hasDot(), true)
+        mDotInfo = dotInfo
+    }
+
+    private fun updateDotScale(wasDotted: Boolean, isDotted: Boolean, animate: Boolean) {
         val newDotScale: Float = if (isDotted) 1f else 0f
         mDotRenderer = mActivity.deviceProfile.mDotRenderer
         if (wasDotted || isDotted) {
             // Animate when a dot is first added or when it is removed.
-            if (animate && wasDotted xor isDotted && isShown) {
+            if (animate && (wasDotted xor isDotted) && isShown) {
                 animateDotScale(newDotScale)
             } else {
                 cancelDotScaleAnim()
@@ -221,7 +234,6 @@ class IconTextView @JvmOverloads constructor(
     }
 
     private fun cancelUninstallScaleAnim() {
-        Log.d(TAG, "cancelUninstallScaleAnim() called")
         mUninstallIconScaleAnim?.cancel()
     }
 
@@ -229,12 +241,12 @@ class IconTextView @JvmOverloads constructor(
         mDotScaleAnim?.cancel()
     }
 
-    private fun animateDotScale(vararg dotScales: Float) {
+    private fun animateDotScale(dotScales: Float) {
         cancelDotScaleAnim()
         mDotScaleAnim = ObjectAnimator.ofFloat(
             this,
             DOT_SCALE_PROPERTY,
-            *dotScales
+            dotScales
         ).apply {
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
@@ -343,6 +355,9 @@ class IconTextView @JvmOverloads constructor(
     }
 
     private fun hasDot(): Boolean {
+        if (mDotInfo != null && mDotInfo is FolderDotInfo) {
+            return (mDotInfo as FolderDotInfo).hasDot()
+        }
         return mDotInfo != null
     }
 
@@ -364,7 +379,6 @@ class IconTextView @JvmOverloads constructor(
      */
     private fun drawUninstallIcon(canvas: Canvas?) {
         if (isUninstallVisible || uninstallButtonScale > 0) {
-            Log.d(TAG, "drawUninstallIcon() called with: $isUninstallVisible $uninstallButtonScale")
             val tempBounds = Rect()
             getIconBounds(tempBounds)
             val scrollX = scrollX
@@ -376,7 +390,6 @@ class IconTextView @JvmOverloads constructor(
     }
 
     fun applyUninstallIconState(showUninstallIcon: Boolean) {
-        Log.d(TAG, "applyUninstallIconState() called with: showUninstallIcon = $showUninstallIcon")
         val wasUninstallVisible = isUninstallVisible
         isUninstallVisible = showUninstallIcon
         val newScale: Float = if (isUninstallVisible) 1f else 0f
