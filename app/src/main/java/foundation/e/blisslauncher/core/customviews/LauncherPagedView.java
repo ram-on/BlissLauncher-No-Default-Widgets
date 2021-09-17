@@ -37,6 +37,7 @@ import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots;
+import foundation.e.blisslauncher.core.database.DatabaseManager;
 import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.FolderItem;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
@@ -299,8 +300,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     || launcherItem.screenId > mScreenOrder.size() - 1) {
                     workspaceScreen = insertNewWorkspaceScreen(mScreenOrder.size());
                 }
-                launcherItem.screenId = mScreenOrder.size() - 1;
-                launcherItem.cell = workspaceScreen.getChildCount();
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.LayoutParams iconLayoutParams =
@@ -310,7 +309,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 iconLayoutParams.setGravity(Gravity.CENTER);
                 appView.setLayoutParams(iconLayoutParams);
                 appView.setTextVisibility(true);
-                //appView.setWithText(true);
                 workspaceScreen.addView(appView);
             } else if (launcherItem.container == Constants.CONTAINER_HOTSEAT) {
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
@@ -321,7 +319,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 iconLayoutParams.height = mLauncher.getDeviceProfile().getHotseatCellHeightPx();
                 iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
                 appView.setLayoutParams(iconLayoutParams);
-                //appView.setWithText(false);
                 mLauncher.getHotseat().getLayout().addView(appView);
             }
         }
@@ -1399,6 +1396,9 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                         mTargetCell, resultSpan, CellLayout.MODE_ON_DROP
                     );
                 }*/
+
+                Log.i(TAG, "onDrop: Test here");
+
                 int[] resultSpan = new int[2];
                 mTargetCell = dropTargetLayout.performReorder((int) mDragViewVisualCenter[0],
                     (int) mDragViewVisualCenter[1], 1, 1, spanX, spanY, cell,
@@ -1442,7 +1442,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     lp.cellVSpan = item.spanY;
                     lp.isLockedToGrid = true;*/
 
-                    //TODO: Update the launcher database here.
+                    updateDatabase(getWorkspaceAndHotseatCellLayouts());
                 } else {
                     onNoCellFound(dropTargetLayout);
 
@@ -1455,6 +1455,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     );
                 }
             }
+
+            Log.i(TAG, "onDrop: Test here2");
 
             final CellLayout parent = (CellLayout) cell.getParent();
             if (d.dragView.hasDrawn()) {
@@ -1482,6 +1484,43 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             /*mLauncher.getStateManager().goToState(
                 NORMAL, SPRING_LOADED_EXIT_DELAY, onCompleteRunnable);*/
         }
+    }
+
+    private void updateDatabase(ArrayList<CellLayout> layouts) {
+        List<LauncherItem> items = new ArrayList<>();
+        for (int i = 0; i < layouts.size(); i++) {
+            CellLayout cellLayout = layouts.get(i);
+            long screenId = getIdForScreen(cellLayout);
+            long container;
+            if (cellLayout.getContainerType() == CellLayout.WORKSPACE) {
+                container = Constants.CONTAINER_DESKTOP;
+            } else if (cellLayout.getContainerType() == CellLayout.HOTSEAT) {
+                container = Constants.CONTAINER_HOTSEAT;
+            } else {
+                throw new IllegalArgumentException(
+                    "Container type can only be CellLayout.WORKSPACE or CellLayout.HOTSEAT");
+            }
+            for (int j = 0; j < cellLayout.getChildCount(); j++) {
+                LauncherItem launcherItem = (LauncherItem) cellLayout.getChildAt(
+                    j).getTag();
+                launcherItem.cell = j;
+                launcherItem.screenId = screenId;
+                launcherItem.container = container;
+                if (launcherItem.itemType == Constants.ITEM_TYPE_FOLDER) {
+                    FolderItem folderItem = (FolderItem) launcherItem;
+                    items.add(folderItem);
+                    for (int k = 0; k < folderItem.items.size(); k++) {
+                        LauncherItem item = folderItem.items.get(k);
+                        item.container = Long.parseLong(folderItem.id);
+                        item.cell = k;
+                        items.add(item);
+                    }
+                } else {
+                    items.add(launcherItem);
+                }
+            }
+        }
+        DatabaseManager.getManager(getContext()).saveItems(items);
     }
 
     boolean createUserFolderIfNecessary(
@@ -1553,7 +1592,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             invalidate();
             post(() -> {
                 if (fi.cell % 2 == 0) {
-                    folderView.startAnimation(AnimationUtils.loadAnimation(getContext(), R.anim.wobble));
+                    folderView
+                        .startAnimation(AnimationUtils.loadAnimation(getContext(), R.anim.wobble));
                 } else {
                     folderView.startAnimation(AnimationUtils
                         .loadAnimation(getContext(), R.anim.wobble_reverse));

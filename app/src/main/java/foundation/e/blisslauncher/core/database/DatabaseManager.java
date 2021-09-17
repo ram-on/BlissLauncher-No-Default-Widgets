@@ -9,6 +9,8 @@ import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.core.database.model.WidgetItem;
 import foundation.e.blisslauncher.core.executors.AppExecutors;
 import foundation.e.blisslauncher.core.utils.Constants;
+import foundation.e.blisslauncher.features.test.CellLayout;
+import foundation.e.blisslauncher.features.test.IconTextView;
 import io.reactivex.Single;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +48,10 @@ public class DatabaseManager {
     public void saveLayouts(List<GridLayout> pages, GridLayout dock) {
         List<GridLayout> tempPages = pages;
         GridLayout tempDock = dock;
-        mAppExecutors.diskIO().execute(() -> saveLauncherItems(tempPages, tempDock));
+    }
+
+    public void saveItems(final List<LauncherItem> items) {
+        mAppExecutors.diskIO().execute(() -> LauncherDB.getDatabase(mContext).launcherDao().insertAll(items));
     }
 
     private void saveLauncherItems(final List<GridLayout> pages, final GridLayout dock) {

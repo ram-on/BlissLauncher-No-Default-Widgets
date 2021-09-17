@@ -1092,7 +1092,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     }
 
     private fun showApps(launcherItems: List<LauncherItem?>) {
-        if (hotseat != null) hotseat.resetLayout(false)
+        hotseat.resetLayout(false)
         workspace.bindItems(launcherItems)
     }
 

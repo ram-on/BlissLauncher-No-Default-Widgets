@@ -94,8 +94,6 @@ open class CellLayout @JvmOverloads constructor(
     private val mDragOutlinePaint = Paint()
     private var mEaseOutInterpolator: TimeInterpolator? = null
 
-    open var containerType = Constants.CONTAINER_DESKTOP
-
     private var cellWidth: Int = 0
     private var cellHeight: Int = 0
 
@@ -196,6 +194,8 @@ open class CellLayout @JvmOverloads constructor(
         }
     }
 
+    fun getContainerType() = mContainerType
+
     open fun getCellContentHeight(): Int {
         return Math.min(
             measuredHeight,
@@ -226,7 +226,7 @@ open class CellLayout @JvmOverloads constructor(
         val cHeight: Int = getCellContentHeight()
         val cellPaddingY = 0f.coerceAtLeast((lp.height - cHeight) / 2f).toInt()
         var cellPaddingX: Int
-        if (containerType == Constants.CONTAINER_DESKTOP) {
+        if (mContainerType == WORKSPACE) {
             cellPaddingX = dp.workspaceCellPaddingXPx
         } else {
             cellPaddingX = (dp.edgeMarginPx / 2f).toInt()
@@ -839,6 +839,13 @@ open class CellLayout @JvmOverloads constructor(
             }
             dragView.layoutParams = iconLayoutParams
             addView(dragView, index)
+
+            // Update item info after reordering so that we always save correct state in database.
+            // TODO: May optimize this
+            val item: LauncherItem = dragView.tag as LauncherItem
+            item.container = if (mContainerType == HOTSEAT) Constants.CONTAINER_HOTSEAT else Constants.CONTAINER_DESKTOP
+            item.cell = index
+            (dragView as IconTextView).applyFromShortcutItem(item)
 
             /*copySolutionToTempState(finalSolution, dragView)
             setItemPlacementDirty(true)
