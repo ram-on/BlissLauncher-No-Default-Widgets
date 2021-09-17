@@ -33,7 +33,6 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.GridLayout;
 import android.widget.Toast;
-
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
@@ -69,13 +68,11 @@ import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
-
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
@@ -141,7 +138,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private int mDragOverX = -1;
     private int mDragOverY = -1;
 
-    private static final int FOLDER_CREATION_TIMEOUT = 0;
+    private static final int FOLDER_CREATION_TIMEOUT = 100;
     public static final int REORDER_TIMEOUT = 650;
     private final Alarm mFolderCreationAlarm = new Alarm();
     private final Alarm mReorderAlarm = new Alarm();
@@ -304,12 +301,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 }
                 launcherItem.screenId = mScreenOrder.size() - 1;
                 launcherItem.cell = workspaceScreen.getChildCount();
-                Log.d(
-                    TAG,
-                    "launcherItemCell " + launcherItem.cell % mLauncher.getDeviceProfile().getInv()
-                        .getNumColumns() + " " + launcherItem.cell % mLauncher.getDeviceProfile()
-                        .getInv().getNumRows() + " " + launcherItem.cell
-                );
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.LayoutParams iconLayoutParams =
@@ -320,7 +311,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 appView.setLayoutParams(iconLayoutParams);
                 appView.setTextVisibility(true);
                 //appView.setWithText(true);
-                Log.i(TAG, "bindItems: " + appView);
                 workspaceScreen.addView(appView);
             } else if (launcherItem.container == Constants.CONTAINER_HOTSEAT) {
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
@@ -1125,7 +1115,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             ((amount >= 0 && !mIsRtl) || (amount <= 0 && mIsRtl));
 
         if (shouldScrollOverlay) {
-            Log.d(TAG, "overScroll() called with: amount = [" + amount + "]");
             if (!mStartedSendingScrollEvents && mScrollInteractionBegan) {
                 mStartedSendingScrollEvents = true;
                 mLauncherOverlay.onScrollInteractionBegin();
@@ -1562,6 +1551,14 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             dragView.remove();
             dragView = null;
             invalidate();
+            post(() -> {
+                if (fi.cell % 2 == 0) {
+                    folderView.startAnimation(AnimationUtils.loadAnimation(getContext(), R.anim.wobble));
+                } else {
+                    folderView.startAnimation(AnimationUtils
+                        .loadAnimation(getContext(), R.anim.wobble_reverse));
+                }
+            });
             return true;
         }
         return false;
@@ -1605,7 +1602,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     public void onNoCellFound(View dropTargetLayout) {
-        Log.d(TAG, "onNoCellFound() called with: dropTargetLayout = [" + dropTargetLayout + "]");
         if (mLauncher.isHotseatLayout(dropTargetLayout)) {
             showOutOfSpaceMessage(true);
         } else {
@@ -1620,7 +1616,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void onDragEnter(DragObject dragObject) {
-        Log.d(TAG, "onDragEnter() called with: dragObject = [" + dragObject + "]");
         mCreateUserFolderOnDrop = false;
         mAddToExistingFolderOnDrop = false;
 
@@ -1725,7 +1720,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 cleanupFolderCreation();
             } else if (dragMode == DRAG_MODE_ADD_TO_FOLDER) {
                 cleanupReorder(true);
-                cleanupFolderCreation();
+                //cleanupFolderCreation();
             } else if (dragMode == DRAG_MODE_CREATE_FOLDER) {
                 cleanupAddToFolder();
                 cleanupReorder(true);
@@ -1813,8 +1808,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void onDragOver(DragObject d) {
-        Log.d(TAG, "onDragOver() called with: dragObject = [" + d + "]");
-
         LauncherItem item = d.dragInfo;
         if (item == null) {
             throw new NullPointerException("DragObject has null info");
@@ -1838,15 +1831,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             if (mLauncher.isHotseatLayout(mDragTargetLayout)) {
                 mapPointFromSelfToHotseatLayout(mLauncher.getHotseat(), mDragViewVisualCenter);
             } else {
-                Log.d(
-                    TAG,
-                    "Before mapping: " + mDragViewVisualCenter[0] + " " + mDragViewVisualCenter[1]
-                );
                 mapPointFromSelfToChild(mDragTargetLayout, mDragViewVisualCenter);
-                Log.d(
-                    TAG,
-                    "After mapping: " + mDragViewVisualCenter[0] + " " + mDragViewVisualCenter[1]
-                );
             }
 
             mTargetCell = findNearestArea((int) mDragViewVisualCenter[0],
@@ -1866,26 +1851,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             boolean nearestDropOccupied = mDragTargetLayout.isNearestDropLocationOccupied((int)
                 mDragViewVisualCenter[0], (int) mDragViewVisualCenter[1], child, mTargetCell);
 
-            Log.d(
-                TAG,
-                "Reorder [" + mLastReorderX + ", " + mLastReorderY + "] [" + reorderX + ", " + reorderY + "] "
-            );
-            Log.d(
-                TAG,
-                "Reorder " + mDragMode + " " + mReorderAlarm
-                    .alarmPending() + " " + nearestDropOccupied
-            );
-
             if (!nearestDropOccupied) {
                 mDragTargetLayout.visualizeDropLocation(child, mOutlineProvider,
                     mTargetCell[0], mTargetCell[1], false, d
                 );
             } else if ((mDragMode == DRAG_MODE_NONE || mDragMode == DRAG_MODE_REORDER)
                 && (mLastReorderX != reorderX || mLastReorderY != reorderY)) {
-                Log.d(
-                    TAG,
-                    "Reorder  Setting reorder now"
-                );
                 int[] resultSpan = new int[2];
                 /*mDragTargetLayout.performReorder((int) mDragViewVisualCenter[0],
                     (int) mDragViewVisualCenter[1], 1, 1, 1, 1,
@@ -1910,7 +1881,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void onDragExit(DragObject dragObject) {
-        Log.d(TAG, "onDragExit() called with: dragObject = [" + dragObject + "]");
         // Here we store the final page that will be dropped to, if the workspace in fact
         // receives the drop
         mDropToLayout = mDragTargetLayout;
@@ -2014,8 +1984,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         int dragLayerX = mTempXY[0];
         int dragLayerY = mTempXY[1];
 
-        Log.i(TAG, "beginDragShared: " + dragLayerY);
-
         VariantDeviceProfile grid = mLauncher.getDeviceProfile();
         Point dragVisualizeOffset = null;
         Rect dragRect = null;
@@ -2023,7 +1991,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             dragRect =
                 ((IconTextView) child).getIconBounds();
             dragLayerY += dragRect.top;
-            Log.i(TAG, "beginDragShared: " + dragLayerY + " " + dragRect);
 
             // Note: The dragRect is used to calculate drag layer offsets, but the
             // dragVisualizeOffset in addition to the dragRect (the size) to position the outline.
@@ -2140,7 +2107,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         if (willAddToFolder && mDragMode == DRAG_MODE_NONE && !mFolderCreationAlarm
             .alarmPending()) {
-            Log.i(TAG, "manageFolderFeedback: willAddToFolder: " + willAddToFolder);
 
             FolderCreationAlarmListener listener = new
                 FolderCreationAlarmListener(targetLayout, targetCell[0], targetCell[1], false);
@@ -2151,7 +2117,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             } else {
                 listener.onAlarm(mFolderCreationAlarm);
             }
-            setDragMode(DRAG_MODE_ADD_TO_FOLDER);
             return;
         }
 
@@ -2351,7 +2316,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
      * The overlay scroll is being controlled locally, just update our overlay effect
      */
     public void onOverlayScrollChanged(float scroll) {
-        Log.d(TAG, "onOverlayScrollChanged() called with: scroll = [" + scroll + "]");
         if (Float.compare(scroll, 1f) == 0) {
             mOverlayShown = true;
             // Not announcing the overlay page for accessibility since it announces itself.
@@ -2381,7 +2345,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             transX = -transX;
         }
         mOverlayTranslation = transX;
-        Log.d(TAG, "onOverlayScrollChanged() called with: scroll = [" + scroll + "]");
 
         // TODO(adamcohen): figure out a final effect here. We may need to recommend
         // different effects based on device performance. On at least one relatively high-end
@@ -2499,7 +2462,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
 
         public void onAlarm(Alarm alarm) {
-            Log.d(TAG, "onAlarm() called with: alarm = [" + alarm + "]");
             parentFolderCell = cell;
             parentFolderCell.setScaleX(1.2f);
             parentFolderCell.setScaleY(1.2f);
