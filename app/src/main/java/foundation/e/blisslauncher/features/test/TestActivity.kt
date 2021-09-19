@@ -79,6 +79,8 @@ import foundation.e.blisslauncher.core.database.model.ShortcutItem
 import foundation.e.blisslauncher.core.executors.AppExecutors
 import foundation.e.blisslauncher.core.utils.AppUtils
 import foundation.e.blisslauncher.core.utils.Constants
+import foundation.e.blisslauncher.core.utils.IntSet
+import foundation.e.blisslauncher.core.utils.IntegerArray
 import foundation.e.blisslauncher.core.utils.ListUtil
 import foundation.e.blisslauncher.core.utils.PackageUserKey
 import foundation.e.blisslauncher.core.utils.UserHandle
@@ -1077,8 +1079,8 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 .appsRelay
                 .distinctUntilChanged()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribeWith(object : DisposableObserver<List<LauncherItem?>?>() {
-                    override fun onNext(launcherItems: List<LauncherItem?>) {
+                .subscribeWith(object : DisposableObserver<List<LauncherItem>>() {
+                    override fun onNext(launcherItems: List<LauncherItem>) {
                         showApps(launcherItems)
                     }
 
@@ -1091,25 +1093,54 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         )
     }
 
-    private fun showApps(launcherItems: List<LauncherItem?>) {
+    private fun showApps(launcherItems: List<LauncherItem>) {
         hotseat.resetLayout(false)
-        workspace.bindItems(launcherItems)
+        val populatedItems = populateItemPositions(launcherItems)
+        val orderedScreenIds = IntegerArray()
+        orderedScreenIds.addAll(collectWorkspaceScreens(populatedItems))
+        workspace.bindScreens(orderedScreenIds)
+        workspace.bindItems(populatedItems)
     }
 
-    fun getCellLayout(container: Long, screenId: Long): CellLayout? {
-        return if (container == Constants.CONTAINER_HOTSEAT) {
-            if (hotseat != null) {
-                hotseat.getLayout()
-            } else {
-                null
+    private fun populateItemPositions(launcherItems: List<LauncherItem>): List<LauncherItem> {
+        var newScreenId = 0
+        var cell = 0
+        val maxChild = deviceProfile.inv.numRows * deviceProfile.inv.numColumns
+        return launcherItems.map { item ->
+            if (item.screenId > newScreenId) {
+                newScreenId = item.screenId + 1
             }
+
+            if (item.container == Constants.CONTAINER_DESKTOP && item.screenId == -1) {
+                if (cell == maxChild) {
+                    cell = 0
+                    newScreenId++
+                }
+                item.screenId = newScreenId
+                item.cell = cell
+                cell++
+            }
+            item
+        }
+    }
+
+    private fun collectWorkspaceScreens(launcherItems: List<LauncherItem>): IntegerArray {
+        val screenSet = IntSet()
+        launcherItems.filter { it.container == Constants.CONTAINER_DESKTOP && it.screenId != -1 }
+            .forEach { screenSet.add(it.screenId) }
+        return screenSet.array
+    }
+
+    fun getCellLayout(container: Long, screenId: Int): CellLayout? {
+        return if (container == Constants.CONTAINER_HOTSEAT) {
+            hotseat.layout
         } else {
             workspace.getScreenWithId(screenId)
         }
     }
 
     fun isHotseatLayout(layout: View?): Boolean =
-        hotseat != null && layout != null && layout is CellLayout && layout == hotseat.layout
+        layout != null && layout is CellLayout && layout == hotseat.layout
 
     fun getViewIdForItem(info: LauncherItem): Int {
         // aapt-generated IDs have the high byte nonzero; clamp to the range under that.

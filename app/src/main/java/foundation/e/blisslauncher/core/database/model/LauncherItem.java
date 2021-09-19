@@ -67,7 +67,7 @@ public class LauncherItem {
      * {@link Constants#CONTAINER_HOTSEAT})
      */
     @ColumnInfo(name = "screen_id")
-    public long screenId = -1;
+    public int screenId = -1;
 
     /**
      * Indicates the position of the associated cell.

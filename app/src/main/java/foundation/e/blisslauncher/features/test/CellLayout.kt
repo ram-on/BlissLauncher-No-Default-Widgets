@@ -13,7 +13,6 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.util.ArrayMap
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
@@ -113,7 +112,6 @@ open class CellLayout @JvmOverloads constructor(
     init {
         val a = context.obtainStyledAttributes(attrs, R.styleable.CellLayout, defStyleAttr, 0)
         mContainerType = a.getInteger(R.styleable.CellLayout_containerType, WORKSPACE)
-        Log.i(TAG, "Container type: $mContainerType")
         a.recycle()
 
         setWillNotDraw(false)
@@ -151,10 +149,6 @@ open class CellLayout @JvmOverloads constructor(
                 if (outline == null) {
 
                     val `val` = animation.animatedValue
-                    Log.d(
-                        TAG, "anim " + i + " update: " + `val` +
-                            ", isStopped " + anim.isStopped
-                    )
                     // Try to prevent it from continuing to run
                     animation.cancel()
                 } else {
@@ -266,7 +260,6 @@ open class CellLayout @JvmOverloads constructor(
 
     override fun onViewAdded(child: View?) {
         super.onViewAdded(child)
-        Log.d(TAG, "onViewAdded() called with: child = $child")
     }
 
     fun addViewToCellLayout(
@@ -291,14 +284,7 @@ open class CellLayout @JvmOverloads constructor(
         // Generate an id for each view, this assumes we have at most 256x256 cells
         // per workspace screen
         if (index >= 0 && index <= mCountX * mCountY - 1) {
-
             child.id = childId
-/*            val rowSpec = spec(UNDEFINED)
-            val colSpec = spec(UNDEFINED)
-            val iconLayoutParams = LayoutParams(rowSpec, colSpec)
-            iconLayoutParams.height = launcher.deviceProfile.cellHeightPx
-            iconLayoutParams.width = launcher.deviceProfile.cellWidthPx
-            iconLayoutParams.setGravity(Gravity.CENTER)*/
             addView(child, index, lp)
 
             if (markCells) markCellsAsOccupiedForView(child)
@@ -561,7 +547,7 @@ open class CellLayout @JvmOverloads constructor(
         pixelX: Int,
         pixelY: Int,
         result: IntArray?
-    ): IntArray? {
+    ): IntArray {
         return findNearestArea(pixelX, pixelY, false, result, null)
     }
 
@@ -583,7 +569,7 @@ open class CellLayout @JvmOverloads constructor(
         ignoreOccupied: Boolean,
         result: IntArray?,
         resultSpan: IntArray?
-    ): IntArray? {
+    ): IntArray {
         var pixelX = pixelX
         var pixelY = pixelY
         lazyInitTempRectStack()
@@ -601,7 +587,6 @@ open class CellLayout @JvmOverloads constructor(
         val spanX = 1
         val spanY = 1
 
-        Log.d(TAG, "FINDING START")
         for (y in 0 until countY - (minSpanY - 1)) {
             inner@ for (x in 0 until countX - (minSpanX - 1)) {
                 var ySize = -1
@@ -695,7 +680,6 @@ open class CellLayout @JvmOverloads constructor(
             bestXY[1] = -1
         }
         recycleTempRects(validRegions)
-        Log.d(TAG, "FINDING END")
         return bestXY
     }
 
@@ -722,7 +706,6 @@ open class CellLayout @JvmOverloads constructor(
     open fun regionToCenterPoint(cellX: Int, cellY: Int, spanX: Int, spanY: Int, result: IntArray) {
         val hStartPadding = paddingLeft
         val vStartPadding = paddingTop
-        Log.i(TAG, "regionToCenterPoint: $hStartPadding $vStartPadding")
         result[0] = hStartPadding + cellX * cellWidth + spanX * cellWidth / 2
         result[1] = vStartPadding + cellY * cellHeight + spanY * cellHeight / 2
     }
@@ -773,7 +756,7 @@ open class CellLayout @JvmOverloads constructor(
         }
     }
 
-    fun getChildAt(x: Int, y: Int): View {
+    fun getChildAt(x: Int, y: Int): View? {
         return getChildAt(y * mCountX + x)
     }
 
@@ -785,7 +768,7 @@ open class CellLayout @JvmOverloads constructor(
         spanX: Int,
         spanY: Int,
         dragView: View,
-        result: IntArray?,
+        result: IntArray,
         resultSpan: IntArray?,
         mode: Int
     ): IntArray? {
@@ -794,10 +777,6 @@ open class CellLayout @JvmOverloads constructor(
         var result = result
         var resultSpan = resultSpan
         result = findNearestArea(pixelX, pixelY, result)
-        Log.d(
-            TAG,
-            "performReorder() called with: resultX = ${result!![0]} ${result!![1]} mode = $mode"
-        )
         if (resultSpan == null) {
             resultSpan = IntArray(2)
         }
@@ -843,7 +822,8 @@ open class CellLayout @JvmOverloads constructor(
             // Update item info after reordering so that we always save correct state in database.
             // TODO: May optimize this
             val item: LauncherItem = dragView.tag as LauncherItem
-            item.container = if (mContainerType == HOTSEAT) Constants.CONTAINER_HOTSEAT else Constants.CONTAINER_DESKTOP
+            item.container =
+                if (mContainerType == HOTSEAT) Constants.CONTAINER_HOTSEAT else Constants.CONTAINER_DESKTOP
             item.cell = index
             (dragView as IconTextView).applyFromShortcutItem(item)
 
@@ -867,7 +847,12 @@ open class CellLayout @JvmOverloads constructor(
                 if (index % 2 == 0) {
                     dragView.startAnimation(AnimationUtils.loadAnimation(context, R.anim.wobble))
                 } else {
-                    dragView.startAnimation(AnimationUtils.loadAnimation(context, R.anim.wobble_reverse))
+                    dragView.startAnimation(
+                        AnimationUtils.loadAnimation(
+                            context,
+                            R.anim.wobble_reverse
+                        )
+                    )
                 }
             }
         }
@@ -911,25 +896,19 @@ open class CellLayout @JvmOverloads constructor(
     //    cellX and cellY coordinates and which page was clicked. We then set this as a tag on
     //    the CellLayout that was long clicked
     class CellInfo(v: View, info: LauncherItem) {
-        val cell: View
-        val screenId: Long
-        val container: Long
-        val rank: Int
+        val cell: View = v
+        val screenId: Int = info.screenId
+        val container: Long = info.container
+        val rank: Int = info.cell
+
         override fun toString(): String {
             return ("Cell[view=${cell.javaClass}, rank=$rank")
         }
-
-        init {
-            cell = v
-            rank = info.cell
-            screenId = info.screenId
-            container = info.container
-        }
     }
 
-    fun isOccupied(x: Int, y: Int): Boolean {
-        return if (x < mCountX && y < mCountY) {
-            mOccupied.cells[x * mCountY + y]
+    fun isOccupied(cellIdx: Int): Boolean {
+        return if (cellIdx < mOccupied.cells.size) {
+            mOccupied.cells[cellIdx]
         } else {
             throw RuntimeException("Position exceeds the bound of this CellLayout")
         }

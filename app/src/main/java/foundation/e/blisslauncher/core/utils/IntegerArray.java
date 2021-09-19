@@ -22,7 +22,7 @@ import java.util.Arrays;
  * Copy of the platform hidden implementation of android.util.IntArray.
  * Implements a growing array of int primitives.
  */
-public class IntArray implements Cloneable {
+public class IntegerArray implements Cloneable {
     private static final int MIN_CAPACITY_INCREMENT = 12;
 
     private static final int[] EMPTY_INT = new int[0];
@@ -30,7 +30,7 @@ public class IntArray implements Cloneable {
     /* package private */ int[] mValues;
     /* package private */ int mSize;
 
-    private IntArray(int[] array, int size) {
+    private IntegerArray(int[] array, int size) {
         mValues = array;
         mSize = size;
     }
@@ -38,14 +38,14 @@ public class IntArray implements Cloneable {
     /**
      * Creates an empty IntArray with the default initial capacity.
      */
-    public IntArray() {
+    public IntegerArray() {
         this(10);
     }
 
     /**
      * Creates an empty IntArray with the specified initial capacity.
      */
-    public IntArray(int initialCapacity) {
+    public IntegerArray(int initialCapacity) {
         if (initialCapacity == 0) {
             mValues = EMPTY_INT;
         } else {
@@ -57,8 +57,8 @@ public class IntArray implements Cloneable {
     /**
      * Creates an IntArray wrapping the given primitive int array.
      */
-    public static IntArray wrap(int... array) {
-        return new IntArray(array, array.length);
+    public static IntegerArray wrap(int... array) {
+        return new IntegerArray(array, array.length);
     }
 
     /**
@@ -91,7 +91,7 @@ public class IntArray implements Cloneable {
     /**
      * Adds the values in the specified array to this array.
      */
-    public void addAll(IntArray values) {
+    public void addAll(IntegerArray values) {
         final int count = values.mSize;
         ensureCapacity(count);
 
@@ -102,7 +102,7 @@ public class IntArray implements Cloneable {
     /**
      * Sets the array to be same as {@param other}
      */
-    public void copyFrom(IntArray other) {
+    public void copyFrom(IntegerArray other) {
         clear();
         addAll(other);
     }
@@ -131,7 +131,7 @@ public class IntArray implements Cloneable {
     }
 
     @Override
-    public IntArray clone() {
+    public IntegerArray clone() {
         return wrap(toArray());
     }
 
@@ -140,8 +140,8 @@ public class IntArray implements Cloneable {
         if (obj == this) {
             return true;
         }
-        if (obj instanceof IntArray) {
-            IntArray arr = (IntArray) obj;
+        if (obj instanceof IntegerArray) {
+            IntegerArray arr = (IntegerArray) obj;
             if (mSize == arr.mSize) {
                 for (int i = 0; i < mSize; i++) {
                     if (arr.mValues[i] != mValues[i]) {
@@ -214,7 +214,7 @@ public class IntArray implements Cloneable {
     /**
      * Removes the values if it exists
      */
-    public void removeAllValues(IntArray values) {
+    public void removeAllValues(IntegerArray values) {
         for (int i = 0; i < values.mSize; i++) {
             removeValue(values.mValues[i]);
         }

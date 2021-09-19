@@ -22,7 +22,7 @@ import java.util.Arrays;
  */
 public class IntSet {
 
-    final IntArray mArray = new IntArray();
+    final IntegerArray mArray = new IntegerArray();
 
     /**
      * Appends the specified value to the set if it does not exist.
@@ -61,7 +61,7 @@ public class IntSet {
         return (obj instanceof IntSet) && ((IntSet) obj).mArray.equals(mArray);
     }
 
-    public IntArray getArray() {
+    public IntegerArray getArray() {
         return mArray;
     }
 
@@ -72,7 +72,7 @@ public class IntSet {
         mArray.copyFrom(other.mArray);
     }
 
-    public static IntSet wrap(IntArray array) {
+    public static IntSet wrap(IntegerArray array) {
         IntSet set = new IntSet();
         set.mArray.addAll(array);
         Arrays.sort(set.mArray.mValues, 0, set.mArray.mSize);

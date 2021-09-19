@@ -46,7 +46,8 @@ import foundation.e.blisslauncher.core.touch.ItemClickHandler;
 import foundation.e.blisslauncher.core.touch.ItemLongClickListener;
 import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.GraphicsUtil;
-import foundation.e.blisslauncher.core.utils.LongArrayMap;
+import foundation.e.blisslauncher.core.utils.IntSparseArrayMap;
+import foundation.e.blisslauncher.core.utils.IntegerArray;
 import foundation.e.blisslauncher.core.utils.PackageUserKey;
 import foundation.e.blisslauncher.features.launcher.Hotseat;
 import foundation.e.blisslauncher.features.notification.FolderDotInfo;
@@ -95,7 +96,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private static final boolean MAP_RECURSE = true;
 
     // The screen id used for the empty screen always present to the right.
-    public static final long EXTRA_EMPTY_SCREEN_ID = -201;
+    public static final  int EXTRA_EMPTY_SCREEN_ID = -201;
     // The is the first screen. It is always present, even if its empty.
     public static final long FIRST_SCREEN_ID = 0;
     private static final int ADJACENT_SCREEN_DROP_DURATION = 300;
@@ -105,8 +106,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private LayoutTransition mLayoutTransition;
     final WallpaperManager mWallpaperManager;
 
-    public final LongArrayMap<CellLayout> mWorkspaceScreens = new LongArrayMap<>();
-    final ArrayList<Long> mScreenOrder = new ArrayList<>();
+    public final IntSparseArrayMap<CellLayout> mWorkspaceScreens = new IntSparseArrayMap<>();
+    final IntegerArray mScreenOrder = new IntegerArray();
 
     // Variables relating to touch disambiguation (scrolling workspace vs. scrolling a widget)
     private float mXDown;
@@ -275,7 +276,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         enableLayoutTransitions();
     }
 
-    public void insertNewWorkspaceScreenBeforeEmptyScreen(long screenId) {
+    public void insertNewWorkspaceScreenBeforeEmptyScreen(int screenId) {
         // Find the index to insert this view into.  If the empty screen exists, then
         // insert it before that.
         int insertIndex = mScreenOrder.indexOf(EXTRA_EMPTY_SCREEN_ID);
@@ -285,9 +286,18 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         insertNewWorkspaceScreen(screenId, insertIndex);
     }
 
+    public void bindScreens(@NotNull IntegerArray orderedScreenIds) {
+        if(orderedScreenIds.isEmpty()) {
+            addExtraEmptyScreen();
+        }
+
+        for (int i = 0; i < orderedScreenIds.size(); i++) {
+            int screenId = orderedScreenIds.get(i);
+            insertNewWorkspaceScreenBeforeEmptyScreen(screenId);
+        }
+    }
+
     public void bindItems(@NotNull List<? extends LauncherItem> launcherItems) {
-        removeAllWorkspaceScreens();
-        GridLayout workspaceScreen = insertNewWorkspaceScreen(0);
         for (LauncherItem launcherItem : launcherItems) {
             IconTextView appView = (IconTextView) LayoutInflater.from(getContext())
                 .inflate(R.layout.app_icon, null, false);
@@ -295,10 +305,9 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             appView.setOnClickListener(ItemClickHandler.INSTANCE);
             appView.setOnLongClickListener(ItemLongClickListener.INSTANCE_WORKSPACE);
             if (launcherItem.container == Constants.CONTAINER_DESKTOP) {
-                if (workspaceScreen.getChildCount() >= mLauncher.getDeviceProfile().getInv()
-                    .getNumRows() * mLauncher.getDeviceProfile().getInv().getNumColumns()
-                    || launcherItem.screenId > mScreenOrder.size() - 1) {
-                    workspaceScreen = insertNewWorkspaceScreen(mScreenOrder.size());
+                CellLayout cl = getScreenWithId(launcherItem.screenId);
+                if(cl != null && cl.isOccupied(launcherItem.cell)) {
+                    // TODO: Add item to the end of the list
                 }
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
@@ -306,29 +315,27 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     new GridLayout.LayoutParams(rowSpec, colSpec);
                 iconLayoutParams.height = mLauncher.getDeviceProfile().getCellHeightPx();
                 iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
-                iconLayoutParams.setGravity(Gravity.CENTER);
                 appView.setLayoutParams(iconLayoutParams);
                 appView.setTextVisibility(true);
-                workspaceScreen.addView(appView);
+                addInScreenFromBind(appView, launcherItem);
             } else if (launcherItem.container == Constants.CONTAINER_HOTSEAT) {
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.LayoutParams iconLayoutParams =
                     new GridLayout.LayoutParams(rowSpec, colSpec);
-                iconLayoutParams.setGravity(Gravity.CENTER);
                 iconLayoutParams.height = mLauncher.getDeviceProfile().getHotseatCellHeightPx();
                 iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
                 appView.setLayoutParams(iconLayoutParams);
-                mLauncher.getHotseat().getLayout().addView(appView);
+                addInScreenFromBind(appView, launcherItem);
             }
         }
     }
 
-    public GridLayout insertNewWorkspaceScreen(long screenId) {
+    public GridLayout insertNewWorkspaceScreen(int screenId) {
         return insertNewWorkspaceScreen(screenId, getChildCount());
     }
 
-    public GridLayout insertNewWorkspaceScreen(long screenId, int insertIndex) {
+    public GridLayout insertNewWorkspaceScreen(int screenId, int insertIndex) {
         if (mWorkspaceScreens.containsKey(screenId)) {
             throw new RuntimeException("Screen id " + screenId + " already exists!");
         }
@@ -346,8 +353,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         mWorkspaceScreens.put(screenId, newScreen);
         mScreenOrder.add(insertIndex, screenId);
         addView(newScreen, insertIndex);
-        /*mStateTransitionAnimation.applyChildState(
-            mLauncher.getStateManager().getState(), newScreen, insertIndex);*/
 
         return newScreen;
     }
@@ -393,14 +398,14 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
 
         if (hasExtraEmptyScreen() || mScreenOrder.size() == 0) return;
-        long finalScreenId = mScreenOrder.get(mScreenOrder.size() - 1);
+        int finalScreenId = mScreenOrder.get(mScreenOrder.size() - 1);
 
         CellLayout finalScreen = mWorkspaceScreens.get(finalScreenId);
 
         // If the final screen is empty, convert it to the extra empty screen
         if (finalScreen.getChildCount() == 0) {
             mWorkspaceScreens.remove(finalScreenId);
-            mScreenOrder.remove(finalScreenId);
+            mScreenOrder.removeValue(finalScreenId);
 
             // if this is the last screen, convert it to the empty screen
             mWorkspaceScreens.put(EXTRA_EMPTY_SCREEN_ID, finalScreen);
@@ -473,7 +478,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         mRemoveEmptyScreenRunnable = () -> {
             if (hasExtraEmptyScreen()) {
                 mWorkspaceScreens.remove(EXTRA_EMPTY_SCREEN_ID);
-                mScreenOrder.remove(EXTRA_EMPTY_SCREEN_ID);
+                mScreenOrder.removeValue(EXTRA_EMPTY_SCREEN_ID);
                 removeView(cl);
                 if (stripEmptyScreens) {
                     stripEmptyScreens();
@@ -512,9 +517,9 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         CellLayout cl = mWorkspaceScreens.get(EXTRA_EMPTY_SCREEN_ID);
         mWorkspaceScreens.remove(EXTRA_EMPTY_SCREEN_ID);
-        mScreenOrder.remove(EXTRA_EMPTY_SCREEN_ID);
+        mScreenOrder.removeValue(EXTRA_EMPTY_SCREEN_ID);
 
-        long newId = mScreenOrder.size();
+        int newId = mScreenOrder.size();
         mWorkspaceScreens.put(newId, cl);
         mScreenOrder.add(newId);
 
@@ -524,11 +529,11 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         return newId;
     }
 
-    public CellLayout getScreenWithId(long screenId) {
+    public CellLayout getScreenWithId(int screenId) {
         return mWorkspaceScreens.get(screenId);
     }
 
-    public long getIdForScreen(CellLayout layout) {
+    public int getIdForScreen(CellLayout layout) {
         int index = mWorkspaceScreens.indexOfValue(layout);
         if (index != -1) {
             return mWorkspaceScreens.keyAt(index);
@@ -628,7 +633,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         return iconView;
     }
 
-    public int getPageIndexForScreenId(long screenId) {
+    public int getPageIndexForScreenId(int screenId) {
         return indexOfChild(mWorkspaceScreens.get(screenId));
     }
 
@@ -639,7 +644,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         return -1;
     }
 
-    public ArrayList<Long> getScreenOrder() {
+    public IntegerArray getScreenOrder() {
         return mScreenOrder;
     }
 
@@ -656,10 +661,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
 
         int currentPage = getNextPage();
-        ArrayList<Long> removeScreens = new ArrayList<>();
+        IntegerArray removeScreens = new IntegerArray();
         int total = mWorkspaceScreens.size();
         for (int i = 0; i < total; i++) {
-            long id = mWorkspaceScreens.keyAt(i);
+            int id = mWorkspaceScreens.keyAt(i);
             GridLayout cl = mWorkspaceScreens.valueAt(i);
             removeScreens.add(id);
         }
@@ -669,10 +674,11 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         int minScreens = 1;
 
         int pageShift = 0;
-        for (Long id : removeScreens) {
+        for (int i = 0; i < removeScreens.size(); i++) {
+            int id = removeScreens.get(i);
             CellLayout cl = mWorkspaceScreens.get(id);
             mWorkspaceScreens.remove(id);
-            mScreenOrder.remove(id);
+            mScreenOrder.removeValue(id);
 
             if (getChildCount() > minScreens) {
                 if (indexOfChild(cl) < currentPage) {
@@ -711,7 +717,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private void addInScreen(
         View child,
         long container,
-        long screenId,
+        int screenId,
         int x,
         int y,
         boolean animate
@@ -744,7 +750,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
      * @param screenId The screen in which to add the child.
      * @param index    The index of the child in grid.
      */
-    private void addInScreen(View child, long container, long screenId, int index) {
+    private void addInScreen(View child, long container, int screenId, int index) {
         if (container == Constants.CONTAINER_DESKTOP) {
             if (getScreenWithId(screenId) == null) {
                 Log.e(TAG, "Skipping child, screenId " + screenId + " not found");
@@ -815,7 +821,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     public void addInScreenFromBind(View child, LauncherItem info) {
-        mWorkspaceScreens.get(info.screenId).addView(child);
+        addInScreen(child, info.container, info.screenId, info.cell);
     }
 
     /**
@@ -1346,7 +1352,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 long container = hasMovedIntoHotseat ?
                     Constants.CONTAINER_HOTSEAT :
                     Constants.CONTAINER_DESKTOP;
-                long screenId = (mTargetCell[0] < 0) ?
+                int screenId = (mTargetCell[0] < 0) ?
                     mDragInfo.getScreenId() : getIdForScreen(dropTargetLayout);
                 int spanX = 1;
                 int spanY = 1;
@@ -1396,8 +1402,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                         mTargetCell, resultSpan, CellLayout.MODE_ON_DROP
                     );
                 }*/
-
-                Log.i(TAG, "onDrop: Test here");
 
                 int[] resultSpan = new int[2];
                 mTargetCell = dropTargetLayout.performReorder((int) mDragViewVisualCenter[0],
@@ -1456,8 +1460,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 }
             }
 
-            Log.i(TAG, "onDrop: Test here2");
-
             final CellLayout parent = (CellLayout) cell.getParent();
             if (d.dragView.hasDrawn()) {
                 if (droppedOnOriginalCellDuringTransition) {
@@ -1490,7 +1492,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         List<LauncherItem> items = new ArrayList<>();
         for (int i = 0; i < layouts.size(); i++) {
             CellLayout cellLayout = layouts.get(i);
-            long screenId = getIdForScreen(cellLayout);
+            int screenId = getIdForScreen(cellLayout);
             long container;
             if (cellLayout.getContainerType() == CellLayout.WORKSPACE) {
                 container = Constants.CONTAINER_DESKTOP;
@@ -1540,7 +1542,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         if (targetView == null || hasntMoved || !mCreateUserFolderOnDrop) return false;
         mCreateUserFolderOnDrop = false;
-        final long screenId = getIdForScreen(target);
+        final int screenId = getIdForScreen(target);
 
         boolean aboveShortcut =
             (targetView.getTag() instanceof ApplicationItem) || (targetView
@@ -1590,6 +1592,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             dragView.remove();
             dragView = null;
             invalidate();
+            updateDatabase(getWorkspaceAndHotseatCellLayouts());
             post(() -> {
                 if (fi.cell % 2 == 0) {
                     folderView
@@ -1636,6 +1639,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             d.dragView.remove();
             d.dragView = null;
             invalidate();
+            updateDatabase(getWorkspaceAndHotseatCellLayouts());
             return true;
         }
         return false;
@@ -2103,7 +2107,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     boolean willAddToExistingUserFolder(LauncherItem dragInfo, View dropOverView) {
-        if (dropOverView.getTag() instanceof FolderItem) {
+        if (dropOverView != null && dropOverView.getTag() instanceof FolderItem) {
             return true;
         }
         return false;
@@ -2468,6 +2472,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     public void computeScrollWithoutInvalidation() {
         computeScrollHelper(false);
     }
+
+
 
     public interface ItemOperator {
         /**
