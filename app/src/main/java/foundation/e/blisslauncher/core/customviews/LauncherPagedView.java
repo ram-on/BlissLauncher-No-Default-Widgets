@@ -294,7 +294,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         for (int i = 0; i < orderedScreenIds.size(); i++) {
             int screenId = orderedScreenIds.get(i);
             insertNewWorkspaceScreenBeforeEmptyScreen(screenId);
-            Log.d(TAG, "bindScreens() called with: orderedScreenIds = [" + orderedScreenIds + "]");
         }
     }
 
@@ -770,18 +769,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         final CellLayout layout;
         if (container == Constants.CONTAINER_HOTSEAT) {
             layout = mLauncher.getHotseat().getLayout();
-
-            // Hide folder title in the hotseat
-            //TODO: Enable when supporting folders
-            /*if (child instanceof FolderIcon) {
-                ((FolderIcon) child).setTextVisible(false);
-            }*/
         } else {
-            // Show folder title if not in the hotseat
-            //TODO: Enable when supporting folders
-            /*if (child instanceof FolderIcon) {
-                ((FolderIcon) child).setTextVisible(true);
-            }*/
             layout = getScreenWithId(screenId);
         }
 
@@ -799,8 +787,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             lp = new GridLayout.LayoutParams(rowSpec, colSpec);
         } else {
             lp = (CellLayout.LayoutParams) genericLp;
-            lp.rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
-            lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED);
+            lp.rowSpec = rowSpec;
+            lp.columnSpec = colSpec;
         }
         lp.setGravity(Gravity.CENTER);
 
@@ -830,10 +818,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     public void addInScreenFromBind(View child, LauncherItem info) {
-        Log.d(
-            TAG,
-            "addInScreenFromBind() called with: child = [" + child + "], info = [" + info + "]"
-        );
         addInScreen(child, info.container, info.screenId, info.cell);
     }
 
@@ -1273,7 +1257,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public boolean isDropEnabled() {
-        Log.d(TAG, "isDropEnabled() called");
         return true;
     }
 
@@ -1521,10 +1504,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 launcherItem.cell = j;
                 launcherItem.screenId = screenId;
                 launcherItem.container = container;
-                Log.i(TAG, "updateDatabase: "+launcherItem);
                 if (launcherItem.itemType == Constants.ITEM_TYPE_FOLDER) {
                     FolderItem folderItem = (FolderItem) launcherItem;
-                    Log.i(TAG, "updateDatabaseFolder: "+launcherItem);
                     items.add(folderItem);
                     for (int k = 0; k < folderItem.items.size(); k++) {
                         LauncherItem item = folderItem.items.get(k);

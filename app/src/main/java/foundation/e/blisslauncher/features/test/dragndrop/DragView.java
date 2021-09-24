@@ -420,11 +420,7 @@ public class DragView extends View {
         setLayoutParams(lp);
         move(touchX, touchY);
         // Post the animation to skip other expensive work happening on the first frame
-        post(new Runnable() {
-            public void run() {
-                mAnim.start();
-            }
-        });
+        post(() -> mAnim.start());
     }
 
     public void cancelAnimation() {

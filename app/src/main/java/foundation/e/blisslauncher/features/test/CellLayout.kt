@@ -273,12 +273,12 @@ open class CellLayout @JvmOverloads constructor(
         params: LayoutParams,
         markCells: Boolean
     ): Boolean {
+
         val lp: LayoutParams = params
 
         // Hotseat icons - remove text
         if (child is IconTextView) {
             val bubbleChild: IconTextView = child
-
             bubbleChild.setTextVisibility(mContainerType != HOTSEAT)
         }
 

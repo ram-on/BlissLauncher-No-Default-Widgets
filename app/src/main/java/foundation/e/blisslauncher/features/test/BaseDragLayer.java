@@ -10,7 +10,6 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewDebug;
@@ -295,11 +294,9 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
         int[] temp = new int[2];
         getLocationOnScreen(temp);
 
-        Log.i("BaseDragLayer", "getViewRectRelativeToSelf iNWindow: "+x+" "+y);
         v.getLocationInWindow(loc);
         int vX = loc[0];
         int vY = loc[1];
-        Log.i("BaseDragLayer", "getViewRectRelativeToSelf ofView: "+vX+" "+vY);
 
         int left = vX - x;
         int top = vY - y;
@@ -439,6 +436,7 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
         int count = getChildCount();
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
+
             final FrameLayout.LayoutParams flp = (FrameLayout.LayoutParams) child.getLayoutParams();
             if (flp instanceof LayoutParams) {
                 final LayoutParams lp = (LayoutParams) flp;

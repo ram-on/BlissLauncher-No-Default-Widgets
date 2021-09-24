@@ -28,6 +28,7 @@ import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.os.Process
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
@@ -199,6 +200,8 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
     private var mFolderAppsViewPager: ViewPager? = null
     private var mFolderTitleInput: BlissInput? = null
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val mWeatherReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -1081,7 +1084,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeWith(object : DisposableObserver<List<LauncherItem>>() {
                     override fun onNext(launcherItems: List<LauncherItem>) {
-                        showApps(launcherItems)
+                        mainHandler.post { showApps(launcherItems) }
                     }
 
                     override fun onError(e: Throwable) {

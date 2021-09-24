@@ -12,18 +12,6 @@ open class InsettableFrameLayout(mContext: Context, attrs: AttributeSet?) : Fram
     mContext, attrs
 ), Insettable {
 
-    /*val insets: Rect
-        get() {
-            var tempInsets = Rect()
-            if (this.windowInsets != null) {
-                tempInsets.left = this.windowInsets!!.systemWindowInsetLeft
-                tempInsets.top = this.windowInsets!!.systemWindowInsetTop
-                tempInsets.right = this.windowInsets!!.systemWindowInsetRight
-                tempInsets.bottom = this.windowInsets!!.systemWindowInsetBottom
-            }
-            return tempInsets
-        }*/
-
     @JvmField
     val mInsets = Rect()
 
@@ -65,6 +53,19 @@ open class InsettableFrameLayout(mContext: Context, attrs: AttributeSet?) : Fram
             }
         }
     }
+
+    override fun generateLayoutParams(attrs: AttributeSet?): LayoutParams =
+        LayoutParams(context, attrs)
+
+    override fun generateDefaultLayoutParams(): LayoutParams = LayoutParams(
+        FrameLayout.LayoutParams.WRAP_CONTENT,
+        FrameLayout.LayoutParams.WRAP_CONTENT
+    )
+
+    override fun checkLayoutParams(p: ViewGroup.LayoutParams?): Boolean = p is LayoutParams
+
+    override fun generateLayoutParams(lp: ViewGroup.LayoutParams): LayoutParams = LayoutParams(lp)
+
     open class LayoutParams : FrameLayout.LayoutParams {
         var ignoreInsets = false
 
@@ -80,6 +81,6 @@ open class InsettableFrameLayout(mContext: Context, attrs: AttributeSet?) : Fram
         }
 
         constructor(width: Int, height: Int) : super(width, height)
-        constructor(lp: ViewGroup.LayoutParams?) : super(lp!!)
+        constructor(lp: ViewGroup.LayoutParams) : super(lp)
     }
 }

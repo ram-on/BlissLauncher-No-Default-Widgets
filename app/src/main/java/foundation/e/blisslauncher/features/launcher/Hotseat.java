@@ -81,6 +81,7 @@ public class Hotseat extends CellLayout implements Insettable {
     public void setInsets(Rect insets) {
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) getLayoutParams();
         VariantDeviceProfile grid = mLauncher.getDeviceProfile();
+        insets = grid.getInsets();
         lp.gravity = Gravity.BOTTOM;
         lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
         lp.height = grid.getHotseatBarSizePx() + insets.bottom;
@@ -88,7 +89,6 @@ public class Hotseat extends CellLayout implements Insettable {
         getLayout().setPadding(padding.left, padding.top, padding.right, padding.bottom);
         setLayoutParams(lp);
         InsettableFrameLayout.Companion.dispatchInsets(this, insets);
-        Log.i(TAG, "setInsets: called");
     }
 
     @Override
