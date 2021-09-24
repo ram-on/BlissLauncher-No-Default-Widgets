@@ -390,6 +390,10 @@ public class AppProvider {
             }
         }
 
+        for (LauncherItem mLauncherItem : mLauncherItems) {
+            Log.i(TAG, "prepareLauncherItems: "+mLauncherItem);
+        }
+
         applicationItems.removeAll(mDatabaseItems);
         List<ApplicationItem> mutableList = new ArrayList<>(applicationItems);
         Collections.sort(mutableList, (app1, app2) -> {

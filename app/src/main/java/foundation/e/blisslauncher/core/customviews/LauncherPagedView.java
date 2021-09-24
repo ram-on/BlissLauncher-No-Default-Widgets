@@ -294,6 +294,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         for (int i = 0; i < orderedScreenIds.size(); i++) {
             int screenId = orderedScreenIds.get(i);
             insertNewWorkspaceScreenBeforeEmptyScreen(screenId);
+            Log.d(TAG, "bindScreens() called with: orderedScreenIds = [" + orderedScreenIds + "]");
         }
     }
 
@@ -666,7 +667,9 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         for (int i = 0; i < total; i++) {
             int id = mWorkspaceScreens.keyAt(i);
             GridLayout cl = mWorkspaceScreens.valueAt(i);
-            removeScreens.add(id);
+            if(id > FIRST_SCREEN_ID && cl.getChildCount() == 0) {
+                removeScreens.add(id);
+            }
         }
 
         // We enforce at least one page to add new items to. In the case that we remove the last
@@ -782,6 +785,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             layout = getScreenWithId(screenId);
         }
 
+        // It helps in recovering from situation when a layout is not saved correctly.
+        // TODO: Figure out when it can happen.
+        if(index > layout.getChildCount()) {
+            index = layout.getChildCount();
+        }
+
         ViewGroup.LayoutParams genericLp = child.getLayoutParams();
         GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
         GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
@@ -821,6 +830,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     public void addInScreenFromBind(View child, LauncherItem info) {
+        Log.d(
+            TAG,
+            "addInScreenFromBind() called with: child = [" + child + "], info = [" + info + "]"
+        );
         addInScreen(child, info.container, info.screenId, info.cell);
     }
 
@@ -1178,7 +1191,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     @Override
     public void onDragEnd() {
         if (!mDeferRemoveExtraEmptyScreen) {
-            //removeExtraEmptyScreen(true, mDragSourceInternal != null);
+            removeExtraEmptyScreen(true, mDragSourceInternal != null);
         }
 
         updateChildrenLayersEnabled();
@@ -1508,8 +1521,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 launcherItem.cell = j;
                 launcherItem.screenId = screenId;
                 launcherItem.container = container;
+                Log.i(TAG, "updateDatabase: "+launcherItem);
                 if (launcherItem.itemType == Constants.ITEM_TYPE_FOLDER) {
                     FolderItem folderItem = (FolderItem) launcherItem;
+                    Log.i(TAG, "updateDatabaseFolder: "+launcherItem);
                     items.add(folderItem);
                     for (int k = 0; k < folderItem.items.size(); k++) {
                         LauncherItem item = folderItem.items.get(k);

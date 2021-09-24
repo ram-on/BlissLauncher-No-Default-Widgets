@@ -598,6 +598,7 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
                 if (layoutChildren) {
                     final int childHeight = child.getMeasuredHeight();
                     final int childTop = verticalCenter - childHeight / 2;
+                    Log.i(TAG, "getPageScrolls: "+childLeft+" "+childTop+" "+childRight+" "+ (childTop+childHeight));
                     child.layout(childLeft, childTop, childRight, childTop + childHeight);
                 }
 

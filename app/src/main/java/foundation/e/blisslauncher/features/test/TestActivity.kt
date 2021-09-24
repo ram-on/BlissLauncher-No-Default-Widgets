@@ -1094,6 +1094,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     }
 
     private fun showApps(launcherItems: List<LauncherItem>) {
+        Log.d(TAG, "showApps() called with: launcherItems = $launcherItems")
         hotseat.resetLayout(false)
         val populatedItems = populateItemPositions(launcherItems)
         val orderedScreenIds = IntegerArray()

@@ -88,6 +88,7 @@ public class Hotseat extends CellLayout implements Insettable {
         getLayout().setPadding(padding.left, padding.top, padding.right, padding.bottom);
         setLayoutParams(lp);
         InsettableFrameLayout.Companion.dispatchInsets(this, insets);
+        Log.i(TAG, "setInsets: called");
     }
 
     @Override

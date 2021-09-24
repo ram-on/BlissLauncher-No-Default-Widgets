@@ -15,6 +15,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewDebug;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.AbstractFloatingView;
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
@@ -438,11 +439,11 @@ public abstract class BaseDragLayer<T extends BaseDraggingActivity> extends Inse
         int count = getChildCount();
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
-            final LayoutParams flp = (LayoutParams) child.getLayoutParams();
+            final FrameLayout.LayoutParams flp = (FrameLayout.LayoutParams) child.getLayoutParams();
             if (flp instanceof LayoutParams) {
-                final LayoutParams lp = flp;
+                final LayoutParams lp = (LayoutParams) flp;
                 if (lp.customPosition) {
-                    child.layout(lp.x, lp.y, lp.x + lp.width, lp.y + lp.height+lp.height);
+                    child.layout(lp.x, lp.y, lp.x + lp.width, lp.y + lp.height);
                 }
             }
         }
