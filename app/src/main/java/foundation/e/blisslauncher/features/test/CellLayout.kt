@@ -11,6 +11,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Point
 import android.graphics.Rect
+import android.os.Handler
+import android.os.Looper
 import android.util.ArrayMap
 import android.util.AttributeSet
 import android.view.View
@@ -847,16 +849,24 @@ open class CellLayout @JvmOverloads constructor(
                 )
             }*/
 
-            if ((mode == MODE_ON_DROP)) {
-                if (index % 2 == 0) {
-                    dragView.startAnimation(AnimationUtils.loadAnimation(context, R.anim.wobble))
-                } else {
-                    dragView.startAnimation(
-                        AnimationUtils.loadAnimation(
-                            context,
-                            R.anim.wobble_reverse
+            val handler = Handler(Looper.getMainLooper())
+            handler.post {
+                if ((mode == MODE_ON_DROP)) {
+                    if (index % 2 == 0) {
+                        dragView.startAnimation(
+                            AnimationUtils.loadAnimation(
+                                context,
+                                R.anim.wobble
+                            )
                         )
-                    )
+                    } else {
+                        dragView.startAnimation(
+                            AnimationUtils.loadAnimation(
+                                context,
+                                R.anim.wobble_reverse
+                            )
+                        )
+                    }
                 }
             }
         }

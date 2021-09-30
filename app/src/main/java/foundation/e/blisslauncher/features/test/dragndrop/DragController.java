@@ -337,10 +337,8 @@ public class DragController implements DragDriver.EventListener, TouchController
      */
     private int[] getClampedDragLayerPos(float x, float y) {
         mLauncher.getDragLayer().getLocalVisibleRect(mDragLayerRect);
-        Log.d("DragController", "Rect: "+mDragLayerRect);
         mTmpPoint[0] = (int) Math.max(mDragLayerRect.left, Math.min(x, mDragLayerRect.right - 1));
         mTmpPoint[1] = (int) Math.max(mDragLayerRect.top, Math.min(y, mDragLayerRect.bottom - 1));
-        Log.d("DragController", "TmpPoint: "+mTmpPoint[0]+", "+mTmpPoint[1]);
         return mTmpPoint;
     }
 

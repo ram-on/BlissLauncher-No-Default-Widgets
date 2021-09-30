@@ -25,6 +25,8 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -95,7 +97,7 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
     }
 
     public void recreateControllers() {
-        mControllers = new TouchController[] {
+        mControllers = new TouchController[]{
             mActivity.getDragController()};
     }
 
@@ -275,11 +277,12 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
         );*/
         // Show the drop view if it was previously hidden
         mDropView = dragView;
-        mDropView.requestLayout();
-        child.setVisibility(VISIBLE);
+        //mDropView.requestLayout();
         if (mDropView != null) {
             mDragController.onDeferredEndDrag(mDropView);
         }
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(() -> child.setVisibility(VISIBLE));
         mDropView = null;
         invalidate();
     }
@@ -293,7 +296,8 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
         Rect from = new Rect(fromX, fromY, fromX +
             view.getMeasuredWidth(), fromY + view.getMeasuredHeight());
         Rect to = new Rect(toX, toY, toX + view.getMeasuredWidth(), toY + view.getMeasuredHeight());
-        animateView(view,
+        animateView(
+            view,
             from,
             to,
             finalAlpha,

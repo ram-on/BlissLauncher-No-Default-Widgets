@@ -1586,8 +1586,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             }
             //Add animation here.
             dragView.remove();
-            dragView = null;
-            invalidate();
             updateDatabase(getWorkspaceAndHotseatCellLayouts());
             post(() -> {
                 if (fi.cell % 2 == 0) {
@@ -1634,7 +1632,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             //Add animation here.
             d.dragView.remove();
             d.dragView = null;
-            invalidate();
             updateDatabase(getWorkspaceAndHotseatCellLayouts());
             return true;
         }

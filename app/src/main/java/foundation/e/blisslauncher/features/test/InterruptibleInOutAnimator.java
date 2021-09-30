@@ -71,7 +71,7 @@ public class InterruptibleInOutAnimator {
         cancel();
 
         // TODO: We don't really need to do the animation if startValue == toValue, but
-        // somehow that doesn't seem to work, possibly a quirk of the animation framework
+        //  somehow that doesn't seem to work, possibly a quirk of the animation framework
         mDirection = direction;
 
         // Ensure we don't calculate a non-sensical duration
