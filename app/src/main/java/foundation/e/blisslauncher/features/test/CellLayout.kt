@@ -920,6 +920,8 @@ open class CellLayout @JvmOverloads constructor(
         }
     }
 
+    fun getMaxChildCount(): Int = mCountX * mCountY
+
     fun isOccupied(cellIdx: Int): Boolean {
         return if (cellIdx < mOccupied.cells.size) {
             mOccupied.cells[cellIdx]

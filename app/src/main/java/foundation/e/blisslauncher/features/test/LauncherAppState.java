@@ -50,6 +50,7 @@ public class LauncherAppState {
 
     private final SecureSettingsObserver mNotificationDotsObserver;
     private TestActivity launcher;
+    private LauncherModel mModel;
 
     public static LauncherAppState getInstance(final Context context) {
         if (INSTANCE == null) {
@@ -87,6 +88,7 @@ public class LauncherAppState {
 
         mInvariantDeviceProfile = new InvariantDeviceProfile(mContext);
 
+        mModel = new LauncherModel(this);
         // Register intent receivers
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_LOCALE_CHANGED);
@@ -96,6 +98,7 @@ public class LauncherAppState {
         filter.addAction(Intent.ACTION_MANAGED_PROFILE_AVAILABLE);
         filter.addAction(Intent.ACTION_MANAGED_PROFILE_UNAVAILABLE);
         filter.addAction(Intent.ACTION_MANAGED_PROFILE_UNLOCKED);
+        mContext.registerReceiver(mModel, filter);
 
         UserManagerCompat.getInstance(mContext).enableAndResetCache();
         new ConfigMonitor(mContext).register();
@@ -114,10 +117,6 @@ public class LauncherAppState {
         }
     }
 
-    public void setLauncher(TestActivity launcher) {
-        this.launcher = launcher;
-    }
-
     public TestActivity getLauncher() {
         return launcher;
     }
@@ -126,9 +125,20 @@ public class LauncherAppState {
      * Call from Application.onTerminate(), which is not guaranteed to ever be called.
      */
     public void onTerminate() {
+        mContext.unregisterReceiver(mModel);
         if (mNotificationDotsObserver != null) {
             mNotificationDotsObserver.unregister();
         }
+    }
+
+    LauncherModel setLauncher(TestActivity launcher) {
+        this.launcher = launcher;
+        mModel.initialize(launcher);
+        return mModel;
+    }
+
+    public LauncherModel getModel() {
+        return mModel;
     }
 
     public InvariantDeviceProfile getInvariantDeviceProfile() {

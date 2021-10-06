@@ -19,6 +19,7 @@ import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
@@ -588,5 +589,27 @@ public class Utilities {
         }
         float progress = getProgress(t, fromMin, fromMax);
         return mapRange(interpolator.getInterpolation(progress), toMin, toMax);
+    }
+
+    /**
+     * Returns true if the intent is a valid launch intent for a launcher activity of an app.
+     * This is used to identify shortcuts which are different from the ones exposed by the
+     * applications' manifest file.
+     *
+     * @param launchIntent The intent that will be launched when the shortcut is clicked.
+     */
+    public static boolean isLauncherAppTarget(Intent launchIntent) {
+        if (launchIntent != null
+            && Intent.ACTION_MAIN.equals(launchIntent.getAction())
+            && launchIntent.getComponent() != null
+            && launchIntent.getCategories() != null
+            && launchIntent.getCategories().size() == 1
+            && launchIntent.hasCategory(Intent.CATEGORY_LAUNCHER)
+            && TextUtils.isEmpty(launchIntent.getDataString())) {
+            // An app target can either have no extra or have ItemInfo.EXTRA_PROFILE.
+            Bundle extras = launchIntent.getExtras();
+            return extras == null || extras.keySet().isEmpty();
+        }
+        return false;
     }
 }

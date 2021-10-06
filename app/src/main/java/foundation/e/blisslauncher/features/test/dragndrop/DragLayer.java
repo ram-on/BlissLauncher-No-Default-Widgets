@@ -277,7 +277,7 @@ public class DragLayer extends BaseDragLayer<TestActivity> {
         );*/
         // Show the drop view if it was previously hidden
         mDropView = dragView;
-        //mDropView.requestLayout();
+        mDropView.requestLayout();
         if (mDropView != null) {
             mDragController.onDeferredEndDrag(mDropView);
         }

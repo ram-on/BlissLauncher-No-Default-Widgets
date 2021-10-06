@@ -18,6 +18,8 @@ package foundation.e.blisslauncher.core.utils;
 
 import android.os.Looper;
 
+import foundation.e.blisslauncher.features.test.LauncherModel;
+
 /**
  * A set of utility methods for thread verification.
  */
@@ -30,10 +32,9 @@ public class Preconditions {
     }
 
     public static void assertWorkerThread() {
-        //TODO: Uncommnet after LauncherModel
-        /*if (!isSameLooper(LauncherModel.getWorkerLooper())) {
+        if (!isSameLooper(LauncherModel.getWorkerLooper())) {
             throw new IllegalStateException();
-        }*/
+        }
     }
 
     public static void assertUIThread() {

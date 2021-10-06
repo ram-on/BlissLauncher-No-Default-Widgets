@@ -33,6 +33,7 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 
 open class InvariantDeviceProfile {
+
     // Profile-defining invariant properties
     var name: String? = null
     var minWidthDps = 0f

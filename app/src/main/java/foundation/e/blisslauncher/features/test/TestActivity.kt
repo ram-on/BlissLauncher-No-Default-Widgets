@@ -119,6 +119,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.schedulers.Schedulers
+import java.lang.Exception
 import java.net.URISyntaxException
 import java.util.ArrayList
 import java.util.Arrays
@@ -128,8 +129,10 @@ import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
 import me.relex.circleindicator.CircleIndicator
 
-class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionClickListener {
+class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionClickListener,
+    LauncherModel.Callbacks {
 
+    private var mModel: LauncherModel? = null
     private lateinit var widgetRootView: WidgetsRootView
     private lateinit var overlayCallbackImpl: OverlayCallbackImpl
 
@@ -243,7 +246,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         TraceHelper.partitionSection("Launcher-onCreate", "super call")
 
         val app = LauncherAppState.getInstance(this)
-        app.launcher = this
+        mModel = app.setLauncher(this)
         mOldConfig = Configuration(resources.configuration)
 
         mAppWidgetManager = BlissLauncher.getApplication(this).appWidgetManager
@@ -1103,7 +1106,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         val orderedScreenIds = IntegerArray()
         orderedScreenIds.addAll(collectWorkspaceScreens(populatedItems))
         workspace.bindScreens(orderedScreenIds)
-        workspace.bindItems(populatedItems)
+        workspace.bindItems(populatedItems, false)
     }
 
     private fun populateItemPositions(launcherItems: List<LauncherItem>): List<LauncherItem> {
@@ -1504,11 +1507,15 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
     private fun deleteShortcutFromProvider(id: String) {
         val resolver = contentResolver
-        val count = resolver.delete(
-            Uri.parse("content://foundation.e.pwaplayer.provider/pwa"),
-            null, arrayOf(id)
-        )
-        Log.d("LauncherActivity", "Items deleted from pwa provider: $count")
+        try {
+            val count = resolver.delete(
+                Uri.parse("content://foundation.e.pwaplayer.provider/pwa"),
+                null, arrayOf(id)
+            )
+            Log.d("LauncherActivity", "Items deleted from pwa provider: $count")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     /**
@@ -1767,5 +1774,11 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         })
         set.start()
         currentAnimator = set
+    }
+
+    override fun bindAppsAdded(items: MutableList<LauncherItem>) {
+        if (items.isEmpty()) return
+
+        workspace?.bindItemsAdded(items)
     }
 }

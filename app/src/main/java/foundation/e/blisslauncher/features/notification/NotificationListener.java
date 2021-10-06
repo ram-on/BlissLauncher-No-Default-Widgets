@@ -23,7 +23,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.os.Build;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.service.notification.NotificationListenerService;
@@ -35,6 +34,7 @@ import androidx.annotation.Nullable;
 import foundation.e.blisslauncher.core.utils.IntSet;
 import foundation.e.blisslauncher.core.utils.PackageUserKey;
 import foundation.e.blisslauncher.core.utils.SecureSettingsObserver;
+import foundation.e.blisslauncher.features.test.LauncherModel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -74,8 +74,6 @@ public class NotificationListener extends NotificationListenerService {
     private String mLastKeyDismissedByLauncher;
 
     private SecureSettingsObserver mNotificationDotsObserver;
-
-    static final HandlerThread sWorkerThread = new HandlerThread("launcher-loader");
 
     private final Handler.Callback mWorkerCallback = new Handler.Callback() {
         @Override
@@ -139,8 +137,7 @@ public class NotificationListener extends NotificationListenerService {
 
     public NotificationListener() {
         super();
-        sWorkerThread.start();
-        mWorkerHandler = new Handler(sWorkerThread.getLooper(), mWorkerCallback);
+        mWorkerHandler = new Handler(LauncherModel.getWorkerLooper(), mWorkerCallback);
         mUiHandler = new Handler(Looper.getMainLooper(), mUiCallback);
         sNotificationListenerInstance = this;
     }

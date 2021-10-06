@@ -7,6 +7,7 @@ import static foundation.e.blisslauncher.features.test.dragndrop.DragLayer.ALPHA
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.animation.LayoutTransition;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
@@ -14,6 +15,7 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.WallpaperManager;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.Point;
@@ -23,6 +25,7 @@ import android.os.UserHandle;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.MutableInt;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -31,6 +34,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.view.animation.OvershootInterpolator;
 import android.widget.GridLayout;
 import android.widget.Toast;
 import foundation.e.blisslauncher.BuildConfig;
@@ -51,6 +55,9 @@ import foundation.e.blisslauncher.core.utils.IntegerArray;
 import foundation.e.blisslauncher.core.utils.PackageUserKey;
 import foundation.e.blisslauncher.features.launcher.Hotseat;
 import foundation.e.blisslauncher.features.notification.FolderDotInfo;
+import foundation.e.blisslauncher.features.shortcuts.DeepShortcutManager;
+import foundation.e.blisslauncher.features.shortcuts.InstallShortcutReceiver;
+import foundation.e.blisslauncher.features.shortcuts.ShortcutKey;
 import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.IconTextView;
@@ -62,6 +69,7 @@ import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 import foundation.e.blisslauncher.features.test.WorkspaceStateTransitionAnimation;
 import foundation.e.blisslauncher.features.test.anim.AnimatorSetBuilder;
 import foundation.e.blisslauncher.features.test.anim.Interpolators;
+import foundation.e.blisslauncher.features.test.anim.PropertyListBuilder;
 import foundation.e.blisslauncher.features.test.dragndrop.DragController;
 import foundation.e.blisslauncher.features.test.dragndrop.DragOptions;
 import foundation.e.blisslauncher.features.test.dragndrop.DragSource;
@@ -71,8 +79,11 @@ import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragContro
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
@@ -96,7 +107,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private static final boolean MAP_RECURSE = true;
 
     // The screen id used for the empty screen always present to the right.
-    public static final  int EXTRA_EMPTY_SCREEN_ID = -201;
+    public static final int EXTRA_EMPTY_SCREEN_ID = -201;
     // The is the first screen. It is always present, even if its empty.
     public static final long FIRST_SCREEN_ID = 0;
     private static final int ADJACENT_SCREEN_DROP_DURATION = 300;
@@ -115,6 +126,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     final static float START_DAMPING_TOUCH_SLOP_ANGLE = (float) Math.PI / 6;
     final static float MAX_SWIPE_ANGLE = (float) Math.PI / 3;
     final static float TOUCH_SLOP_DAMPING_FACTOR = 4;
+
+    // How long to wait before the new-shortcut animation automatically pans the workspace
+    private static final int NEW_APPS_PAGE_MOVE_DELAY = 500;
+    private static final int NEW_APPS_ANIMATION_INACTIVE_TIMEOUT_SECONDS = 5;
+    static final int NEW_APPS_ANIMATION_DELAY = 500;
+    private static final float BOUNCE_ANIMATION_TENSION = 1.3f;
 
     private final static Paint sPaint = new Paint();
 
@@ -175,6 +192,11 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     private Alarm wobbleExpireAlarm = new Alarm();
     private static final int WOBBLE_EXPIRATION_TIMEOUT = 25000;
+
+    /**
+     * Map of ShortcutKey to the number of times it is pinned.
+     */
+    public final Map<ShortcutKey, MutableInt> pinnedShortcutCounts = new HashMap<>();
 
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -287,7 +309,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     public void bindScreens(@NotNull IntegerArray orderedScreenIds) {
-        if(orderedScreenIds.isEmpty()) {
+        if (orderedScreenIds.isEmpty()) {
             addExtraEmptyScreen();
         }
 
@@ -297,8 +319,14 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
     }
 
-    public void bindItems(@NotNull List<? extends LauncherItem> launcherItems) {
-        for (LauncherItem launcherItem : launcherItems) {
+    public void bindItems(
+        @NotNull List<? extends LauncherItem> launcherItems,
+        boolean animateIcons
+    ) {
+        final Collection<Animator> bounceAnims = new ArrayList<>();
+        int newItemsScreenId = -1;
+        for (int i = 0; i < launcherItems.size(); i++) {
+            LauncherItem launcherItem = launcherItems.get(i);
             IconTextView appView = (IconTextView) LayoutInflater.from(getContext())
                 .inflate(R.layout.app_icon, null, false);
             appView.applyFromShortcutItem(launcherItem);
@@ -306,7 +334,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             appView.setOnLongClickListener(ItemLongClickListener.INSTANCE_WORKSPACE);
             if (launcherItem.container == Constants.CONTAINER_DESKTOP) {
                 CellLayout cl = getScreenWithId(launcherItem.screenId);
-                if(cl != null && cl.isOccupied(launcherItem.cell)) {
+                if (cl != null && cl.isOccupied(launcherItem.cell)) {
                     // TODO: Add item to the end of the list
                 }
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
@@ -317,7 +345,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
                 appView.setLayoutParams(iconLayoutParams);
                 appView.setTextVisibility(true);
-                addInScreenFromBind(appView, launcherItem);
             } else if (launcherItem.container == Constants.CONTAINER_HOTSEAT) {
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
@@ -326,9 +353,252 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 iconLayoutParams.height = mLauncher.getDeviceProfile().getHotseatCellHeightPx();
                 iconLayoutParams.width = mLauncher.getDeviceProfile().getCellWidthPx();
                 appView.setLayoutParams(iconLayoutParams);
-                addInScreenFromBind(appView, launcherItem);
+            }
+            addInScreenFromBind(appView, launcherItem);
+            if (animateIcons) {
+                // Animate all the applications up now
+                appView.setAlpha(0f);
+                appView.setScaleX(0f);
+                appView.setScaleY(0f);
+                bounceAnims.add(createNewAppBounceAnimation(appView, i));
+                newItemsScreenId = launcherItem.screenId;
             }
         }
+
+        // Animate to the correct page
+        if (animateIcons && newItemsScreenId > -1) {
+            AnimatorSet anim = new AnimatorSet();
+            anim.playTogether(bounceAnims);
+            int currentScreenId = getScreenIdForPageIndex(getNextPage());
+            final int newScreenIndex = getPageIndexForScreenId(newItemsScreenId);
+            final Runnable startBounceAnimRunnable = anim::start;
+
+            if (newItemsScreenId != currentScreenId) {
+                // We post the animation slightly delayed to prevent slowdowns
+                // when we are loading right after we return to launcher.
+                this.postDelayed((Runnable) () -> {
+                    AbstractFloatingView.closeAllOpenViews(mLauncher, false);
+
+                    snapToPage(newScreenIndex);
+                    postDelayed(
+                        startBounceAnimRunnable,
+                        NEW_APPS_ANIMATION_DELAY
+                    );
+                }, NEW_APPS_PAGE_MOVE_DELAY);
+            } else {
+                postDelayed(startBounceAnimRunnable, NEW_APPS_ANIMATION_DELAY);
+            }
+        }
+        requestLayout();
+    }
+
+    public void bindItemsAdded(@NotNull List<? extends LauncherItem> items) {
+        final ArrayList<LauncherItem> addedItemsFinal = new ArrayList<>();
+        final IntegerArray addedWorkspaceScreensFinal = new IntegerArray();
+        List<LauncherItem> filteredItems = new ArrayList<>();
+        for (LauncherItem item : items) {
+            if (item.itemType == Constants.ITEM_TYPE_APPLICATION ||
+                item.itemType == Constants.ITEM_TYPE_SHORTCUT
+            ) {
+                // Short-circuit this logic if the icon exists somewhere on the workspace
+                if (shortcutExists(item.getIntent(), item.user.getRealHandle())) {
+                    continue;
+                }
+            }
+            if (item != null) {
+                filteredItems.add(item);
+            }
+        }
+
+        for (LauncherItem item : filteredItems) {
+            // Find appropriate space for the item.
+            int[] coords = findSpaceForItem(addedWorkspaceScreensFinal);
+            int screenId = coords[0];
+
+            LauncherItem itemInfo;
+            if (item instanceof ApplicationItem || item instanceof ShortcutItem ||
+                item instanceof FolderItem) {
+                itemInfo = item;
+                itemInfo.screenId = screenId;
+                itemInfo.cell = coords[1];
+                itemInfo.container = Constants.CONTAINER_DESKTOP;
+            } else {
+                throw new RuntimeException("Unexpected info type");
+            }
+
+            if(item.itemType == Constants.ITEM_TYPE_SHORTCUT) {
+                // Increment the count for the given shortcut
+                ShortcutKey pinnedShortcut = ShortcutKey.fromItem((ShortcutItem) item);
+                MutableInt count = pinnedShortcutCounts.get(pinnedShortcut);
+                if (count == null) {
+                    count = new MutableInt(1);
+                    pinnedShortcutCounts.put(pinnedShortcut, count);
+                } else {
+                    count.value++;
+                }
+
+                // Since this is a new item, pin the shortcut in the system server.
+                if (count.value == 1) {
+                    DeepShortcutManager.getInstance(getContext()).pinShortcut(pinnedShortcut);
+                }
+
+            }
+            // Save the WorkspaceItemInfo for binding in the workspace
+            addedItemsFinal.add(itemInfo);
+        }
+
+        if (!addedItemsFinal.isEmpty()) {
+            final ArrayList<LauncherItem> addAnimated = new ArrayList<>();
+            final ArrayList<LauncherItem> addNotAnimated = new ArrayList<>();
+            if (!addedItemsFinal.isEmpty()) {
+                LauncherItem info = addedItemsFinal.get(addedItemsFinal.size() - 1);
+                int lastScreenId = info.screenId;
+                for (LauncherItem i : addedItemsFinal) {
+                    if (i.screenId == lastScreenId) {
+                        addAnimated.add(i);
+                    } else {
+                        addNotAnimated.add(i);
+                    }
+                }
+            }
+
+            if (!addedWorkspaceScreensFinal.isEmpty()) {
+                bindScreens(addedWorkspaceScreensFinal);
+            }
+
+            // We add the items without animation on non-visible pages, and with
+            // animations on the new page (which we will try and snap to).
+            if (addNotAnimated != null && !addNotAnimated.isEmpty()) {
+                bindItems(addNotAnimated, false);
+            }
+            if (addAnimated != null && !addAnimated.isEmpty()) {
+                bindItems(addAnimated, true);
+            }
+
+            // Remove the extra empty screen
+            removeExtraEmptyScreen(false, false);
+            updateDatabase(getWorkspaceAndHotseatCellLayouts());
+        }
+    }
+
+    private int[] findSpaceForItem(IntegerArray addedWorkspaceScreensFinal) {
+        // Find appropriate space for the item.
+        int screenId = 0;
+        int cell = 0;
+        boolean found = false;
+
+        int screenCount = getChildCount();
+        for (int screen = 0; screen < screenCount; screen++) {
+            View child = getChildAt(screen);
+            if (child instanceof CellLayout) {
+                CellLayout cellLayout = (CellLayout) child;
+                int index = mWorkspaceScreens.indexOfValue(cellLayout);
+                screenId = mWorkspaceScreens.keyAt(index);
+                if (cellLayout.getChildCount() < cellLayout.getMaxChildCount()) {
+                    found = true;
+                    cell = cellLayout.getChildCount();
+                    break;
+                }
+            }
+        }
+
+        if (!found) {
+            screenId = screenId + 1;
+            addedWorkspaceScreensFinal.add(screenId);
+            cell = 0;
+        }
+        return new int[]{screenId, cell};
+    }
+
+    /**
+     * Returns true if the shortcuts already exists on the workspace. This must be called after
+     * the workspace has been loaded. We identify a shortcut by its intent.
+     */
+    protected boolean shortcutExists(Intent intent, UserHandle user) {
+        final String compPkgName, intentWithPkg, intentWithoutPkg;
+        if (intent == null) {
+            // Skip items with null intents
+            return true;
+        }
+        if (intent.getComponent() != null) {
+            // If component is not null, an intent with null package will produce
+            // the same result and should also be a match.
+            compPkgName = intent.getComponent().getPackageName();
+            if (intent.getPackage() != null) {
+                intentWithPkg = intent.toUri(0);
+                intentWithoutPkg = new Intent(intent).setPackage(null).toUri(0);
+            } else {
+                intentWithPkg = new Intent(intent).setPackage(compPkgName).toUri(0);
+                intentWithoutPkg = intent.toUri(0);
+            }
+        } else {
+            compPkgName = null;
+            intentWithPkg = intent.toUri(0);
+            intentWithoutPkg = intent.toUri(0);
+        }
+
+        boolean isLauncherAppTarget = Utilities.isLauncherAppTarget(intent);
+
+        for (CellLayout layout : getWorkspaceAndHotseatCellLayouts()) {
+            // map over all the shortcuts on the workspace
+            final int itemCount = layout.getChildCount();
+            for (int itemIdx = 0; itemIdx < itemCount; itemIdx++) {
+                View item = layout.getChildAt(itemIdx);
+                LauncherItem info = (LauncherItem) item.getTag();
+                if (info instanceof FolderItem) {
+                    FolderItem folder = (FolderItem) info;
+                    List<LauncherItem> folderChildren = folder.items;
+                    // map over all the children in the folder
+                    final int childCount = folder.items.size();
+                    for (int childIdx = 0; childIdx < childCount; childIdx++) {
+                        LauncherItem childItem = folderChildren.get(childIdx);
+                        if (childItem.getIntent() != null && childItem.user.equals(user)) {
+                            Intent copyIntent = new Intent(childItem.getIntent());
+                            copyIntent.setSourceBounds(intent.getSourceBounds());
+                            String s = copyIntent.toUri(0);
+                            if (intentWithPkg.equals(s) || intentWithoutPkg.equals(s)) {
+                                return true;
+                            }
+
+                            // checking for existing promise icon with same package name
+                            if (isLauncherAppTarget
+                                && childItem.getTargetComponent() != null
+                                && compPkgName != null
+                                && compPkgName
+                                .equals(childItem.getTargetComponent().getPackageName())) {
+                                return true;
+                            }
+                        }
+                    }
+                } else {
+                    if (info.getIntent() != null && info.user.equals(user)) {
+                        Intent copyIntent = new Intent(info.getIntent());
+                        copyIntent.setSourceBounds(intent.getSourceBounds());
+                        String s = copyIntent.toUri(0);
+                        if (intentWithPkg.equals(s) || intentWithoutPkg.equals(s)) {
+                            return true;
+                        }
+
+                        // checking for existing promise icon with same package name
+                        if (isLauncherAppTarget
+                            && info.getTargetComponent() != null
+                            && compPkgName != null
+                            && compPkgName.equals(info.getTargetComponent().getPackageName())) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private ValueAnimator createNewAppBounceAnimation(View v, int i) {
+        ValueAnimator bounceAnim = new PropertyListBuilder().alpha(1).scale(1).build(v)
+            .setDuration(InstallShortcutReceiver.NEW_SHORTCUT_BOUNCE_DURATION);
+        bounceAnim.setStartDelay(i * InstallShortcutReceiver.NEW_SHORTCUT_STAGGER_DELAY);
+        bounceAnim.setInterpolator(new OvershootInterpolator(BOUNCE_ANIMATION_TENSION));
+        return bounceAnim;
     }
 
     public GridLayout insertNewWorkspaceScreen(int screenId) {
@@ -637,7 +907,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         return indexOfChild(mWorkspaceScreens.get(screenId));
     }
 
-    public long getScreenIdForPageIndex(int index) {
+    public int getScreenIdForPageIndex(int index) {
         if (0 <= index && index < mScreenOrder.size()) {
             return mScreenOrder.get(index);
         }
@@ -666,7 +936,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         for (int i = 0; i < total; i++) {
             int id = mWorkspaceScreens.keyAt(i);
             GridLayout cl = mWorkspaceScreens.valueAt(i);
-            if(id > FIRST_SCREEN_ID && cl.getChildCount() == 0) {
+            if (id > FIRST_SCREEN_ID && cl.getChildCount() == 0) {
                 removeScreens.add(id);
             }
         }
@@ -775,7 +1045,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         // It helps in recovering from situation when a layout is not saved correctly.
         // TODO: Figure out when it can happen.
-        if(index > layout.getChildCount()) {
+        if (index > layout.getChildCount()) {
             index = layout.getChildCount();
         }
 
@@ -2465,8 +2735,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     public void computeScrollWithoutInvalidation() {
         computeScrollHelper(false);
     }
-
-
 
     public interface ItemOperator {
         /**

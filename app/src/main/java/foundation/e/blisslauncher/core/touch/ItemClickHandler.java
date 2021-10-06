@@ -158,15 +158,14 @@ public class ItemClickHandler {
         }
         if (item instanceof ShortcutItem) {
             ShortcutItem si = (ShortcutItem) item;
-            /*if (si.hasStatusFlag(ShortcutInfo.FLAG_SUPPORTS_WEB_UI)
-                    && intent.getAction() == Intent.ACTION_VIEW) {
+            if (intent.getAction() == Intent.ACTION_VIEW) {
                 // make a copy of the intent that has the package set to null
                 // we do this because the platform sometimes disables instant
                 // apps temporarily (triggered by the user) and fallbacks to the
                 // web ui. This only works though if the package isn't set
                 intent = new Intent(intent);
                 intent.setPackage(null);
-            }*/
+            }
         }
         launcher.startActivitySafely(v, intent, item);
     }

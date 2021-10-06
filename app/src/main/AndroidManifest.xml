@@ -90,7 +90,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".features.shortcuts.AddItemActivity"
+            android:name=".features.test.dragndrop.AddItemActivity"
             android:autoRemoveFromRecents="true"
             android:excludeFromRecents="true"
             android:label="@string/action_add_to_workspace"
