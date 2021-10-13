@@ -22,14 +22,23 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.LauncherApps;
+import android.content.pm.ShortcutInfo;
 import android.os.Looper;
+import android.os.UserHandle;
+import android.util.ArrayMap;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+
 import foundation.e.blisslauncher.core.ConfigMonitor;
 import foundation.e.blisslauncher.core.UserManagerCompat;
 import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
 import foundation.e.blisslauncher.core.utils.Preconditions;
 import foundation.e.blisslauncher.core.utils.SecureSettingsObserver;
 import foundation.e.blisslauncher.features.notification.NotificationListener;
+
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
@@ -45,12 +54,17 @@ public class LauncherAppState {
     // We do not need any synchronization for this variable as its only written on UI thread.
     private static LauncherAppState INSTANCE;
 
+    private LauncherApps launcherApps;
+
     private final Context mContext;
     private final InvariantDeviceProfile mInvariantDeviceProfile;
 
     private final SecureSettingsObserver mNotificationDotsObserver;
     private TestActivity launcher;
     private LauncherModel mModel;
+
+    private final ArrayMap<OnAppsChangedCallback, WrappedCallback> mCallbacks =
+        new ArrayMap<>();
 
     public static LauncherAppState getInstance(final Context context) {
         if (INSTANCE == null) {
@@ -82,6 +96,7 @@ public class LauncherAppState {
 
     private LauncherAppState(Context context) {
 
+        launcherApps = (LauncherApps) context.getSystemService(Context.LAUNCHER_APPS_SERVICE);
         Log.v(TestActivity.TAG, "LauncherAppState initiated");
         Preconditions.assertUIThread();
         mContext = context;
@@ -89,6 +104,12 @@ public class LauncherAppState {
         mInvariantDeviceProfile = new InvariantDeviceProfile(mContext);
 
         mModel = new LauncherModel(this);
+        WrappedCallback wrappedCallback = new WrappedCallback(mModel);
+        synchronized (mCallbacks) {
+            mCallbacks.put(mModel, wrappedCallback);
+        }
+        launcherApps.registerCallback(wrappedCallback);
+        mModel.registerCallbacks(launcherApps);
         // Register intent receivers
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_LOCALE_CHANGED);
@@ -129,6 +150,13 @@ public class LauncherAppState {
         if (mNotificationDotsObserver != null) {
             mNotificationDotsObserver.unregister();
         }
+        final WrappedCallback wrappedCallback;
+        synchronized (mCallbacks) {
+            wrappedCallback = mCallbacks.remove(mModel);
+        }
+        if (wrappedCallback != null) {
+            launcherApps.unregisterCallback(wrappedCallback);
+        }
     }
 
     LauncherModel setLauncher(TestActivity launcher) {
@@ -153,4 +181,54 @@ public class LauncherAppState {
     }
 
 
+    private static class WrappedCallback extends LauncherApps.Callback {
+        private final OnAppsChangedCallback mCallback;
+
+        public WrappedCallback(OnAppsChangedCallback callback) {
+            mCallback = callback;
+        }
+
+        @Override
+        public void onPackageRemoved(String packageName, UserHandle user) {
+            mCallback.onPackageRemoved(packageName, user);
+        }
+
+        @Override
+        public void onPackageAdded(String packageName, UserHandle user) {
+            mCallback.onPackageAdded(packageName, user);
+        }
+
+        @Override
+        public void onPackageChanged(String packageName, UserHandle user) {
+            mCallback.onPackageChanged(packageName, user);
+        }
+
+        @Override
+        public void onPackagesAvailable(String[] packageNames, UserHandle user, boolean replacing) {
+            mCallback.onPackagesAvailable(packageNames, user, replacing);
+        }
+
+        @Override
+        public void onPackagesUnavailable(String[] packageNames, UserHandle user,
+            boolean replacing) {
+            mCallback.onPackagesUnavailable(packageNames, user, replacing);
+        }
+
+        @Override
+        public void onPackagesSuspended(String[] packageNames, UserHandle user) {
+            mCallback.onPackagesSuspended(packageNames, user);
+        }
+
+        @Override
+        public void onPackagesUnsuspended(String[] packageNames, UserHandle user) {
+            mCallback.onPackagesUnsuspended(packageNames, user);
+        }
+
+        @Override
+        public void onShortcutsChanged(@NonNull String packageName,
+            @NonNull List<ShortcutInfo> shortcuts,
+            @NonNull UserHandle user) {
+            mCallback.onShortcutsChanged(packageName, shortcuts, user);
+        }
+    }
 }

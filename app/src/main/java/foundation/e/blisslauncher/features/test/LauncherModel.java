@@ -1,18 +1,40 @@
+/*
+ * Copyright (C) 2008 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package foundation.e.blisslauncher.features.test;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.LauncherApps;
+import android.content.pm.ShortcutInfo;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Process;
+import android.os.UserHandle;
 import android.telecom.Call;
 import android.util.Log;
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,7 +45,8 @@ import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.Preconditions;
 import foundation.e.blisslauncher.features.shortcuts.DeepShortcutManager;
 
-public class LauncherModel extends BroadcastReceiver {
+public class LauncherModel extends BroadcastReceiver implements
+    OnAppsChangedCallback {
 
     private static final boolean DEBUG_RECEIVER = false;
 
@@ -42,6 +65,54 @@ public class LauncherModel extends BroadcastReceiver {
         mWorkerLooper = sWorkerThread.getLooper();
     }
     static final Handler sWorker = new Handler(mWorkerLooper);
+
+    @Override
+    public void onPackageRemoved(String packageName, UserHandle user) {
+        // TODO: Handle package removed here.
+        onPackagesRemoved(user, packageName);
+    }
+
+    public void onPackagesRemoved(UserHandle user, String... packages) {
+        final HashSet<String> removedPackages = new HashSet<>();
+        Collections.addAll(removedPackages, packages);
+    }
+
+    @Override
+    public void onPackageAdded(String packageName, UserHandle user) {
+
+    }
+
+    @Override
+    public void onPackageChanged(String packageName, UserHandle user) {
+
+    }
+
+    @Override
+    public void onPackagesAvailable(String[] packageNames, UserHandle user, boolean replacing) {
+
+    }
+
+    @Override
+    public void onPackagesUnavailable(String[] packageNames, UserHandle user, boolean replacing) {
+
+    }
+
+    @Override
+    public void onPackagesSuspended(String[] packageNames, UserHandle user) {
+
+    }
+
+    @Override
+    public void onPackagesUnsuspended(String[] packageNames, UserHandle user) {
+
+    }
+
+    @Override
+    public void onShortcutsChanged(
+        String packageName, List<ShortcutInfo> shortcuts, UserHandle user
+    ) {
+
+    }
 
     // Runnable to check if the shortcuts permission has changed.
     /*private final Runnable mShortcutPermissionCheckRunnable = new Runnable() {
