@@ -19,31 +19,25 @@ package foundation.e.blisslauncher.features.test;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.LauncherApps;
 import android.content.pm.ShortcutInfo;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Process;
 import android.os.UserHandle;
-import android.telecom.Call;
 import android.util.Log;
 import android.util.Pair;
-
-import androidx.annotation.NonNull;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
-import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.Preconditions;
-import foundation.e.blisslauncher.features.shortcuts.DeepShortcutManager;
+import foundation.e.blisslauncher.features.shortcuts.InstallShortcutReceiver;
 
 public class LauncherModel extends BroadcastReceiver implements
     OnAppsChangedCallback {
@@ -53,17 +47,19 @@ public class LauncherModel extends BroadcastReceiver implements
     static final String TAG = "Launcher.Model";
 
     private final MainThreadExecutor mUiExecutor = new MainThreadExecutor();
-   final LauncherAppState mApp;
+    final LauncherAppState mApp;
     final Object mLock = new Object();
 
     WeakReference<Callbacks> mCallbacks;
 
     static final HandlerThread sWorkerThread = new HandlerThread("launcher-loader");
     private static final Looper mWorkerLooper;
+
     static {
         sWorkerThread.start();
         mWorkerLooper = sWorkerThread.getLooper();
     }
+
     static final Handler sWorker = new Handler(mWorkerLooper);
 
     @Override
@@ -75,6 +71,22 @@ public class LauncherModel extends BroadcastReceiver implements
     public void onPackagesRemoved(UserHandle user, String... packages) {
         final HashSet<String> removedPackages = new HashSet<>();
         Collections.addAll(removedPackages, packages);
+        if (!removedPackages.isEmpty()) {
+            LauncherItemMatcher removeMatch = LauncherItemMatcher.ofPackages(removedPackages, user);
+            deleteAndBindComponentsRemoved(removeMatch);
+
+            // Remove any queued items from the install queue
+            if (sWorkerThread.getThreadId() == Process.myTid()) {
+            } else {
+                // If we are not on the worker thread, then post to the worker handler
+                sWorker.post(() -> InstallShortcutReceiver
+                    .removeFromInstallQueue(mApp.getContext(), removedPackages, user));
+            }
+        }
+    }
+
+    private void deleteAndBindComponentsRemoved(LauncherItemMatcher removeMatch) {
+        mCallbacks.get().bindWorkspaceComponentsRemoved(removeMatch);
     }
 
     @Override
@@ -130,6 +142,8 @@ public class LauncherModel extends BroadcastReceiver implements
 
     public interface Callbacks {
         void bindAppsAdded(List<LauncherItem> items);
+
+        void bindWorkspaceComponentsRemoved(LauncherItemMatcher matcher);
     }
 
     LauncherModel(LauncherAppState app) {
@@ -158,13 +172,12 @@ public class LauncherModel extends BroadcastReceiver implements
         Callbacks callbacks = getCallback();
         if (callbacks != null) {
             //callbacks.preAddApps();
-            List<LauncherItem> items =  new ArrayList<>();
+            List<LauncherItem> items = new ArrayList<>();
             for (Pair<LauncherItem, Object> entry : itemList) {
                 items.add(entry.first);
             }
             mUiExecutor.execute(() -> callbacks.bindAppsAdded(items));
         }
-
     }
 
     public Callbacks getCallback() {

@@ -5,6 +5,7 @@ import android.os.UserHandle;
 
 import java.util.HashSet;
 
+import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.FolderItem;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.core.database.model.ShortcutItem;
@@ -22,7 +23,13 @@ public abstract class LauncherItemMatcher {
     public final HashSet<LauncherItem> filterItemInfos(Iterable<LauncherItem> infos) {
         HashSet<LauncherItem> filtered = new HashSet<>();
         for (LauncherItem i : infos) {
-            if (i instanceof ShortcutItem) {
+            if (i instanceof ApplicationItem) {
+                ApplicationItem info = (ApplicationItem) i;
+                ComponentName cn = info.getTargetComponent();
+                if (cn != null && matches(info, cn)) {
+                    filtered.add(info);
+                }
+            } else if (i instanceof ShortcutItem) {
                 ShortcutItem info = (ShortcutItem) i;
                 ComponentName cn = info.getTargetComponent();
                 if (cn != null && matches(info, cn)) {

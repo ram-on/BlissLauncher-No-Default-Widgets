@@ -82,6 +82,7 @@ import foundation.e.blisslauncher.core.utils.AppUtils
 import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.core.utils.IntSet
 import foundation.e.blisslauncher.core.utils.IntegerArray
+import foundation.e.blisslauncher.core.utils.ItemInfoMatcher
 import foundation.e.blisslauncher.core.utils.ListUtil
 import foundation.e.blisslauncher.core.utils.PackageUserKey
 import foundation.e.blisslauncher.core.utils.UserHandle
@@ -1100,7 +1101,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     }
 
     private fun showApps(launcherItems: List<LauncherItem>) {
-        Log.d(TAG, "showApps() called with: launcherItems = $launcherItems")
         hotseat.resetLayout(false)
         val populatedItems = populateItemPositions(launcherItems)
         val orderedScreenIds = IntegerArray()
@@ -1778,7 +1778,18 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
     override fun bindAppsAdded(items: MutableList<LauncherItem>) {
         if (items.isEmpty()) return
+        workspace.bindItemsAdded(items)
+    }
 
-        workspace?.bindItemsAdded(items)
+    /**
+     * A package was uninstalled/updated.  We take both the super set of packageNames
+     * in addition to specific applications to remove, the reason being that
+     * this can be called when a package is updated as well.  In that scenario,
+     * we only remove specific components from the workspace and hotseat, where as
+     * package-removal should clear all items by package name.
+     */
+    override fun bindWorkspaceComponentsRemoved(matcher: LauncherItemMatcher) {
+        workspace.removeItemsByMatcher(matcher)
+        dragController.onAppsRemoved(matcher)
     }
 }

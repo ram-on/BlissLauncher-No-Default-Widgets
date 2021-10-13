@@ -109,7 +109,6 @@ public class LauncherAppState {
             mCallbacks.put(mModel, wrappedCallback);
         }
         launcherApps.registerCallback(wrappedCallback);
-        mModel.registerCallbacks(launcherApps);
         // Register intent receivers
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_LOCALE_CHANGED);

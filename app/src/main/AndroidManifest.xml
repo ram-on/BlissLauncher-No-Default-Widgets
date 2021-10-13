@@ -165,7 +165,6 @@
             </intent-filter>
         </receiver>
         -->
-        <receiver android:name="core.broadcast.PackageAddedRemovedHandler" />
 
         <meta-data
             android:name="android.nfc.disable_beam_default"

@@ -37,6 +37,7 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.OvershootInterpolator;
 import android.widget.GridLayout;
 import android.widget.Toast;
+
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
@@ -61,6 +62,7 @@ import foundation.e.blisslauncher.features.shortcuts.ShortcutKey;
 import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.IconTextView;
+import foundation.e.blisslauncher.features.test.LauncherItemMatcher;
 import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.LauncherStateManager;
 import foundation.e.blisslauncher.features.test.OnAlarmListener;
@@ -78,6 +80,7 @@ import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -86,6 +89,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
@@ -426,7 +430,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 throw new RuntimeException("Unexpected info type");
             }
 
-            if(item.itemType == Constants.ITEM_TYPE_SHORTCUT) {
+            if (item.itemType == Constants.ITEM_TYPE_SHORTCUT) {
                 // Increment the count for the given shortcut
                 ShortcutKey pinnedShortcut = ShortcutKey.fromItem((ShortcutItem) item);
                 MutableInt count = pinnedShortcutCounts.get(pinnedShortcut);
@@ -441,7 +445,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 if (count.value == 1) {
                     DeepShortcutManager.getInstance(getContext()).pinShortcut(pinnedShortcut);
                 }
-
             }
             // Save the WorkspaceItemInfo for binding in the workspace
             addedItemsFinal.add(itemInfo);
@@ -2734,6 +2737,55 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     public void computeScrollWithoutInvalidation() {
         computeScrollHelper(false);
+    }
+
+    /**
+     * Removes items that match the {@param matcher}. When applications are removed
+     * as a part of an update, this is called to ensure that other widgets and application
+     * shortcuts are not removed.
+     */
+    public void removeItemsByMatcher(@NotNull LauncherItemMatcher matcher) {
+        for (final CellLayout layout : getWorkspaceAndHotseatCellLayouts()) {
+
+            HashMap<String, View> idToViewMap = new HashMap<>();
+            ArrayList<LauncherItem> items = new ArrayList<>();
+            for (int j = 0; j < layout.getChildCount(); j++) {
+                final View view = layout.getChildAt(j);
+                if (view.getTag() instanceof LauncherItem) {
+                    LauncherItem item = (LauncherItem) view.getTag();
+                    items.add(item);
+                    idToViewMap.put(item.id, view);
+                }
+            }
+
+            for (LauncherItem itemToRemove : matcher.filterItemInfos(items)) {
+                View child = idToViewMap.get(itemToRemove.id);
+
+                if (child != null) {
+                    // Note: We can not remove the view directly from CellLayoutChildren as this
+                    // does not re-mark the spaces as unoccupied.
+                    layout.removeViewInLayout(child);
+                    if (child instanceof DropTarget) {
+                        mDragController.removeDropTarget((DropTarget) child);
+                    }
+                } else if (itemToRemove.container >= 0) {
+                    // The item may belong to a folder.
+                    View parent = idToViewMap.get(String.valueOf(itemToRemove.container));
+                    if (parent != null) {
+/*
+                        FolderItem folderInfo = (FolderItem) parent.getTag();
+                        folderInfo.prepareAutoUpdate();
+                        folderInfo.remove((WorkspaceItemInfo) itemToRemove, false);
+*/
+                        // TODO: Properly handle item removal from folder.
+                    }
+                }
+            }
+        }
+
+        // Strip all the empty screens
+        stripEmptyScreens();
+        updateDatabase(getWorkspaceAndHotseatCellLayouts());
     }
 
     public interface ItemOperator {

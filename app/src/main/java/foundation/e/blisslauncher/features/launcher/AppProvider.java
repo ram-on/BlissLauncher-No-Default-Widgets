@@ -119,7 +119,7 @@ public class AppProvider {
                 Context.LAUNCHER_APPS_SERVICE);
         assert launcher != null;
 
-        launcher.registerCallback(new LauncherApps.Callback() {
+        /*launcher.registerCallback(new LauncherApps.Callback() {
             @Override
             public void onPackageRemoved(String packageName, android.os.UserHandle user) {
                 if (packageName.equalsIgnoreCase(MICROG_PACKAGE) || packageName.equalsIgnoreCase(
@@ -194,7 +194,7 @@ public class AppProvider {
                 super.onPackagesUnsuspended(packageNames, user);
                 Log.d(TAG, "onPackagesUnsuspended() called with: packageNames = [" + packageNames + "], user = [" + user + "]");
             }
-        });
+        });*/
 
         mAppsRepository = AppsRepository.getAppsRepository();
     }
