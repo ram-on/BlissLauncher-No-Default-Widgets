@@ -113,7 +113,7 @@ public abstract class LauncherItemMatcher {
         return new LauncherItemMatcher() {
             @Override
             public boolean matches(LauncherItem info, ComponentName cn) {
-                return packageNames.contains(cn.getPackageName()) && info.user.equals(user);
+                return packageNames.contains(cn.getPackageName()) && info.user.getRealHandle().equals(user);
             }
         };
     }

@@ -1710,7 +1710,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
         val set = AnimatorSet()
         /*ValueAnimator valueAnimator = ValueAnimator.ofInt(18, 0);
-        valueAnimator.addUpdateListener(animation ->
+        valueAnimator.addUpdateListener(animati on ->
                 BlurWallpaperProvider.getInstance(this).blurWithLauncherView(mergedView, (Integer) animation.getAnimatedValue()));*/
         /*ValueAnimator valueAnimator = ValueAnimator.ofInt(18, 0);
         valueAnimator.addUpdateListener(animation ->

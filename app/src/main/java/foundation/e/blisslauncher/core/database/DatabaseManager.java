@@ -134,4 +134,9 @@ public class DatabaseManager {
     public void removeWidget(int id) {
         mAppExecutors.diskIO().execute(() -> LauncherDB.getDatabase(mContext).widgetDao().delete(id));
     }
+
+    public void removeItem(String id) {
+        mAppExecutors.diskIO().execute(
+            () -> LauncherDB.getDatabase(mContext).launcherDao().delete(id));
+    }
 }

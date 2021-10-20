@@ -82,7 +82,9 @@ import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -2764,20 +2766,46 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 if (child != null) {
                     // Note: We can not remove the view directly from CellLayoutChildren as this
                     // does not re-mark the spaces as unoccupied.
+                    child.clearAnimation();
                     layout.removeViewInLayout(child);
                     if (child instanceof DropTarget) {
                         mDragController.removeDropTarget((DropTarget) child);
                     }
+                    // Remove item from database
+                    DatabaseManager.getManager(getContext()).removeItem(itemToRemove.id);
                 } else if (itemToRemove.container >= 0) {
                     // The item may belong to a folder.
                     View parent = idToViewMap.get(String.valueOf(itemToRemove.container));
                     if (parent != null) {
-/*
-                        FolderItem folderInfo = (FolderItem) parent.getTag();
-                        folderInfo.prepareAutoUpdate();
-                        folderInfo.remove((WorkspaceItemInfo) itemToRemove, false);
-*/
-                        // TODO: Properly handle item removal from folder.
+                        FolderItem folder = (FolderItem) parent.getTag();
+                        parent.clearAnimation();
+                        // Close folder before making any changes
+                        mLauncher.closeFolder();
+                        folder.items.remove(itemToRemove);
+                        DatabaseManager.getManager(getContext()).removeItem(itemToRemove.id);
+                        if (folder.items.size() == 0) {
+                            layout.removeView(parent);
+                            if (parent instanceof DropTarget) {
+                                mDragController.removeDropTarget((DropTarget) child);
+                            }
+                        } else if (folder.items.size() == 1) {
+                            LauncherItem lastFolderItem = folder.items.get(0);
+                            layout.removeViewInLayout(parent);
+                            if (parent instanceof DropTarget) {
+                                mDragController.removeDropTarget((DropTarget) parent);
+                            }
+                            lastFolderItem.container = folder.container;
+                            lastFolderItem.cell = folder.cell;
+                            lastFolderItem.screenId = folder.screenId;
+                            bindItems(Collections.singletonList(lastFolderItem), true);
+                        } else {
+                            folder.icon = new GraphicsUtil(getContext()).generateFolderIcon(getContext(), folder);
+                            layout.removeViewInLayout(parent);
+                            if (parent instanceof DropTarget) {
+                                mDragController.removeDropTarget((DropTarget) parent);
+                            }
+                            bindItems(Arrays.asList(folder), true);
+                        }
                     }
                 }
             }

@@ -21,7 +21,6 @@ import android.util.LongSparseArray;
 import foundation.e.blisslauncher.BlissLauncher;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
-import foundation.e.blisslauncher.core.broadcast.PackageAddedRemovedHandler;
 import foundation.e.blisslauncher.core.database.DatabaseManager;
 import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.FolderItem;
@@ -118,84 +117,6 @@ public class AppProvider {
         final LauncherApps launcher = (LauncherApps) mContext.getSystemService(
                 Context.LAUNCHER_APPS_SERVICE);
         assert launcher != null;
-
-        /*launcher.registerCallback(new LauncherApps.Callback() {
-            @Override
-            public void onPackageRemoved(String packageName, android.os.UserHandle user) {
-                if (packageName.equalsIgnoreCase(MICROG_PACKAGE) || packageName.equalsIgnoreCase(
-                        MUPDF_PACKAGE)) {
-                    return;
-                }
-
-                PackageAddedRemovedHandler.handleEvent(mContext,
-                        "android.intent.action.PACKAGE_REMOVED",
-                        packageName, new UserHandle(manager.getSerialNumberForUser(user), user),
-                        false
-                );
-            }
-
-            @Override
-            public void onPackageAdded(String packageName, android.os.UserHandle user) {
-                if (packageName.equalsIgnoreCase(MICROG_PACKAGE) || packageName.equalsIgnoreCase(
-                        MUPDF_PACKAGE)) {
-                    return;
-                }
-
-                PackageAddedRemovedHandler.handleEvent(mContext,
-                        "android.intent.action.PACKAGE_ADDED",
-                        packageName, new UserHandle(manager.getSerialNumberForUser(user), user),
-                        false
-                );
-            }
-
-            @Override
-            public void onPackageChanged(String packageName, android.os.UserHandle user) {
-                if (packageName.equalsIgnoreCase(MICROG_PACKAGE) || packageName.equalsIgnoreCase(
-                        MUPDF_PACKAGE)) {
-                    return;
-                }
-
-                PackageAddedRemovedHandler.handleEvent(mContext,
-                        "android.intent.action.PACKAGE_CHANGED",
-                        packageName, new UserHandle(manager.getSerialNumberForUser(user), user),
-                        true
-                );
-            }
-
-            @Override
-            public void onPackagesAvailable(String[] packageNames, android.os.UserHandle user,
-                                            boolean replacing) {
-                Log.d(TAG, "onPackagesAvailable() called with: packageNames = [" + packageNames + "], user = [" + user + "], replacing = [" + replacing + "]");
-                for (String packageName : packageNames) {
-                    PackageAddedRemovedHandler.handleEvent(mContext,
-                            "android.intent.action.MEDIA_MOUNTED",
-                            packageName, new UserHandle(manager.getSerialNumberForUser(user), user), false
-                    );
-                }
-            }
-
-            @Override
-            public void onPackagesUnavailable(String[] packageNames, android.os.UserHandle user,
-                                              boolean replacing) {
-                Log.d(TAG, "onPackagesUnavailable() called with: packageNames = [" + packageNames + "], user = [" + user + "], replacing = [" + replacing + "]");
-                PackageAddedRemovedHandler.handleEvent(mContext,
-                        "android.intent.action.MEDIA_UNMOUNTED",
-                        null, new UserHandle(manager.getSerialNumberForUser(user), user), false
-                );
-            }
-
-            @Override
-            public void onPackagesSuspended(String[] packageNames, android.os.UserHandle user) {
-                Log.d(TAG, "onPackagesSuspended() called with: packageNames = [" + packageNames + "], user = [" + user + "]");
-            }
-
-            @Override
-            public void onPackagesUnsuspended(String[] packageNames, android.os.UserHandle user) {
-                super.onPackagesUnsuspended(packageNames, user);
-                Log.d(TAG, "onPackagesUnsuspended() called with: packageNames = [" + packageNames + "], user = [" + user + "]");
-            }
-        });*/
-
         mAppsRepository = AppsRepository.getAppsRepository();
     }
 
