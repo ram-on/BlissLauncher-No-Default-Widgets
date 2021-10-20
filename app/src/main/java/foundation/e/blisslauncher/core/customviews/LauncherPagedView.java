@@ -37,7 +37,6 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.OvershootInterpolator;
 import android.widget.GridLayout;
 import android.widget.Toast;
-
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
@@ -80,7 +79,6 @@ import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -91,7 +89,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,

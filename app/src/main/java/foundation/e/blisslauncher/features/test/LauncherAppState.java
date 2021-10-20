@@ -28,16 +28,13 @@ import android.os.Looper;
 import android.os.UserHandle;
 import android.util.ArrayMap;
 import android.util.Log;
-
 import androidx.annotation.NonNull;
-
 import foundation.e.blisslauncher.core.ConfigMonitor;
 import foundation.e.blisslauncher.core.UserManagerCompat;
 import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
 import foundation.e.blisslauncher.core.utils.Preconditions;
 import foundation.e.blisslauncher.core.utils.SecureSettingsObserver;
 import foundation.e.blisslauncher.features.notification.NotificationListener;
-
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
