@@ -137,6 +137,10 @@ public abstract class BaseActivity extends Activity {
         mActivityFlags &= ~ACTIVITY_STATE_STARTED & ~ACTIVITY_STATE_USER_ACTIVE;
         mForceInvisible = 0;
         super.onStop();
+
+        // Reset the overridden sysui flags used for the task-swipe launch animation, this is a
+        // catch all for if we do not get resumed (and therefore not paused below)
+        getSystemUiController().updateUiState(SystemUiController.UI_STATE_OVERVIEW, 0);
     }
 
     @Override
@@ -148,7 +152,7 @@ public abstract class BaseActivity extends Activity {
         // here instead of at the end of the animation because the start of the new activity does
         // not happen immediately, which would cause us to reset to launcher's sysui flags and then
         // back to the new app (causing a flash)
-        getSystemUiController().updateUiState(SystemUiController.UI_STATE_NORMAL, 0);
+        getSystemUiController().updateUiState(SystemUiController.UI_STATE_OVERVIEW, 0);
     }
 
     public boolean isStarted() {

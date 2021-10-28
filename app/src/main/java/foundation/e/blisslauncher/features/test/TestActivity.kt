@@ -277,7 +277,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
         systemUiController.updateUiState(
             SystemUiController.UI_STATE_BASE_WINDOW,
-            true
+            false
         )
         rotationHelper.initialize()
         TraceHelper.endSection("Launcher-onCreate")
