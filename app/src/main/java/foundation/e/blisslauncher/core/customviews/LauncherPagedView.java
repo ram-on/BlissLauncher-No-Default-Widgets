@@ -80,7 +80,6 @@ import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragContro
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1012,6 +1011,24 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     child.startAnimation(AnimationUtils
                         .loadAnimation(getContext(), R.anim.wobble_reverse));
                 }
+
+                LauncherItem info = (LauncherItem) child.getTag();
+                if (child instanceof IconTextView && (info instanceof ApplicationItem || info instanceof ShortcutItem) && !UninstallHelper.INSTANCE
+                    .isUninstallDisabled(info.user.getRealHandle(), getContext())) {
+                    // Return early if this app is system app
+                    if (info instanceof ApplicationItem) {
+                        ApplicationItem applicationItem = (ApplicationItem) info;
+                        if (applicationItem.isSystemApp != ApplicationItem.FLAG_SYSTEM_UNKNOWN) {
+                            if ((applicationItem.isSystemApp & ApplicationItem.FLAG_SYSTEM_NO) != 0) {
+                                ((IconTextView) child).applyUninstallIconState(true);
+                            }
+                        } else {
+                            ((IconTextView) child).applyUninstallIconState(true);
+                        }
+                    } else if (info instanceof ShortcutItem) {
+                        ((IconTextView) child).applyUninstallIconState(true);
+                    }
+                }
             }
         });
     }
@@ -1867,6 +1884,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                     folderView.startAnimation(AnimationUtils
                         .loadAnimation(getContext(), R.anim.wobble_reverse));
                 }
+                folderView.applyUninstallIconState(false);
             });
             return true;
         }
@@ -2796,12 +2814,13 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                             lastFolderItem.screenId = folder.screenId;
                             bindItems(Collections.singletonList(lastFolderItem), true);
                         } else {
-                            folder.icon = new GraphicsUtil(getContext()).generateFolderIcon(getContext(), folder);
+                            folder.icon = new GraphicsUtil(getContext())
+                                .generateFolderIcon(getContext(), folder);
                             layout.removeViewInLayout(parent);
                             if (parent instanceof DropTarget) {
                                 mDragController.removeDropTarget((DropTarget) parent);
                             }
-                            bindItems(Arrays.asList(folder), true);
+                            bindItems(Collections.singletonList(folder), true);
                         }
                     }
                 }

@@ -22,12 +22,15 @@ import android.widget.GridLayout
 import androidx.annotation.IntDef
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
+import foundation.e.blisslauncher.core.database.model.ApplicationItem
 import foundation.e.blisslauncher.core.database.model.LauncherItem
+import foundation.e.blisslauncher.core.database.model.ShortcutItem
 import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.features.launcher.Hotseat
 import foundation.e.blisslauncher.features.test.anim.Interpolators
 import foundation.e.blisslauncher.features.test.dragndrop.DropTarget
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider
+import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper.isUninstallDisabled
 import java.lang.Double.MAX_VALUE
 import java.util.ArrayList
 import java.util.Arrays
@@ -866,6 +869,26 @@ open class CellLayout @JvmOverloads constructor(
                                 R.anim.wobble_reverse
                             )
                         )
+                    }
+
+                    val info: LauncherItem = dragView.getTag() as LauncherItem
+                    if ((info is ApplicationItem || info is ShortcutItem) && !isUninstallDisabled(
+                            info.user.realHandle,
+                            context
+                        )
+                    ) {
+                        // Return early if this app is system app
+                        if (info is ApplicationItem) {
+                            if (info.isSystemApp != ApplicationItem.FLAG_SYSTEM_UNKNOWN) {
+                                if (info.isSystemApp and ApplicationItem.FLAG_SYSTEM_NO != 0) {
+                                    dragView.applyUninstallIconState(true)
+                                }
+                            } else {
+                                dragView.applyUninstallIconState(true)
+                            }
+                        } else if (info is ShortcutItem) {
+                            dragView.applyUninstallIconState(true)
+                        }
                     }
                 }
             }
