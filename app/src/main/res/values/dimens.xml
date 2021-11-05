@@ -31,6 +31,7 @@
     <dimen name="dynamic_grid_hotseat_top_padding">8dp</dimen>
     <dimen name="dynamic_grid_hotseat_bottom_padding">2dp</dimen>
     <dimen name="dynamic_grid_hotseat_size">80dp</dimen>
+    <dimen name="dynamic_grid_hotseat_extra_vertical_size">34dp</dimen>
     <dimen name="dynamic_grid_hotseat_side_padding">0dp</dimen>
 
     <dimen name="folder_cell_x_padding">9dp</dimen>

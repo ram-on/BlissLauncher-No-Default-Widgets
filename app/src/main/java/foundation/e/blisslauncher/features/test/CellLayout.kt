@@ -26,7 +26,6 @@ import foundation.e.blisslauncher.core.database.model.ApplicationItem
 import foundation.e.blisslauncher.core.database.model.LauncherItem
 import foundation.e.blisslauncher.core.database.model.ShortcutItem
 import foundation.e.blisslauncher.core.utils.Constants
-import foundation.e.blisslauncher.features.launcher.Hotseat
 import foundation.e.blisslauncher.features.test.anim.Interpolators
 import foundation.e.blisslauncher.features.test.dragndrop.DropTarget
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider
@@ -199,7 +198,7 @@ open class CellLayout @JvmOverloads constructor(
         return Math.min(
             measuredHeight,
             launcher.deviceProfile
-                .getCellHeight(if (parent is Hotseat) Constants.CONTAINER_HOTSEAT else Constants.CONTAINER_DESKTOP)
+                .getCellHeight(mContainerType)
         )
     }
 

@@ -134,6 +134,7 @@ class IconTextView @JvmOverloads constructor(
         compoundDrawablePadding = dp.iconDrawablePaddingPx
         ellipsize = TruncateAt.END
         longPressHelper = CheckLongPressHelper(this)
+        setTextAlpha(1f)
     }
 
     override fun onFocusChanged(

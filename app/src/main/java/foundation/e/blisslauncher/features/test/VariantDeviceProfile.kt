@@ -30,6 +30,7 @@ import android.view.WindowManager
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.utils.Constants
+import foundation.e.blisslauncher.core.utils.ResourceUtils
 import foundation.e.blisslauncher.features.notification.DotRenderer
 import foundation.e.blisslauncher.features.test.uninstall.UninstallButtonRenderer
 import kotlin.math.max
@@ -211,8 +212,8 @@ class VariantDeviceProfile(
             res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_bottom_padding)
         hotseatBarSidePaddingPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_side_padding)
-        hotseatBarSizePx =
-            res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_size) + hotseatBarTopPaddingPx + hotseatBarBottomPaddingPx
+        hotseatBarSizePx = ResourceUtils.pxFromDp(inv.iconSize, dm) + (res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_extra_vertical_size)
+            + hotseatBarTopPaddingPx + hotseatBarBottomPaddingPx)
         workspacePageIndicatorHeight =
             res.getDimensionPixelSize(R.dimen.dotSize) * 2 + res.getDimensionPixelSize(R.dimen.dotPadding) * 2
 
@@ -467,10 +468,10 @@ class VariantDeviceProfile(
             insets.top + availableHeightPx - hotseatBarSizePx - -edgeMarginPx
         )
 
-    fun getCellHeight(containerType: Long): Int {
+    fun getCellHeight(containerType: Int): Int {
         return when (containerType) {
-            Constants.CONTAINER_DESKTOP -> cellHeightPx
-            Constants.CONTAINER_HOTSEAT -> hotseatCellHeightPx
+            CellLayout.WORKSPACE -> cellHeightPx
+            CellLayout.HOTSEAT -> hotseatCellHeightPx
             else -> 0
         }
     }
