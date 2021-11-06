@@ -160,7 +160,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     private int mDragOverY = -1;
 
     private static final int FOLDER_CREATION_TIMEOUT = 100;
-    public static final int REORDER_TIMEOUT = 650;
+    public static final int REORDER_TIMEOUT = 350;
     private final Alarm mFolderCreationAlarm = new Alarm();
     private final Alarm mReorderAlarm = new Alarm();
     //private FolderIcon mDragOverFolderIcon = null;
@@ -263,7 +263,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         mInsets.set(insets);
 
         VariantDeviceProfile grid = mLauncher.getDeviceProfile();
-        mMaxDistanceForFolderCreation = (0.55f * grid.getIconSizePx());
+        mMaxDistanceForFolderCreation = (0.35f * grid.getIconSizePx());
         Rect padding = grid.getWorkspacePadding();
         setPadding(padding.left, padding.top, padding.right, padding.bottom);
         int paddingLeftRight = grid.getCellLayoutPaddingLeftRightPx();

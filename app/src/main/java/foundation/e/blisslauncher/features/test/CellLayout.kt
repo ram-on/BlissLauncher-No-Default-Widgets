@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.ArrayMap
 import android.util.AttributeSet
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
@@ -813,19 +814,26 @@ open class CellLayout @JvmOverloads constructor(
                 result[1] = index / mCountX
             }
 
-            // appView.findViewById(R.id.app_label).setVisibility(GONE);
+            val genericLp: ViewGroup.LayoutParams = dragView.layoutParams
             val rowSpec = spec(UNDEFINED)
             val colSpec = spec(UNDEFINED)
-            val iconLayoutParams = LayoutParams(rowSpec, colSpec)
-            // iconLayoutParams.setGravity(Gravity.CENTER)
-            iconLayoutParams.height = if (mContainerType == HOTSEAT)
-                dp.hotseatCellHeightPx else dp.cellHeightPx
-            iconLayoutParams.width = dp.cellWidthPx
-            dragView.also {
-                if (it is IconTextView) it.setTextVisibility(mContainerType != HOTSEAT)
+            val lp: LayoutParams
+            if (genericLp !is LayoutParams) {
+                lp = LayoutParams(rowSpec, colSpec)
+            } else {
+                lp = genericLp
+                lp.rowSpec = rowSpec
+                lp.columnSpec = colSpec
             }
-            dragView.layoutParams = iconLayoutParams
-            addView(dragView, index)
+            lp.setGravity(Gravity.CENTER)
+
+            // Get the canonical child id to uniquely represent this view in this screen
+
+            val childId: Int = launcher.getViewIdForItem(dragView.tag as LauncherItem)
+            dragView.apply {
+                if (this is IconTextView) setTextVisibility(mContainerType != HOTSEAT)
+            }
+            addViewToCellLayout(dragView, index, childId, lp, true)
 
             // Update item info after reordering so that we always save correct state in database.
             // TODO: May optimize this
