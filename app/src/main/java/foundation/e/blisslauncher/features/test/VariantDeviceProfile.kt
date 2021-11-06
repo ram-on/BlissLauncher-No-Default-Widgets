@@ -29,7 +29,6 @@ import android.view.WindowInsets
 import android.view.WindowManager
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Utilities
-import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.core.utils.ResourceUtils
 import foundation.e.blisslauncher.features.notification.DotRenderer
 import foundation.e.blisslauncher.features.test.uninstall.UninstallButtonRenderer
@@ -212,8 +211,8 @@ class VariantDeviceProfile(
             res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_bottom_padding)
         hotseatBarSidePaddingPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_side_padding)
-        hotseatBarSizePx = ResourceUtils.pxFromDp(inv.iconSize, dm) + (res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_extra_vertical_size)
-            + hotseatBarTopPaddingPx + hotseatBarBottomPaddingPx)
+        hotseatBarSizePx = ResourceUtils.pxFromDp(inv.iconSize, dm) + (res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_extra_vertical_size) +
+            hotseatBarTopPaddingPx + hotseatBarBottomPaddingPx)
         workspacePageIndicatorHeight =
             res.getDimensionPixelSize(R.dimen.dotSize) * 2 + res.getDimensionPixelSize(R.dimen.dotPadding) * 2
 
