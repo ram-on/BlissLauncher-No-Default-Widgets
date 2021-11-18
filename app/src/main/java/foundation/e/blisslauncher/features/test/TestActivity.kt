@@ -124,7 +124,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.schedulers.Schedulers
-import me.relex.circleindicator.CircleIndicator
 import java.net.URISyntaxException
 import java.util.ArrayList
 import java.util.Arrays
@@ -132,6 +131,7 @@ import java.util.Comparator
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
+import me.relex.circleindicator.CircleIndicator
 
 class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionClickListener,
     LauncherModel.Callbacks, OnFocusChangeListener, FolderTitleInput.OnBackKeyListener,

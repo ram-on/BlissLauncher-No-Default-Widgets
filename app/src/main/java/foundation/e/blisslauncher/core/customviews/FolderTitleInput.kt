@@ -8,7 +8,8 @@ import android.view.inputmethod.InputMethodManager
 import foundation.e.blisslauncher.features.test.UiThreadHelper
 
 class FolderTitleInput @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
+    context: Context,
+    attrs: AttributeSet? = null
 ) : BlissInput(context, attrs) {
 
     private var mShowImeAfterFirstLayout = false
