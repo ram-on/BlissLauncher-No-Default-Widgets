@@ -27,7 +27,6 @@ import foundation.e.blisslauncher.core.database.model.ShortcutItem
 import foundation.e.blisslauncher.core.utils.Constants
 import foundation.e.blisslauncher.features.notification.DotInfo
 import foundation.e.blisslauncher.features.notification.DotRenderer
-import foundation.e.blisslauncher.features.notification.FolderDotInfo
 import foundation.e.blisslauncher.features.test.uninstall.UninstallButtonRenderer
 import kotlin.math.roundToInt
 
@@ -35,7 +34,7 @@ import kotlin.math.roundToInt
  * A text view which displays an icon on top side of it.
  */
 @SuppressLint("AppCompatCustomView")
-class IconTextView @JvmOverloads constructor(
+open class IconTextView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet?,
     defStyle: Int
@@ -43,7 +42,6 @@ class IconTextView @JvmOverloads constructor(
 
     companion object {
         private const val DISPLAY_WORKSPACE = 1
-        private const val DISPLAY_FOLDER = 2
         private val STATE_PRESSED = intArrayOf(android.R.attr.state_pressed)
 
         private const val TAG = "IconTextView"
@@ -115,7 +113,7 @@ class IconTextView @JvmOverloads constructor(
 
     private var longPressHelper: CheckLongPressHelper
 
-    private var mDotInfo: DotInfo? = null
+    protected var mDotInfo: DotInfo? = null
     private var mDotScaleAnim: Animator? = null
     private var mForceHideDot = false
 
@@ -154,7 +152,7 @@ class IconTextView @JvmOverloads constructor(
 
     override fun setTextColor(colors: ColorStateList) {
         mTextColor = colors.defaultColor
-        if (java.lang.Float.compare(mTextAlpha, 1f) == 0) {
+        if (mTextAlpha.compareTo(1f) == 0) {
             super.setTextColor(colors)
         } else {
             super.setTextColor(getModifiedColor())
@@ -199,13 +197,7 @@ class IconTextView @JvmOverloads constructor(
         }
     }
 
-    fun setDotInfo(item: FolderItem, dotInfo: FolderDotInfo) {
-        val wasDotted = mDotInfo is FolderDotInfo && (mDotInfo as FolderDotInfo).hasDot()
-        updateDotScale(wasDotted, dotInfo.hasDot(), true)
-        mDotInfo = dotInfo
-    }
-
-    private fun updateDotScale(wasDotted: Boolean, isDotted: Boolean, animate: Boolean) {
+    protected fun updateDotScale(wasDotted: Boolean, isDotted: Boolean, animate: Boolean) {
         val newDotScale: Float = if (isDotted) 1f else 0f
         mDotRenderer = mActivity.deviceProfile.mDotRenderer
         if (wasDotted || isDotted) {
@@ -355,10 +347,7 @@ class IconTextView @JvmOverloads constructor(
         }
     }
 
-    private fun hasDot(): Boolean {
-        if (mDotInfo != null && mDotInfo is FolderDotInfo) {
-            return (mDotInfo as FolderDotInfo).hasDot()
-        }
+    open fun hasDot(): Boolean {
         return mDotInfo != null
     }
 

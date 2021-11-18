@@ -7,19 +7,20 @@
     android:focusable="true"
     android:visibility="gone">
 
-    <foundation.e.blisslauncher.core.customviews.BlissInput
+    <foundation.e.blisslauncher.core.customviews.FolderTitleInput
         android:id="@+id/folder_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@+id/folder_apps_background"
         android:layout_centerHorizontal="true"
-        android:background="@null"
-        android:imeOptions="actionDone"
+        android:background="@android:color/transparent"
+        android:imeOptions="flagNoExtractUi"
         android:inputType="textNoSuggestions|textCapSentences"
         android:paddingTop="16dp"
         android:paddingBottom="16dp"
         android:text="@string/untitled"
         android:textAlignment="center"
+        android:textColorHighlight="?android:attr/colorControlHighlight"
         android:textColor="@android:color/white"
         android:textSize="18sp" />
 

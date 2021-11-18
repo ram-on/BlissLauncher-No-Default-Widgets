@@ -34,6 +34,8 @@ import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
 import android.provider.Settings
 import android.text.Editable
+import android.text.InputType
+import android.text.Selection
 import android.text.TextWatcher
 import android.util.Log
 import android.view.ContextThemeWrapper
@@ -41,6 +43,7 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.View.OnFocusChangeListener
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.LinearInterpolator
@@ -52,6 +55,7 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.TextView.OnEditorActionListener
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -67,6 +71,7 @@ import foundation.e.blisslauncher.core.Utilities
 import foundation.e.blisslauncher.core.customviews.AbstractFloatingView
 import foundation.e.blisslauncher.core.customviews.BlissFrameLayout
 import foundation.e.blisslauncher.core.customviews.BlissInput
+import foundation.e.blisslauncher.core.customviews.FolderTitleInput
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout
 import foundation.e.blisslauncher.core.customviews.LauncherPagedView
 import foundation.e.blisslauncher.core.customviews.RoundedWidgetView
@@ -119,7 +124,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.schedulers.Schedulers
-import java.lang.Exception
+import me.relex.circleindicator.CircleIndicator
 import java.net.URISyntaxException
 import java.util.ArrayList
 import java.util.Arrays
@@ -127,11 +132,12 @@ import java.util.Comparator
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
-import me.relex.circleindicator.CircleIndicator
 
 class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionClickListener,
-    LauncherModel.Callbacks {
+    LauncherModel.Callbacks, OnFocusChangeListener, FolderTitleInput.OnBackKeyListener,
+    OnEditorActionListener {
 
+    private var mIsEditingName: Boolean = false
     private var mModel: LauncherModel? = null
     private lateinit var widgetRootView: WidgetsRootView
     private lateinit var overlayCallbackImpl: OverlayCallbackImpl
@@ -202,7 +208,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     private var activeFolderStartBounds = Rect()
 
     private var mFolderAppsViewPager: ViewPager? = null
-    private var mFolderTitleInput: BlissInput? = null
+    private lateinit var mFolderTitleInput: FolderTitleInput
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -419,6 +425,16 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         folderContainer = findViewById(R.id.folder_window_container)
         mFolderAppsViewPager = findViewById(R.id.folder_apps)
         mFolderTitleInput = findViewById(R.id.folder_title)
+        mFolderTitleInput.setOnBackKeyListener(this)
+        mFolderTitleInput.setOnFocusChangeListener(this)
+        mFolderTitleInput.setOnEditorActionListener(this)
+        mFolderTitleInput.setSelectAllOnFocus(true)
+        mFolderTitleInput.inputType = mFolderTitleInput.inputType and
+            InputType.TYPE_TEXT_FLAG_AUTO_CORRECT.inv() and
+            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS.inv() or
+            InputType.TYPE_TEXT_FLAG_CAP_WORDS
+        mFolderTitleInput.forceDisableSuggestions(true)
+
         launcherView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             or View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
@@ -1021,6 +1037,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
     override fun onDestroy() {
         super.onDestroy()
+        workspace.removeFolderListeners()
         if (mCancelTouchController != null) {
             mCancelTouchController!!.run()
             mCancelTouchController = null
@@ -1104,6 +1121,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         val populatedItems = populateItemPositions(launcherItems)
         val orderedScreenIds = IntegerArray()
         orderedScreenIds.addAll(collectWorkspaceScreens(populatedItems))
+        workspace.removeAllWorkspaceScreens()
         workspace.bindScreens(orderedScreenIds)
         workspace.bindItems(populatedItems, false)
     }
@@ -1701,7 +1719,10 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     }
 
     fun closeFolder() {
-        mFolderTitleInput?.clearFocus()
+        if (isEditingName()) {
+            mFolderTitleInput.dispatchBackKey()
+        }
+
         currentAnimator?.cancel()
 
         // Animate the four positioning/sizing properties in parallel,
@@ -1790,5 +1811,52 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     override fun bindWorkspaceComponentsRemoved(matcher: LauncherItemMatcher) {
         workspace.removeItemsByMatcher(matcher)
         dragController.onAppsRemoved(matcher)
+    }
+
+    override fun onFocusChange(v: View?, hasFocus: Boolean) {
+        if (v === mFolderTitleInput) {
+            if (hasFocus) {
+                startEditingFolderName()
+            } else {
+                mFolderTitleInput.dispatchBackKey()
+            }
+        }
+    }
+
+    override fun onBackKey(): Boolean {
+        // Convert to a string here to ensure that no other state associated with the text field
+        // gets saved.
+        val newTitle: String = mFolderTitleInput.text.toString()
+        activeFolder?.setTitle(newTitle)
+
+        // Update database
+        workspace.updateDatabase()
+
+        // This ensures that focus is gained every time the field is clicked, which selects all
+        // the text and brings up the soft keyboard if necessary.
+        mFolderTitleInput.clearFocus()
+
+        Selection.setSelection(mFolderTitleInput.getText(), 0, 0)
+        mIsEditingName = false
+        return true
+    }
+
+    fun isEditingName(): Boolean {
+        return mIsEditingName
+    }
+
+    private fun startEditingFolderName() {
+        folderContainer.post(Runnable {
+            mFolderTitleInput.hint = ""
+            mIsEditingName = true
+        })
+    }
+
+    override fun onEditorAction(v: TextView?, actionId: Int, event: KeyEvent?): Boolean {
+        if (actionId == EditorInfo.IME_ACTION_DONE) {
+            mFolderTitleInput.dispatchBackKey()
+            return true
+        }
+        return false
     }
 }
