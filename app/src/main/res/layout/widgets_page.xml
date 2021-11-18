@@ -32,17 +32,11 @@
                     android:id="@+id/weather_info_layout"
                     layout="@layout/layout_weather_info" />
 
-                <FrameLayout
-                    android:id="@+id/drag_layer"
+                <LinearLayout
+                    android:id="@+id/widget_container"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <LinearLayout
-                        android:id="@+id/widget_container"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical" />
-                </FrameLayout>
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
 
                 <Button
                     android:id="@+id/edit_widgets_button"
