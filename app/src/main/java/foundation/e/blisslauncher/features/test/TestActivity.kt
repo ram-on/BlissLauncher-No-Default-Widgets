@@ -477,10 +477,11 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         }
 
         // divided by 2 because of left and right padding.
-        val padding = (mDeviceProfile.availableWidthPx / 2 - Utilities.pxFromDp(8, this) -
-            (2 *
-                mDeviceProfile.cellWidthPx)).toInt()
-        widgetPage.findViewById<View>(R.id.suggestedAppGrid).setPadding(padding, 0, padding, 0)
+        val emptySpace = mDeviceProfile.availableWidthPx - 2 * Utilities.pxFromDp(16, this) - 4 *
+            mDeviceProfile.cellWidthPx
+        val padding = emptySpace / 10
+        widgetPage.findViewById<View>(R.id.suggestedAppGrid)
+            .setPadding(padding.toInt(), 0, padding.toInt(), 0)
         // [[END]]
 
         // Prepare search suggestion view
@@ -539,7 +540,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         )
 
         mSearchInput.onFocusChangeListener =
-            View.OnFocusChangeListener { v: View, hasFocus: Boolean ->
+            OnFocusChangeListener { v: View, hasFocus: Boolean ->
                 if (!hasFocus) {
                     hideKeyboard(v)
                 }
@@ -742,52 +743,30 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     private fun searchForLauncherItems(
         charSequence: CharSequence
     ): Observable<SuggestionsResult?> {
-        val query = charSequence.toString().toLowerCase()
+        val query = charSequence.toString().lowercase(Locale.getDefault())
         val suggestionsResult = SuggestionsResult(
             query
         )
         val launcherItems: MutableList<LauncherItem> = ArrayList()
-        workspace.mWorkspaceScreens.forEach { gridLayout: GridLayout ->
-            for (i in 0 until gridLayout.childCount) {
-                val blissFrameLayout = gridLayout.getChildAt(i) as BlissFrameLayout
-                val launcherItem = blissFrameLayout.launcherItem
-                if (launcherItem.itemType == Constants.ITEM_TYPE_FOLDER) {
-                    val folderItem = launcherItem as FolderItem
-                    for (item in folderItem.items) {
-                        if (item.title.toString().toLowerCase().contains(query)) {
-                            launcherItems.add(item)
-                        }
-                    }
-                } else if (launcherItem.title.toString().toLowerCase().contains(query)) {
-                    launcherItems.add(launcherItem)
-                }
+        workspace.mapOverItems(true) { item, _, _ ->
+            Log.i(TAG, "searchForLauncherItems: ${item.title}")
+            if (item.title.toString().lowercase(Locale.getDefault()).contains(query)) {
+                launcherItems.add(item)
             }
-        }
-        val hotseat = getHotseat()
-        for (i in 0 until hotseat.childCount) {
-            val blissFrameLayout = hotseat.getChildAt(i) as BlissFrameLayout
-            val launcherItem = blissFrameLayout.launcherItem
-            if (launcherItem.itemType == Constants.ITEM_TYPE_FOLDER) {
-                val folderItem = launcherItem as FolderItem
-                for (item in folderItem.items) {
-                    if (item.title.toString().toLowerCase().contains(query)) {
-                        launcherItems.add(item)
-                    }
-                }
-            } else if (launcherItem.title.toString().toLowerCase().contains(query)) {
-                launcherItems.add(launcherItem)
-            }
+            false
         }
         launcherItems.sortWith(Comparator.comparing { launcherItem: LauncherItem ->
-            launcherItem.title.toString().toLowerCase().indexOf(query)
+            launcherItem.title.toString().lowercase(Locale.getDefault()).indexOf(query)
         })
         if (launcherItems.size > 4) {
             suggestionsResult.launcherItems = launcherItems.subList(0, 4)
         } else {
             suggestionsResult.launcherItems = launcherItems
         }
+        Log.i(TAG, "searchForLauncherItems: $suggestionsResult")
         return Observable.just(suggestionsResult)
-            .onErrorReturn { throwable: Throwable? ->
+            .onErrorReturn {
+                it.printStackTrace()
                 suggestionsResult.launcherItems = ArrayList()
                 suggestionsResult
             }
@@ -1256,8 +1235,15 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         val rowSpec = GridLayout.spec(GridLayout.UNDEFINED)
         val colSpec = GridLayout.spec(GridLayout.UNDEFINED)
         val iconLayoutParams = GridLayout.LayoutParams(rowSpec, colSpec)
-        iconLayoutParams.height = mDeviceProfile.cellHeightPx
-        iconLayoutParams.width = mDeviceProfile.cellWidthPx
+        val emptySpace = mDeviceProfile.availableWidthPx - 2 * Utilities.pxFromDp(16, this) - 4 *
+            mDeviceProfile.cellWidthPx
+        val padding = emptySpace / 10
+        val topBottomPadding = Utilities.pxFromDp(8, this).toInt()
+        iconLayoutParams.height = (mDeviceProfile.cellHeightPx + topBottomPadding)
+        iconLayoutParams.width = (mDeviceProfile.cellWidthPx + padding * 2).toInt()
+
+        view.setPadding(padding.toInt(),
+            (topBottomPadding / 2), padding.toInt(), topBottomPadding / 2)
         view.findViewById<View>(R.id.app_label).visibility = View.VISIBLE
         view.layoutParams = iconLayoutParams
         view.setWithText(true)

@@ -9,6 +9,7 @@
         android:layout_height="wrap_content"
         android:background="@drawable/search_widget"
         android:focusableInTouchMode="true"
+        android:paddingRight="8dp"
         android:paddingTop="8dp"
         android:paddingBottom="8dp">
 

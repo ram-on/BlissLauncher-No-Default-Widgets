@@ -214,10 +214,6 @@ open class CellLayout @JvmOverloads constructor(
         requestLayout()
     }
 
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        super.onLayout(changed, left, top, right, bottom)
-    }
-
     fun measureChild(child: View) {
         val lp = child.layoutParams as LayoutParams
         lp.rowSpec = spec(UNDEFINED)
