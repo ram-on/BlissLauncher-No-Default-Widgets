@@ -15,6 +15,11 @@
         android:clipToPadding="false"
         android:importantForAccessibility="no">
 
+        <!--<foundation.e.blisslauncher.core.customviews.BlurBackgroundView
+            android:id="@+id/blur_layer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />-->
+
         <foundation.e.blisslauncher.core.customviews.LauncherPagedView
             android:id="@+id/workspace"
             android:layout_width="match_parent"

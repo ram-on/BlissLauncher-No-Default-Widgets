@@ -8,6 +8,7 @@ import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.app.ActivityOptions
 import android.app.AlertDialog
+import android.app.WallpaperManager
 import android.app.usage.UsageStats
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
@@ -21,6 +22,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Point
 import android.graphics.Rect
@@ -43,6 +45,7 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.View.OnAttachStateChangeListener
 import android.view.View.OnFocusChangeListener
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -57,6 +60,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.TextView.OnEditorActionListener
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.core.view.isVisible
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -68,11 +72,12 @@ import foundation.e.blisslauncher.BlissLauncher
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.Preferences
 import foundation.e.blisslauncher.core.Utilities
+import foundation.e.blisslauncher.core.blur.BlurWallpaperProvider
+import foundation.e.blisslauncher.core.broadcast.WallpaperChangeReceiver
 import foundation.e.blisslauncher.core.customviews.AbstractFloatingView
 import foundation.e.blisslauncher.core.customviews.BlissFrameLayout
 import foundation.e.blisslauncher.core.customviews.BlissInput
 import foundation.e.blisslauncher.core.customviews.FolderTitleInput
-import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout
 import foundation.e.blisslauncher.core.customviews.LauncherPagedView
 import foundation.e.blisslauncher.core.customviews.RoundedWidgetView
 import foundation.e.blisslauncher.core.customviews.SquareFrameLayout
@@ -113,6 +118,7 @@ import foundation.e.blisslauncher.features.weather.WeatherPreferences
 import foundation.e.blisslauncher.features.weather.WeatherSourceListenerService
 import foundation.e.blisslauncher.features.weather.WeatherUpdateService
 import foundation.e.blisslauncher.features.widgets.WidgetManager
+import foundation.e.blisslauncher.features.widgets.WidgetPageLayer
 import foundation.e.blisslauncher.features.widgets.WidgetViewBuilder
 import foundation.e.blisslauncher.features.widgets.WidgetsActivity
 import foundation.e.blisslauncher.features.widgets.WidgetsRootView
@@ -170,7 +176,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     private lateinit var dragLayer: DragLayer
     private lateinit var workspace: LauncherPagedView
     private lateinit var hotseat: Hotseat
-    private lateinit var widgetPage: InsettableFrameLayout
+    private lateinit var widgetPage: WidgetPageLayer
 
     private lateinit var mSearchInput: BlissInput
 
@@ -227,6 +233,8 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
     private val TAG = "TestActivity"
 
+    private var wallpaperChangeReceiver: WallpaperChangeReceiver? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         if (DEBUG_STRICT_MODE) {
             StrictMode.setThreadPolicy(
@@ -259,6 +267,8 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         mAppWidgetHost = BlissLauncher.getApplication(this).appWidgetHost
 
         initDeviceProfile(BlissLauncher.getApplication(this).invariantDeviceProfile)
+        val wm = getSystemService(WALLPAPER_SERVICE) as WallpaperManager
+        wm.suggestDesiredDimensions(mDeviceProfile.widthPx, mDeviceProfile.heightPx)
         dragController = DragController(this)
         rotationHelper = RotationHelper(this)
         mStateManager = LauncherStateManager(this)
@@ -299,6 +309,17 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 }
             }
         })
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                STORAGE_PERMISSION_REQUEST_CODE
+            )
+        }
         createOrUpdateIconGrid()
         overlayCallbackImpl = OverlayCallbackImpl(this)
         setLauncherOverlay(overlayCallbackImpl)
@@ -448,11 +469,53 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
         // Setup the drag controller (drop targets have to be added in reverse order in priority)
         dragController.setMoveTarget(workspace)
+
+        wallpaperChangeReceiver = WallpaperChangeReceiver(workspace)
+        workspace.addOnAttachStateChangeListener(object : OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {
+                wallpaperChangeReceiver?.setWindowToken(v.windowToken)
+            }
+
+            override fun onViewDetachedFromWindow(v: View) {
+                wallpaperChangeReceiver?.setWindowToken(null)
+            }
+        })
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        if (requestCode == WeatherPreferences.LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            ) {
+                // We only get here if user tried to enable the preference,
+                // hence safe to turn it on after permission is granted
+                val lm = getSystemService(LOCATION_SERVICE) as LocationManager
+                if (!lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                    showLocationEnableDialog()
+                    Preferences.setEnableLocation(this)
+                } else {
+                    startService(
+                        Intent(this, WeatherUpdateService::class.java)
+                            .setAction(WeatherUpdateService.ACTION_FORCE_UPDATE)
+                    )
+                }
+            }
+        } else if (requestCode == STORAGE_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            ) {
+                BlurWallpaperProvider.getInstance(applicationContext).updateAsync()
+            }
+        } else super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     private fun setupWidgetPage() {
         widgetPage =
-            layoutInflater.inflate(R.layout.widgets_page, rootView, false) as InsettableFrameLayout
+            layoutInflater.inflate(R.layout.widgets_page, rootView, false) as WidgetPageLayer
         rootView.addView(widgetPage)
 
         widgetContainer = widgetPage.findViewById(R.id.widget_container)
@@ -1337,6 +1400,8 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
 
         const val DEBUG_STRICT_MODE = false
 
+        private val STORAGE_PERMISSION_REQUEST_CODE: Int = 586
+
         // TODO: Remove after test is finished
         fun getLauncher(context: Context): TestActivity {
             return if (context is TestActivity) {
@@ -1396,8 +1461,11 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                 if (scrollFromWorkspace) {
                     workspace.onOverlayScrollChanged(progress)
                     widgetPage.translationX = widgetPage.measuredWidth * (progress - 1)
+                    widgetPage.changeBlurBounds(progress, true)
                 } else {
                     workspace.onOverlayScrollChanged(progress)
+                    Log.i(TAG, "onScrollChanged: $progress")
+                    widgetPage.changeBlurBounds(progress, false)
                 }
             }
         }
@@ -1414,6 +1482,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                     workspace.onOverlayScrollChanged(it.animatedValue as Float)
                     widgetPage.translationX =
                         widgetPage.measuredWidth * (it.animatedValue as Float - 1)
+                    widgetPage.changeBlurBounds(it.animatedValue as Float, true)
                 }
                 workspaceAnim.duration = 300
                 workspaceAnim.interpolator = AccelerateDecelerateInterpolator()
@@ -1425,6 +1494,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                     override fun onAnimationCancel(animation: Animator) {
                         workspace.onOverlayScrollChanged(0f)
                         widgetPage.translationX = (-widgetPage.measuredWidth).toFloat()
+                        widgetPage.changeBlurBounds(0f, true)
                         animator = null
                     }
                 })
@@ -1435,6 +1505,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                     workspace.onOverlayScrollChanged(it.animatedValue as Float)
                     widgetPage.translationX =
                         widgetPage.measuredWidth * (it.animatedValue as Float - 1)
+                    widgetPage.changeBlurBounds(it.animatedValue as Float, false)
                 }
                 workspaceAnim.duration = 300
                 workspaceAnim.interpolator = AccelerateDecelerateInterpolator()
@@ -1446,6 +1517,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
                     override fun onAnimationCancel(animation: Animator) {
                         workspace.onOverlayScrollChanged(1f)
                         widgetPage.translationX = 0f
+                        widgetPage.changeBlurBounds(1f, false)
                         animator = null
                     }
                 })

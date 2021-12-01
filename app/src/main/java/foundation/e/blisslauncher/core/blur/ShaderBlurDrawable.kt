@@ -27,6 +27,7 @@ class ShaderBlurDrawable internal constructor(private val blurWallpaperProvider:
         }
 
     private val blurBounds = RectF()
+    var canvasOffset: Float = 0f
     private val blurPath = Path()
     private var blurPathValid = false
         set(value) {
@@ -44,6 +45,7 @@ class ShaderBlurDrawable internal constructor(private val blurWallpaperProvider:
 
     fun draw(canvas: Canvas, noRadius: Boolean = false) {
         if (blurAlpha == 0) return
+        if (blurBounds.right.toInt() - blurBounds.left.toInt() == 0) return
         blurBitmap = blurWallpaperProvider.wallpaper
 
         if (blurBitmap == null) {
@@ -65,7 +67,11 @@ class ShaderBlurDrawable internal constructor(private val blurWallpaperProvider:
 
         // setupBlurPath()
 
-        // canvas.translate(0f, -1500f)
+        // We check the offset just to make sure we don't translate it incorrectly
+        // when moving back to home screen from widget page.
+        if (canvasOffset > 0) {
+            canvas.translate(canvasOffset, 0f)
+        }
         if (noRadius) {
             canvas.drawRect(
                 0f, 0f,
@@ -75,7 +81,9 @@ class ShaderBlurDrawable internal constructor(private val blurWallpaperProvider:
         } else {
             canvas.drawPath(DeviceProfile.path, blurPaint)
         }
-        // canvas.translate(0f, 1500f)
+
+        if (canvasOffset > 0)
+            canvas.translate(-canvasOffset, 0f)
     }
 
     override fun setAlpha(alpha: Int) {
