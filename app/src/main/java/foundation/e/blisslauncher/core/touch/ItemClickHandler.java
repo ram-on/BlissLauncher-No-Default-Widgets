@@ -53,6 +53,10 @@ public class ItemClickHandler {
             return;
         }*/
 
+        if (launcher.getLauncherPagedView().isWobbling()) {
+            return;
+        }
+
         if(v instanceof IconTextView) {
             boolean result = ((IconTextView) v).tryToHandleUninstallClick(launcher);
             if(result) return;

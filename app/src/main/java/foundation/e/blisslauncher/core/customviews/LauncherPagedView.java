@@ -333,7 +333,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             LauncherItem launcherItem = launcherItems.get(i);
             View appView;
             if (launcherItem.itemType == Constants.ITEM_TYPE_FOLDER) {
-                FolderIcon folderIcon = FolderIcon.Companion.fromXml(R.layout.folder_icon, getScreenWithId(launcherItem.screenId), (FolderItem) launcherItem);
+                FolderIcon folderIcon = FolderIcon.Companion.fromXml(R.layout.folder_icon,
+                    getScreenWithId(launcherItem.screenId),
+                    (FolderItem) launcherItem
+                );
                 folderIcon.applyFromFolderItem((FolderItem) launcherItem);
                 appView = folderIcon;
             } else {
@@ -1527,7 +1530,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     /**
      * Unbinds the view for the specified item, and removes the item and all its children.
      *
-     * @param v the view being removed.
+     * @param v        the view being removed.
      * @param itemInfo the {@link LauncherItem} for this view.
      */
     public boolean removeItem(View v, final LauncherItem itemInfo) {
@@ -1683,7 +1686,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (d.dragSource != this || mDragInfo == null) {
             final int[] touchXY = new int[]{(int) mDragViewVisualCenter[0],
                 (int) mDragViewVisualCenter[1]};
-            //onDropExternal(touchXY, dropTargetLayout, d);
+            // onDropExternal(touchXY, dropTargetLayout, d);
         } else {
             final View cell = mDragInfo.getCell();
             boolean droppedOnOriginalCellDuringTransition = false;
@@ -1899,52 +1902,51 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             LauncherItem sourceItem = (LauncherItem) newView.getTag();
             LauncherItem destItem = (LauncherItem) targetView.getTag();
 
-            Rect folderLocation = new Rect();
-            targetView.clearAnimation();
-            target.removeView(targetView);
-            FolderItem fi = new FolderItem();
-            fi.title = getResources().getString(R.string.untitled);
-            fi.id = String.valueOf(System.currentTimeMillis());
-            fi.items = new ArrayList<>();
-            sourceItem.container = Long.parseLong(fi.id);
-            destItem.container = Long.parseLong(fi.id);
-            sourceItem.screenId = -1;
-            destItem.screenId = -1;
-            sourceItem.cell = fi.items.size();
-            fi.items.add(sourceItem);
-            destItem.cell = fi.items.size();
-            fi.items.add(destItem);
-            Drawable folderIcon = new GraphicsUtil(getContext()).generateFolderIcon(getContext(),
-                sourceItem.icon, destItem.icon
-            );
-            fi.icon = folderIcon;
-            fi.container = container;
-            fi.screenId = screenId;
-            fi.cell = targetCell[1] * mLauncher.getDeviceProfile().getInv()
-                .getNumColumns() + targetCell[0];
-            FolderIcon folderView = (FolderIcon) LayoutInflater.from(getContext())
-                .inflate(R.layout.folder_icon, null, false);
-            folderView.applyFromShortcutItem(fi);
-            folderView.setOnClickListener(ItemClickHandler.INSTANCE);
-            folderView.setOnLongClickListener(ItemLongClickListener.INSTANCE_WORKSPACE);
-            fi.addListener(folderView);
-            addInScreen(folderView, fi);
             // if the drag started here, we need to remove it from the workspace
             if (!external) {
                 getParentCellLayoutForView(mDragInfo.getCell()).removeView(mDragInfo.getCell());
             }
-            //Add animation here.
-            dragView.remove();
+            targetView.clearAnimation();
+            target.removeView(targetView);
+
+            final FolderItem fi = new FolderItem();
+            fi.title = getResources().getString(R.string.untitled);
+            fi.id = String.valueOf(System.currentTimeMillis());
+            fi.items = new ArrayList<>();
+            fi.container = destItem.container;
+            fi.screenId = destItem.screenId;
+            fi.cell = destItem.cell;
+
+            // Create the view
+            FolderIcon newFolder = FolderIcon.Companion.fromXml(R.layout.folder_icon, target, fi);
+            addInScreen(newFolder, fi);
+            // Force measure the new folder icon
+            CellLayout parent = getParentCellLayoutForView(newFolder);
+            parent.measureChild(newFolder);
+            sourceItem.container = Long.parseLong(fi.id);
+            destItem.container = Long.parseLong(fi.id);
+            sourceItem.screenId = -1;
+            destItem.screenId = -1;
+            destItem.cell = 0;
+            sourceItem.cell = 1;
+            newFolder.addItem(destItem);
+            newFolder.addItem(sourceItem);
+
             updateDatabase(getWorkspaceAndHotseatCellLayouts());
+
+            // Clear drag view
+            dragView.remove();
+            dragView = null;
+            invalidate();
             post(() -> {
                 if (fi.cell % 2 == 0) {
-                    folderView
+                    newFolder
                         .startAnimation(AnimationUtils.loadAnimation(getContext(), R.anim.wobble));
                 } else {
-                    folderView.startAnimation(AnimationUtils
+                    newFolder.startAnimation(AnimationUtils
                         .loadAnimation(getContext(), R.anim.wobble_reverse));
                 }
-                folderView.applyUninstallIconState(false);
+                newFolder.applyUninstallIconState(false);
             });
             return true;
         }
@@ -1965,16 +1967,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (!mAddToExistingFolderOnDrop) return false;
         mAddToExistingFolderOnDrop = false;
 
-        if ((dropOverView instanceof IconTextView) && (dropOverView
-            .getTag() instanceof FolderItem)) {
-            FolderItem fi = (FolderItem) dropOverView.getTag();
-            LauncherItem sourceItem = (LauncherItem) newView.getTag();
-            sourceItem.container = Long.parseLong(fi.id);
-            sourceItem.screenId = -1;
-            sourceItem.cell = fi.items.size();
-            fi.items.add(sourceItem);
-            fi.icon = new GraphicsUtil(getContext()).generateFolderIcon(getContext(), fi);
-            ((IconTextView) dropOverView).applyFromShortcutItem(fi);
+        if (dropOverView instanceof FolderIcon) {
+            FolderIcon folderIcon = (FolderIcon) dropOverView;
+            if (folderIcon.acceptDrop()) {
+                LauncherItem item = d.dragInfo;
+                folderIcon.addItem(item);
+            }
             // if the drag started here, we need to remove it from the workspace
             if (!external) {
                 getParentCellLayoutForView(mDragInfo.getCell()).removeView(mDragInfo.getCell());
@@ -2296,6 +2294,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         wobbleExpireAlarm.cancelAlarm();
         wobbleExpireAlarm.setAlarm(timeoutInMillis);
         return alarmPending;
+    }
+
+    public boolean isWobbling() {
+        return wobbleExpireAlarm.alarmPending();
     }
 
     @Override

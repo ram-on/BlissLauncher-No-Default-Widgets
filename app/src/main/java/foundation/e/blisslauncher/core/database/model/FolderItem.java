@@ -2,7 +2,9 @@ package foundation.e.blisslauncher.core.database.model;
 
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.utils.Constants;
 
 import java.util.ArrayList;
@@ -48,6 +50,27 @@ public class FolderItem extends LauncherItem {
         for (int i = 0; i < listeners.size(); i++) {
             listeners.get(i).onItemsChanged(animate);
         }
+    }
+
+    /**
+     * Add an app or shortcut
+     *
+     * @param item
+     */
+    public void add(LauncherItem item, boolean animate) {
+        add(item, items.size(), animate);
+    }
+
+    /**
+     * Add an app or shortcut for a specified rank.
+     */
+    public void add(LauncherItem item, int rank, boolean animate) {
+        rank = Utilities.boundToRange(rank, 0, items.size());
+        items.add(rank, item);
+        for (int i = 0; i < listeners.size(); i++) {
+            listeners.get(i).onAdd(item);
+        }
+        itemsChanged(animate);
     }
 
     public interface FolderListener {

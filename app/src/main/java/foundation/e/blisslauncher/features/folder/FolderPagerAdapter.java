@@ -1,6 +1,7 @@
 package foundation.e.blisslauncher.features.folder;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -95,5 +96,10 @@ public class FolderPagerAdapter extends PagerAdapter {
         @NonNull Object object
     ) {
         container.removeView((View) object);
+    }
+
+    @Override
+    public void notifyDataSetChanged() {
+        super.notifyDataSetChanged();
     }
 }

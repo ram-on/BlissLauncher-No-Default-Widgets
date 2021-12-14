@@ -22,6 +22,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import android.widget.TextView.OnEditorActionListener
+import androidx.viewpager.widget.ViewPager
 import foundation.e.blisslauncher.R
 import foundation.e.blisslauncher.core.database.model.FolderItem
 import foundation.e.blisslauncher.core.database.model.LauncherItem
@@ -127,7 +128,7 @@ class Folder @JvmOverloads constructor(
     fun startDrag(v: View, options: DragOptions): Boolean {
         val tag = v.tag
         if (tag is LauncherItem) {
-            val item: LauncherItem = tag as LauncherItem
+            val item: LauncherItem = tag
             mEmptyCellRank = item.cell
             mCurrentDragView = v
             dragController!!.addDragListener(this)
@@ -264,6 +265,7 @@ class Folder @JvmOverloads constructor(
     }
 
     override fun onAdd(item: LauncherItem) {
+        // mContent.adapter?.notifyDataSetChanged()
     }
 
     override fun onTitleChanged(title: CharSequence?) {}
@@ -291,7 +293,9 @@ class Folder @JvmOverloads constructor(
     }
 
     override fun onItemsChanged(animate: Boolean) {
+        mContent.adapter?.notifyDataSetChanged()
         updateTextViewFocus()
+        invalidate()
     }
 
     override fun onDragStart(dragObject: DropTarget.DragObject, options: DragOptions) {
@@ -380,6 +384,21 @@ class Folder @JvmOverloads constructor(
         val mDeviceProfile: VariantDeviceProfile = launcher.deviceProfile
         mContent.adapter =
             FolderPagerAdapter(context, mInfo.items, mDeviceProfile)
+        mContent.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+            override fun onPageScrolled(
+                position: Int,
+                positionOffset: Float,
+                positionOffsetPixels: Int
+            ) {
+            }
+
+            override fun onPageSelected(position: Int) {
+                updateTextViewFocus()
+            }
+
+            override fun onPageScrollStateChanged(state: Int) {
+            }
+        })
         // We use same size for height and width as we want to look it like square
         val height =
             mDeviceProfile.cellHeightPx * 3 + resources.getDimensionPixelSize(R.dimen.folder_padding)
@@ -389,8 +408,6 @@ class Folder @JvmOverloads constructor(
             (mDeviceProfile.cellHeightPx + mDeviceProfile.iconDrawablePaddingPx * 2) * 3 + resources.getDimensionPixelSize(
                 R.dimen.folder_padding
             ) * 2
-        mPageIndicator.setViewPager(mContent)
-
         // In case any children didn't come across during loading, clean up the folder accordingly
         folderIcon?.post {
             if (getItemCount() <= 1) {
@@ -452,7 +469,17 @@ class Folder @JvmOverloads constructor(
         // Just verify that the folder hasn't already been added to the DragLayer.
         // There was a one-off crash where the folder had a parent already.
         if (parent == null) {
-            dragLayer.addView(this, BaseDragLayer.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            mContent.adapter =
+                FolderPagerAdapter(context, mInfo.items, launcher.deviceProfile)
+            mPageIndicator.setViewPager(mContent)
+
+            dragLayer.addView(
+                this,
+                BaseDragLayer.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
         } else {
             Log.e(
                 TAG,
@@ -471,6 +498,7 @@ class Folder @JvmOverloads constructor(
         // dropping. One resulting issue is that replaceFolderWithFinalItem() can be called twice.
         mDeleteFolderOnDropCompleted = false
         // centerAboutIcon()
+        Log.i(TAG, "animateOpen: " + mContent.getItemCount() + " " + mInfo.items.size)
         val anim: AnimatorSet = FolderAnimationManager(this, true /* isOpening */).animator
         anim.play(ObjectAnimator.ofFloat(launcher.getLauncherPagedView(), View.ALPHA, 0f))
             .with(ObjectAnimator.ofFloat(launcher.hotseat, View.ALPHA, 0f))
@@ -614,6 +642,23 @@ class Folder @JvmOverloads constructor(
     var mOnExitAlarmListener: OnAlarmListener = OnAlarmListener { completeDragExit() }
 
     override fun onDropCompleted(target: View?, d: DropTarget.DragObject?, success: Boolean) {
+        if (success) {
+            if (mDeleteFolderOnDropCompleted && !mItemAddedBackToSelfViaIcon && target !== this) {
+                replaceFolderWithFinalItem()
+            }
+        } else {
+            // The drag failed, we need to return the item to the folder
+            mContent.adapter?.notifyDataSetChanged()
+        }
+
+        mDeleteFolderOnDropCompleted = false
+        mDragInProgress = false
+        mItemAddedBackToSelfViaIcon = false
+        mCurrentDragView = null
+
+        // Reordering may have occured, and we need to save the new item locations. We do this once
+        // at the end to prevent unnecessary database operations.
+        launcher.getLauncherPagedView().updateDatabase()
     }
 
     override fun onBackPressed(): Boolean {

@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import foundation.e.blisslauncher.core.customviews.Folder
 import foundation.e.blisslauncher.core.database.model.FolderItem
 import foundation.e.blisslauncher.core.database.model.LauncherItem
+import foundation.e.blisslauncher.core.touch.ItemClickHandler
 import foundation.e.blisslauncher.core.utils.GraphicsUtil
 import foundation.e.blisslauncher.features.notification.FolderDotInfo
 import foundation.e.blisslauncher.features.test.IconTextView
@@ -34,6 +35,7 @@ class FolderIcon @JvmOverloads constructor(
             val icon = LayoutInflater.from(group.context)
                 .inflate(resId, group, false) as FolderIcon
             icon.tag = folderInfo
+            icon.setOnClickListener(ItemClickHandler.INSTANCE)
             icon.folderItem = folderInfo
             val folder = Folder.fromXml(icon.launcher).apply {
                 this.dragController = launcher.dragController
@@ -104,5 +106,17 @@ class FolderIcon @JvmOverloads constructor(
 
     fun removeListeners() {
         folderItem.removeListener(this)
+    }
+
+    fun acceptDrop(): Boolean {
+        return !(folder?.isDestroyed() ?: true)
+    }
+
+    fun addItem(item: LauncherItem) {
+        addItem(item, true)
+    }
+
+    fun addItem(item: LauncherItem?, animate: Boolean) {
+        folderItem.add(item, animate)
     }
 }
