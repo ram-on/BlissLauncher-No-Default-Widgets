@@ -25,7 +25,6 @@ import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Point
-import android.graphics.Rect
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
@@ -56,15 +55,12 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.SeekBar
 import android.widget.TextView
-import android.widget.TextView.OnEditorActionListener
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
-import androidx.core.view.isVisible
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager.widget.ViewPager
 import com.jakewharton.rxbinding3.widget.textChanges
 import foundation.e.blisslauncher.BlissLauncher
 import foundation.e.blisslauncher.R
@@ -75,14 +71,12 @@ import foundation.e.blisslauncher.core.broadcast.WallpaperChangeReceiver
 import foundation.e.blisslauncher.core.customviews.AbstractFloatingView
 import foundation.e.blisslauncher.core.customviews.BlissFrameLayout
 import foundation.e.blisslauncher.core.customviews.BlissInput
-import foundation.e.blisslauncher.core.customviews.FolderTitleInput
 import foundation.e.blisslauncher.core.customviews.LauncherPagedView
 import foundation.e.blisslauncher.core.customviews.RoundedWidgetView
 import foundation.e.blisslauncher.core.customviews.SquareFrameLayout
 import foundation.e.blisslauncher.core.customviews.WidgetHost
 import foundation.e.blisslauncher.core.database.DatabaseManager
 import foundation.e.blisslauncher.core.database.model.ApplicationItem
-import foundation.e.blisslauncher.core.database.model.FolderItem
 import foundation.e.blisslauncher.core.database.model.LauncherItem
 import foundation.e.blisslauncher.core.database.model.ShortcutItem
 import foundation.e.blisslauncher.core.executors.AppExecutors
@@ -93,7 +87,6 @@ import foundation.e.blisslauncher.core.utils.IntegerArray
 import foundation.e.blisslauncher.core.utils.ListUtil
 import foundation.e.blisslauncher.core.utils.PackageUserKey
 import foundation.e.blisslauncher.core.utils.UserHandle
-import foundation.e.blisslauncher.features.folder.FolderPagerAdapter
 import foundation.e.blisslauncher.features.launcher.Hotseat
 import foundation.e.blisslauncher.features.launcher.SearchInputDisposableObserver
 import foundation.e.blisslauncher.features.notification.DotInfo
@@ -128,7 +121,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.schedulers.Schedulers
-import me.relex.circleindicator.CircleIndicator
 import java.net.URISyntaxException
 import java.util.ArrayList
 import java.util.Arrays
@@ -186,8 +178,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     // UI and state for the overview panel
     private lateinit var overviewPanel: View
 
-    private lateinit var folderContainer: RelativeLayout
-
     private val mOnResumeCallbacks = ArrayList<OnResumeCallback>()
 
     private lateinit var mAppWidgetManager: AppWidgetManager
@@ -205,13 +195,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
     private var enableLocationDialog: AlertDialog? = null
 
     private var currentAnimator: AnimatorSet? = null
-
-    private var activeFolder: FolderItem? = null
-    private var activeFolderView: IconTextView? = null
-    private var activeFolderStartBounds = Rect()
-
-    private var mFolderAppsViewPager: ViewPager? = null
-    private lateinit var mFolderTitleInput: FolderTitleInput
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -440,9 +423,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         workspace.initParentViews(dragLayer)
         overviewPanel = findViewById(R.id.overview_panel)
         hotseat = findViewById(R.id.hotseat)
-        folderContainer = findViewById(R.id.folder_window_container)
-        mFolderAppsViewPager = findViewById(R.id.folder_apps)
-
 
         launcherView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -1320,11 +1300,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             if (!internalStateHandled) {
                 // In all these cases, only animate if we're already on home
                 AbstractFloatingView.closeAllOpenViews(this, isStarted)
-
-                if (folderContainer.visibility == View.VISIBLE) {
-                    closeFolder()
-                    return
-                }
                 if (!isInState(NORMAL)) {
                     // Only change state, if not already the same. This prevents cancelling any
                     // animations running as part of resume
@@ -1369,9 +1344,6 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         val topView = AbstractFloatingView.getTopOpenView(this)
 
         if (topView != null && topView.onBackPressed()) {
-            // Handled by the floating view.
-        } else if (folderContainer.visibility == View.VISIBLE) {
-            closeFolder()
         } else {
             mStateManager.state.onBackPressed(this)
         }
@@ -1627,7 +1599,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         }
     }
 
-    fun openFolder(folderView: View) {
+    /*fun openFolder(folderView: View) {
         if (currentAnimator != null) {
             currentAnimator!!.cancel()
         }
@@ -1676,12 +1648,13 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         // Construct and run the parallel animation of the four translation and
         // scale properties (X, Y, SCALE_X, and SCALE_Y).
         val set = AnimatorSet()
-        /*ValueAnimator valueAnimator = ValueAnimator.ofInt(0, 18);
+        *//*ValueAnimator valueAnimator = ValueAnimator.ofInt(0, 18);
         valueAnimator.addUpdateListener(animation ->
-                BlurWallpaperProvider.getInstance(this).blur((Integer) animation.getAnimatedValue()));*/
-        /*ValueAnimator valueAnimator = ValueAnimator.ofInt(0, 18);
+                BlurWallpaperProvider.getInstance(this).blur((Integer) animation.getAnimatedValue()));*//*
+        *//*ValueAnimator valueAnimator = ValueAnimator.ofInt(0, 18);
         valueAnimator.addUpdateListener(animation ->
-                BlurWallpaperProvider.getInstance(this).blur((Integer) animation.getAnimatedValue()));*/set.play(
+                BlurWallpaperProvider.getInstance(this).blur((Integer) animation.getAnimatedValue()));*//*
+        set.play(
             ObjectAnimator.ofFloat(
                 folderContainer, View.X,
                 startBounds.left.toFloat(), finalBounds.left
@@ -1709,7 +1682,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             )
             .with(ObjectAnimator.ofFloat<View>(getLauncherPagedView(), View.ALPHA, 0f))
             // .with(ObjectAnimator.ofFloat<View>(mIndicator, View.ALPHA, 0f))
-            .with(ObjectAnimator.ofFloat(hotseat, View.ALPHA, 0f))
+            .with()
         set.duration = 300
         set.interpolator = LinearInterpolator()
         set.addListener(object : AnimatorListenerAdapter() {
@@ -1775,12 +1748,12 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         // back to their original values.
 
         val set = AnimatorSet()
-        /*ValueAnimator valueAnimator = ValueAnimator.ofInt(18, 0);
+        *//*ValueAnimator valueAnimator = ValueAnimator.ofInt(18, 0);
         valueAnimator.addUpdateListener(animati on ->
-                BlurWallpaperProvider.getInstance(this).blurWithLauncherView(mergedView, (Integer) animation.getAnimatedValue()));*/
-        /*ValueAnimator valueAnimator = ValueAnimator.ofInt(18, 0);
+                BlurWallpaperProvider.getInstance(this).blurWithLauncherView(mergedView, (Integer) animation.getAnimatedValue()));*//*
+        *//*ValueAnimator valueAnimator = ValueAnimator.ofInt(18, 0);
         valueAnimator.addUpdateListener(animation ->
-                BlurWallpaperProvider.getInstance(this).blurWithLauncherView(mergedView, (Integer) animation.getAnimatedValue()));*/set.play(
+                BlurWallpaperProvider.getInstance(this).blurWithLauncherView(mergedView, (Integer) animation.getAnimatedValue()));*//*set.play(
             ObjectAnimator
                 .ofFloat(folderContainer, View.X, activeFolderStartBounds.left.toFloat())
         )
@@ -1840,7 +1813,7 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         })
         set.start()
         currentAnimator = set
-    }
+    }*/
 
     override fun bindAppsAdded(items: MutableList<LauncherItem>) {
         if (items.isEmpty()) return

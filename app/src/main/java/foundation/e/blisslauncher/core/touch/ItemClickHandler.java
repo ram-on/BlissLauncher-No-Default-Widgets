@@ -21,10 +21,12 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 
+import foundation.e.blisslauncher.core.customviews.Folder;
 import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.FolderItem;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.core.database.model.ShortcutItem;
+import foundation.e.blisslauncher.features.folder.FolderIcon;
 import foundation.e.blisslauncher.features.test.IconTextView;
 import foundation.e.blisslauncher.features.test.TestActivity;
 
@@ -60,7 +62,7 @@ public class ItemClickHandler {
         if (tag instanceof ShortcutItem) {
             onClickAppShortcut(v, (ShortcutItem) tag, launcher);
         } else if (tag instanceof FolderItem) {
-            onClickFolderIcon(v, launcher);
+            onClickFolderIcon(v);
         } else if (tag instanceof ApplicationItem) {
             startAppShortcutOrInfoActivity(v, (ApplicationItem) tag, launcher);
         }
@@ -70,14 +72,13 @@ public class ItemClickHandler {
      * Event handler for a folder icon click.
      *
      * @param v The view that was clicked. Must be an instance of {@link IconTextView}.
-     * @param launcher Launcher activity to pass actions.
      */
-    private static void onClickFolderIcon(
-        View v,
-        TestActivity launcher
-    ) {
-        Log.d("ItemClick", "onClickFolderIcon() called with: v = [" + v + "]");
-        launcher.openFolder(v);
+    private static void onClickFolderIcon(View v) {
+        Folder folder = ((FolderIcon) v).getFolder();
+        if (!folder.isOpen() && !folder.isDestroyed()) {
+            // Open the requested folder
+            folder.animateOpen();
+        }
     }
 
     /**

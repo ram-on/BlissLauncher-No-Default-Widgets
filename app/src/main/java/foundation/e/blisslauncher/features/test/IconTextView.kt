@@ -96,7 +96,7 @@ open class IconTextView @JvmOverloads constructor(
             val bottom = top + defaultIconSize
             return Rect(left, top, right, bottom)
         }
-    private val launcher: TestActivity = TestActivity.getLauncher(context)
+    val launcher: TestActivity = TestActivity.getLauncher(context)
     private val dp = launcher.deviceProfile
     private val defaultIconSize = dp.iconSizePx
 
@@ -234,12 +234,12 @@ open class IconTextView @JvmOverloads constructor(
         mDotScaleAnim?.cancel()
     }
 
-    private fun animateDotScale(dotScales: Float) {
+    fun animateDotScale(vararg dotScales: Float) {
         cancelDotScaleAnim()
         mDotScaleAnim = ObjectAnimator.ofFloat(
             this,
             DOT_SCALE_PROPERTY,
-            dotScales
+            *dotScales
         ).apply {
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {

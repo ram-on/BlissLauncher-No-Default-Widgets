@@ -20,6 +20,7 @@ import static foundation.e.blisslauncher.features.test.LauncherState.OVERVIEW;
 
 import android.view.View;
 import android.view.View.OnLongClickListener;
+import foundation.e.blisslauncher.core.customviews.Folder;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
@@ -58,7 +59,7 @@ public class ItemLongClickListener {
         DragOptions dragOptions
     ) {
         if (info.container >= 0) {
-            Folder folder = Folder.getOpen(launcher);
+            Folder folder = Folder.Companion.getOpen(launcher);
             if (folder != null) {
                 if (!folder.getItemsInReadingOrder().contains(v)) {
                     folder.close(true);

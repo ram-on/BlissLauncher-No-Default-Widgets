@@ -1,6 +1,8 @@
 package foundation.e.blisslauncher.core.database.model;
 
 
+import org.jetbrains.annotations.NotNull;
+
 import foundation.e.blisslauncher.core.utils.Constants;
 
 import java.util.ArrayList;
@@ -34,7 +36,24 @@ public class FolderItem extends LauncherItem {
         listeners.remove(listener);
     }
 
+    public void remove(@NotNull LauncherItem launcherItem, boolean animate) {
+        items.remove(launcherItem);
+        for (int i = 0; i < listeners.size(); i++) {
+            listeners.get(i).onRemove(launcherItem);
+        }
+        itemsChanged(animate);
+    }
+
+    public void itemsChanged(boolean animate) {
+        for (int i = 0; i < listeners.size(); i++) {
+            listeners.get(i).onItemsChanged(animate);
+        }
+    }
+
     public interface FolderListener {
+        void onAdd(LauncherItem item);
         void onTitleChanged(CharSequence title);
+        void onRemove(LauncherItem item);
+        void onItemsChanged(boolean animate);
     }
 }

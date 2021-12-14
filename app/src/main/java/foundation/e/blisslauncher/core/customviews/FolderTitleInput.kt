@@ -62,9 +62,7 @@ class FolderTitleInput @JvmOverloads constructor(
 
     fun dispatchBackKey() {
         hideKeyboard()
-        if (mBackKeyListener != null) {
-            mBackKeyListener!!.onBackKey()
-        }
+        mBackKeyListener?.onBackKey()
     }
 
     /**

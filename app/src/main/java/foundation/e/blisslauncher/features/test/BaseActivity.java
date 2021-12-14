@@ -25,7 +25,6 @@ import android.content.Intent;
 import android.view.View.AccessibilityDelegate;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
-
 import foundation.e.blisslauncher.core.utils.ViewCache;
 import java.lang.annotation.Retention;
 import java.util.ArrayList;

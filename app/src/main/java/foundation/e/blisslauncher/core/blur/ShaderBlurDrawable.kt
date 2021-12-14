@@ -85,7 +85,7 @@ class ShaderBlurDrawable internal constructor(private val blurWallpaperProvider:
         if (canvasOffset > 0)
             canvas.translate(-canvasOffset, 0f)
     }
-    
+
     override fun setAlpha(alpha: Int) {
         blurAlpha = alpha
         blurPaint.alpha = alpha

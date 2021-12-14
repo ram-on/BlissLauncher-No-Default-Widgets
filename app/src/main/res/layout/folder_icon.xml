@@ -14,4 +14,4 @@
      limitations under the License.
 -->
 
-<foundation.e.blisslauncher.features.test.FolderIconTextView style="@style/BaseIcon" />
+<foundation.e.blisslauncher.features.folder.FolderIcon style="@style/BaseIcon" />

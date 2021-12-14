@@ -38,9 +38,6 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.OvershootInterpolator;
 import android.widget.GridLayout;
 import android.widget.Toast;
-
-import androidx.viewpager.widget.ViewPager;
-
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
@@ -57,6 +54,7 @@ import foundation.e.blisslauncher.core.utils.GraphicsUtil;
 import foundation.e.blisslauncher.core.utils.IntSparseArrayMap;
 import foundation.e.blisslauncher.core.utils.IntegerArray;
 import foundation.e.blisslauncher.core.utils.PackageUserKey;
+import foundation.e.blisslauncher.features.folder.FolderIcon;
 import foundation.e.blisslauncher.features.launcher.Hotseat;
 import foundation.e.blisslauncher.features.notification.FolderDotInfo;
 import foundation.e.blisslauncher.features.shortcuts.DeepShortcutManager;
@@ -64,7 +62,6 @@ import foundation.e.blisslauncher.features.shortcuts.InstallShortcutReceiver;
 import foundation.e.blisslauncher.features.shortcuts.ShortcutKey;
 import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.CellLayout;
-import foundation.e.blisslauncher.features.test.FolderIconTextView;
 import foundation.e.blisslauncher.features.test.IconTextView;
 import foundation.e.blisslauncher.features.test.LauncherItemMatcher;
 import foundation.e.blisslauncher.features.test.LauncherState;
@@ -84,7 +81,6 @@ import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -94,7 +90,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
@@ -338,11 +333,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             LauncherItem launcherItem = launcherItems.get(i);
             View appView;
             if (launcherItem.itemType == Constants.ITEM_TYPE_FOLDER) {
-                FolderIconTextView folderIcon =
-                    (FolderIconTextView) LayoutInflater.from(getContext())
-                        .inflate(R.layout.folder_icon, null, false);
+                FolderIcon folderIcon = FolderIcon.Companion.fromXml(R.layout.folder_icon, getScreenWithId(launcherItem.screenId), (FolderItem) launcherItem);
                 folderIcon.applyFromFolderItem((FolderItem) launcherItem);
-                ((FolderItem) launcherItem).addListener(folderIcon);
                 appView = folderIcon;
             } else {
                 IconTextView appIcon = (IconTextView) LayoutInflater.from(getContext())
@@ -537,8 +529,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
      */
     public void removeFolderListeners() {
         mapOverItems(false, (info, view, index) -> {
-            if (view instanceof FolderIconTextView) {
-                ((FolderIconTextView) view).removeListeners();
+            if (view instanceof FolderIcon) {
+                ((FolderIcon) view).removeListeners();
             }
             return false;
         });
@@ -1533,6 +1525,38 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     /**
+     * Unbinds the view for the specified item, and removes the item and all its children.
+     *
+     * @param v the view being removed.
+     * @param itemInfo the {@link LauncherItem} for this view.
+     */
+    public boolean removeItem(View v, final LauncherItem itemInfo) {
+        if (itemInfo instanceof ApplicationItem || itemInfo instanceof ShortcutItem) {
+            // Remove the shortcut from the folder before removing it from launcher
+            View folderIcon = getHomescreenIconByItemId(String.valueOf(itemInfo.container));
+            if (folderIcon instanceof FolderIcon) {
+                ((FolderItem) folderIcon.getTag()).remove(itemInfo, true);
+            } else {
+                removeWorkspaceItem(v);
+            }
+            updateDatabase();
+        } else if (itemInfo instanceof FolderItem) {
+            if (v instanceof FolderIcon) {
+                ((FolderIcon) v).removeListeners();
+            }
+            removeWorkspaceItem(v);
+            updateDatabase();
+        } else {
+            return false;
+        }
+        return true;
+    }
+
+    public View getHomescreenIconByItemId(final String id) {
+        return getFirstMatch((info, v, idx) -> info != null && info.id == id);
+    }
+
+    /**
      * For opposite operation. See {@link #addInScreen}.
      */
     public void removeWorkspaceItem(View v) {
@@ -1898,7 +1922,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             fi.screenId = screenId;
             fi.cell = targetCell[1] * mLauncher.getDeviceProfile().getInv()
                 .getNumColumns() + targetCell[0];
-            FolderIconTextView folderView = (FolderIconTextView) LayoutInflater.from(getContext())
+            FolderIcon folderView = (FolderIcon) LayoutInflater.from(getContext())
                 .inflate(R.layout.folder_icon, null, false);
             folderView.applyFromShortcutItem(fi);
             folderView.setOnClickListener(ItemClickHandler.INSTANCE);
@@ -2567,6 +2591,18 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         );
     }
 
+    public View getFirstMatch(final ItemOperator operator) {
+        final View[] value = new View[1];
+        mapOverItems(MAP_NO_RECURSE, (info, v, index) -> {
+            if (operator.evaluate(info, v, index)) {
+                value[0] = v;
+                return true;
+            }
+            return false;
+        });
+        return value[0];
+    }
+
     /**
      * @param cellLayouts List of CellLayouts to scan, in order of preference.
      * @param operators   List of operators, in order starting from best matching operator.
@@ -2663,12 +2699,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         // Update folder icons
         mapOverItems(MAP_NO_RECURSE, (info, v, itemIdx) -> {
             if (info instanceof FolderItem && folderIds.contains(info.id)
-                && v instanceof FolderIconTextView) {
+                && v instanceof FolderIcon) {
                 FolderDotInfo folderDotInfo = new FolderDotInfo();
                 for (LauncherItem si : ((FolderItem) info).items) {
                     folderDotInfo.addDotInfo(mLauncher.getDotInfoForItem(si));
                 }
-                ((FolderIconTextView) v).setDotInfo(folderDotInfo);
+                ((FolderIcon) v).setDotInfo(folderDotInfo);
             }
             // process all the shortcuts
             return false;
@@ -2831,7 +2867,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                         FolderItem folder = (FolderItem) parent.getTag();
                         parent.clearAnimation();
                         // Close folder before making any changes
-                        mLauncher.closeFolder();
+                        // mLauncher.closeFolder();
                         folder.items.remove(itemToRemove);
                         DatabaseManager.getManager(getContext()).removeItem(itemToRemove.id);
                         if (folder.items.size() == 0) {

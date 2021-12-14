@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import foundation.e.blisslauncher.R;
@@ -28,6 +29,7 @@ public class FolderPagerAdapter extends PagerAdapter {
     private Context mContext;
     private List<LauncherItem> mFolderAppItems;
     private VariantDeviceProfile mDeviceProfile;
+    private List<GridLayout> grids = new ArrayList<>();
 
     public FolderPagerAdapter(
         Context context,
@@ -72,6 +74,7 @@ public class FolderPagerAdapter extends PagerAdapter {
             viewGroup.addView(appView);
             i++;
         }
+        grids.add(viewGroup);
         container.addView(viewGroup);
         return viewGroup;
     }

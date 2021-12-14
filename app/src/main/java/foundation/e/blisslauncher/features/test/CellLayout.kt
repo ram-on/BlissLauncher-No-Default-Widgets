@@ -112,6 +112,8 @@ open class CellLayout @JvmOverloads constructor(
 
         const val WORKSPACE = 0
         const val HOTSEAT = 1
+
+        private val paint = Paint()
     }
 
     init {
@@ -251,6 +253,17 @@ open class CellLayout @JvmOverloads constructor(
 
     override fun shouldDelayChildPressedState(): Boolean {
         return false
+    }
+
+    open fun enableHardwareLayer(hasLayer: Boolean) {
+        setLayerType(
+            if (hasLayer) LAYER_TYPE_HARDWARE else LAYER_TYPE_NONE,
+            paint
+        )
+    }
+
+    open fun isHardwareLayerEnabled(): Boolean {
+        return layerType == LAYER_TYPE_HARDWARE
     }
 
     override fun cancelLongPress() {
