@@ -40,6 +40,7 @@ import foundation.e.blisslauncher.features.test.TouchController;
 public abstract class AbstractFloatingView extends LinearLayout implements TouchController {
 
     @IntDef(flag = true, value = {
+        TYPE_FOLDER,
         TYPE_TASK_MENU,
         TYPE_OPTIONS_POPUP,
         TYPE_LISTENER
@@ -48,13 +49,15 @@ public abstract class AbstractFloatingView extends LinearLayout implements Touch
     public @interface FloatingViewType {
     }
 
+    public static final int TYPE_FOLDER = 1 << 0;
     public static final int TYPE_LISTENER = 1 << 1;
 
     // Popups related to quickstep UI
     public static final int TYPE_TASK_MENU = 1 << 2;
     public static final int TYPE_OPTIONS_POPUP = 1 << 3;
 
-    public static final int TYPE_ALL = TYPE_TASK_MENU | TYPE_OPTIONS_POPUP | TYPE_LISTENER;
+    public static final int TYPE_ALL =
+        TYPE_FOLDER | TYPE_TASK_MENU | TYPE_OPTIONS_POPUP | TYPE_LISTENER;
 
     public static final int TYPE_ACCESSIBLE = TYPE_ALL & ~TYPE_LISTENER;
 

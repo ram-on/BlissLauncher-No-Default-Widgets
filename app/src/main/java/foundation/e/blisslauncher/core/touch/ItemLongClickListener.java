@@ -57,8 +57,7 @@ public class ItemLongClickListener {
         View v, TestActivity launcher, LauncherItem info,
         DragOptions dragOptions
     ) {
-        //TODO: Enable when supporting folders
-       /* if (info.container >= 0) {
+        if (info.container >= 0) {
             Folder folder = Folder.getOpen(launcher);
             if (folder != null) {
                 if (!folder.getItemsInReadingOrder().contains(v)) {
@@ -68,7 +67,7 @@ public class ItemLongClickListener {
                     return;
                 }
             }
-        }*/
+        }
 
         CellLayout.CellInfo longClickCellInfo = new CellLayout.CellInfo(v, info);
         launcher.getLauncherPagedView().startDrag(longClickCellInfo, dragOptions);
