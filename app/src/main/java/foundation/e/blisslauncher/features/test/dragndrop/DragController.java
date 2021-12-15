@@ -16,6 +16,9 @@
 
 package foundation.e.blisslauncher.features.test.dragndrop;
 
+import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
+import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SPRING_LOADED_EXIT_DELAY;
+
 import android.content.ComponentName;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -28,9 +31,6 @@ import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
-
-import java.util.ArrayList;
-
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
@@ -39,6 +39,7 @@ import foundation.e.blisslauncher.features.test.LauncherItemMatcher;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.TouchController;
 import foundation.e.blisslauncher.features.test.UiThreadHelper;
+import java.util.ArrayList;
 
 /**
  * Class for initiating a drag within a view or across multiple views.
@@ -251,8 +252,7 @@ public class DragController implements DragDriver.EventListener, TouchController
         if (!accepted) {
             // If it was not accepted, cleanup the state. If it was accepted, it is the
             // responsibility of the drop target to cleanup the state.
-            // mLauncher.getStateManager().goToState(NORMAL, SPRING_LOADED_EXIT_DELAY);
-            //TODO: Go to normal state here.
+            mLauncher.getStateManager().goToState(NORMAL, SPRING_LOADED_EXIT_DELAY);
             mDragObject.deferDragViewCleanupPostAnimation = false;
         }
 

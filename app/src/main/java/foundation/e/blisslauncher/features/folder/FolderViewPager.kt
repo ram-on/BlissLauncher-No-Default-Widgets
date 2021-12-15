@@ -3,6 +3,7 @@ package foundation.e.blisslauncher.features.folder
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
+import android.view.ViewGroup
 import android.widget.GridLayout
 import androidx.core.view.get
 import androidx.viewpager.widget.ViewPager
@@ -66,5 +67,12 @@ class FolderViewPager @JvmOverloads constructor(
         } else {
             (getChildAt(lastPageIndex) as GridLayout).childCount + lastPageIndex * 9 // maxItems per page
         }
+    }
+
+    /**
+     * Sets the focus on the first visible child.
+     */
+    fun setFocusOnFirstChild() {
+        (getChildAt(currentItem) as ViewGroup?)?.getChildAt(0)?.requestFocus()
     }
 }

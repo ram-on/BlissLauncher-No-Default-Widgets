@@ -202,6 +202,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
      */
     public final Map<ShortcutKey, MutableInt> pinnedShortcutCounts = new HashMap<>();
 
+    /** The value that {@link #mTransitionProgress} must be greater than for
+     * {@link #transitionStateShouldAllowDrop()} to return true. */
+    private static final float ALLOW_DROP_TRANSITION_PROGRESS = 0.25f;
+
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
     }
@@ -333,7 +337,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             LauncherItem launcherItem = launcherItems.get(i);
             View appView;
             if (launcherItem.itemType == Constants.ITEM_TYPE_FOLDER) {
-                FolderIcon folderIcon = FolderIcon.Companion.fromXml(R.layout.folder_icon,
+                FolderIcon folderIcon = FolderIcon.Companion.fromXml(
+                    R.layout.folder_icon,
                     getScreenWithId(launcherItem.screenId),
                     (FolderItem) launcherItem
                 );
@@ -1379,11 +1384,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (!workspaceInModalState() && !mIsSwitchingState) {
             result = super.scrollLeft();
         }
-        // TODO: Fix this asap
-        /*Folder openFolder = Folder.getOpen(mLauncher);
+        Folder openFolder = Folder.Companion.getOpen(mLauncher);
         if (openFolder != null) {
             openFolder.completeDragExit();
-        }*/
+        }
         return result;
     }
 
@@ -1393,11 +1397,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (!workspaceInModalState() && !mIsSwitchingState) {
             result = super.scrollRight();
         }
-        // TODO: Fix this asap
-        /*Folder openFolder = Folder.getOpen(mLauncher);
+        Folder openFolder = Folder.Companion.getOpen(mLauncher);
         if (openFolder != null) {
             openFolder.completeDragExit();
-        }*/
+        }
         return result;
     }
 
@@ -1687,7 +1690,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             final int[] touchXY = new int[]{(int) mDragViewVisualCenter[0],
                 (int) mDragViewVisualCenter[1]};
             // onDropExternal(touchXY, dropTargetLayout, d);
-        } else {
+        }
+        else {
             final View cell = mDragInfo.getCell();
             boolean droppedOnOriginalCellDuringTransition = false;
             Runnable onCompleteRunnable = null;
@@ -2211,7 +2215,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
 
         // Handle the drag over
-        if (mDragTargetLayout != null) {
+        if (mDragTargetLayout != null && child != null) {
             // We want the point to be mapped to the dragTarget.
             if (mLauncher.isHotseatLayout(mDragTargetLayout)) {
                 mapPointFromSelfToHotseatLayout(mLauncher.getHotseat(), mDragViewVisualCenter);
@@ -2301,13 +2305,70 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     @Override
-    public boolean acceptDrop(DragObject dragObject) {
+    public boolean acceptDrop(DragObject d) {
         CellLayout dropTargetLayout = mDropToLayout;
+        if(d.dragSource != this) {
+            if (dropTargetLayout == null) {
+                return false;
+            }
+            if (!transitionStateShouldAllowDrop()) return false;
+
+            mDragViewVisualCenter = d.getVisualCenter(mDragViewVisualCenter);
+
+            // We want the point to be mapped to the dragTarget.
+            mapPointFromDropLayout(dropTargetLayout, mDragViewVisualCenter);
+
+            mTargetCell = findNearestArea((int) mDragViewVisualCenter[0],
+                (int) mDragViewVisualCenter[1], dropTargetLayout,
+                mTargetCell);
+            float distance = dropTargetLayout.getDistanceFromCell(mDragViewVisualCenter[0],
+                mDragViewVisualCenter[1], mTargetCell);
+            if (mCreateUserFolderOnDrop && willCreateUserFolder(d.dragInfo,
+                dropTargetLayout, mTargetCell, distance, true)) {
+                return true;
+            }
+
+            if (mAddToExistingFolderOnDrop && willAddToExistingUserFolder(d.dragInfo,
+                dropTargetLayout, mTargetCell, distance)) {
+                return true;
+            }
+
+            int[] resultSpan = new int[2];
+            mTargetCell = dropTargetLayout.performReorder((int) mDragViewVisualCenter[0],
+                (int) mDragViewVisualCenter[1], 1, 1, 1, 1,
+                null, mTargetCell, resultSpan, CellLayout.MODE_ACCEPT_DROP);
+            boolean foundCell = mTargetCell[0] >= 0 && mTargetCell[1] >= 0;
+
+            // Don't accept the drop if there's no room for the item
+            if (!foundCell) {
+                onNoCellFound(dropTargetLayout);
+                return false;
+            }
+        }
         long screenId = getIdForScreen(dropTargetLayout);
         if (screenId == EXTRA_EMPTY_SCREEN_ID) {
             commitExtraEmptyScreen();
         }
         return true;
+    }
+
+    /**
+     * Updates the point in {@param xy} to point to the co-ordinate space of {@param layout}
+     * @param layout either hotseat of a page in workspace
+     * @param xy the point location in workspace co-ordinate space
+     */
+    private void mapPointFromDropLayout(CellLayout layout, float[] xy) {
+        if (mLauncher.isHotseatLayout(layout)) {
+            mLauncher.getDragLayer().getDescendantCoordRelativeToSelf(this, xy, true);
+            mLauncher.getDragLayer().mapCoordInSelfToDescendant(layout, xy);
+        } else {
+            mapPointFromSelfToChild(layout, xy);
+        }
+    }
+
+    private boolean transitionStateShouldAllowDrop() {
+        return (!isSwitchingState() || mTransitionProgress > ALLOW_DROP_TRANSITION_PROGRESS) &&
+            workspaceIconsCanBeDragged();
     }
 
     @Override
@@ -2651,9 +2712,18 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 return;
             }
         }
+        Folder folder = Folder.Companion.getOpen(mLauncher);
+        if (folder != null && !folder.isDestroyed()) {
+            for (int i = 0; i < folder.getContent().getChildCount(); i++) {
+                GridLayout grid = (GridLayout) folder.getContent().getChildAt(i);
+                if (mapOverCellLayout(recurse, grid, op)) {
+                    return;
+                }
+            }
+        }
     }
 
-    private boolean mapOverCellLayout(boolean recurse, CellLayout layout, ItemOperator op) {
+    private boolean mapOverCellLayout(boolean recurse, GridLayout layout, ItemOperator op) {
         // TODO(b/128460496) Potential race condition where layout is not yet loaded
         if (layout == null) {
             return false;

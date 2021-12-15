@@ -50,21 +50,11 @@ class Folder @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : AbstractFloatingView(context, attrs), DragController.DragListener,
     FolderTitleInput.OnBackKeyListener, FolderItem.FolderListener, View.OnFocusChangeListener,
-    OnEditorActionListener, DragSource {
+    OnEditorActionListener, DragSource, DropTarget {
 
-    /**
-     * Fraction of icon width which behave as scroll region.
-     */
-    private val ICON_OVERSCROLL_WIDTH_FACTOR = 0.45f
-
-    private val FOLDER_NAME_ANIMATION_DURATION = 633L
-
-    private val REORDER_DELAY = 250L
-    private val ON_EXIT_CLOSE_DELAY = 400L
-    private val sTempRect = Rect()
+    private var mScrollAreaOffset: Int = 0
     private val MIN_FOLDERS_FOR_HARDWARE_OPTIMIZATION = 10
 
-    private val mReorderAlarm: Alarm = Alarm()
     private val mOnExitAlarm: Alarm = Alarm()
     val mItemsInReadingOrder = ArrayList<View>()
 
@@ -79,8 +69,6 @@ class Folder @JvmOverloads constructor(
     lateinit var mFolderTitleInput: FolderTitleInput
     private lateinit var mPageIndicator: CircleIndicator
 
-    // Cell ranks used for drag and drop
-    var mTargetRank = 0
     var mPrevTargetRank = 0
     var mEmptyCellRank = 0
 
@@ -138,7 +126,7 @@ class Folder @JvmOverloads constructor(
     }
 
     override fun onControllerInterceptTouchEvent(ev: MotionEvent?): Boolean {
-        ev?.let {
+        /*ev?.let {
             if (it.action == MotionEvent.ACTION_DOWN) {
                 val dl: DragLayer = launcher.dragLayer
                 if (isEditingName()) {
@@ -152,7 +140,7 @@ class Folder @JvmOverloads constructor(
                     return true
                 }
             }
-        }
+        }*/
         return false
     }
 
@@ -200,6 +188,7 @@ class Folder @JvmOverloads constructor(
     private fun closeComplete(wasAnimated: Boolean) {
         // TODO: Clear all active animations.
         (this.parent as DragLayer?)?.removeView(this)
+        dragController?.removeDropTarget(this)
         clearFocus()
         folderIcon?.apply {
             launcher.getLauncherPagedView().alpha = 1f
@@ -235,7 +224,7 @@ class Folder @JvmOverloads constructor(
         // Convert to a string here to ensure that no other state associated with the text field
         // gets saved.
         val newTitle: String = mFolderTitleInput.text.toString()
-        mInfo?.setTitle(newTitle)
+        mInfo.setTitle(newTitle)
 
         // Update database
         launcher.getLauncherPagedView().updateDatabase()
@@ -253,14 +242,16 @@ class Folder @JvmOverloads constructor(
     // we need to create the illusion that the item isn't added back to the folder yet, to
     // to correspond to the animation of the icon back into the folder. This is
     fun hideItem(info: LauncherItem) {
-        getViewForInfo(info).apply {
-            visibility = INVISIBLE
+        getViewForInfo(info)?.apply {
+            this.clearAnimation()
+            this.visibility = INVISIBLE
         }
     }
 
     fun showItem(info: LauncherItem) {
         getViewForInfo(info)?.apply {
-            visibility = VISIBLE
+            this.clearAnimation()
+            this.visibility = VISIBLE
         }
     }
 
@@ -271,6 +262,7 @@ class Folder @JvmOverloads constructor(
     override fun onTitleChanged(title: CharSequence?) {}
 
     override fun onRemove(item: LauncherItem) {
+        Log.d(TAG, "onRemove() called with: item = $item")
         mItemsInvalidated = true
         val v: View? = getViewForInfo(item)
         mContent.adapter?.notifyDataSetChanged()
@@ -302,15 +294,12 @@ class Folder @JvmOverloads constructor(
         if (dragObject.dragSource != this) {
             return
         }
-
-        mContent.removeItem(mCurrentDragView)
+        mCurrentDragView?.clearAnimation()
+        hideItem(dragObject.dragInfo)
         if (dragObject.dragInfo is LauncherItem) {
             mItemsInvalidated = true
             SuppressInfoChanges().use { _ ->
-                mInfo.remove(
-                    dragObject.dragInfo as LauncherItem,
-                    true
-                )
+                // mInfo?.remove(dragObject.dragInfo, true)
             }
         }
         mDragInProgress = true
@@ -400,8 +389,6 @@ class Folder @JvmOverloads constructor(
             }
         })
         // We use same size for height and width as we want to look it like square
-        val height =
-            mDeviceProfile.cellHeightPx * 3 + resources.getDimensionPixelSize(R.dimen.folder_padding)
         mContent.layoutParams?.width =
             mDeviceProfile.cellHeightPx * 3 + resources.getDimensionPixelSize(R.dimen.folder_padding) * 2
         mContent.layoutParams?.height =
@@ -480,6 +467,7 @@ class Folder @JvmOverloads constructor(
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
             )
+            dragController?.addDropTarget(this)
         } else {
             Log.e(
                 TAG,
@@ -498,7 +486,6 @@ class Folder @JvmOverloads constructor(
         // dropping. One resulting issue is that replaceFolderWithFinalItem() can be called twice.
         mDeleteFolderOnDropCompleted = false
         // centerAboutIcon()
-        Log.i(TAG, "animateOpen: " + mContent.getItemCount() + " " + mInfo.items.size)
         val anim: AnimatorSet = FolderAnimationManager(this, true /* isOpening */).animator
         anim.play(ObjectAnimator.ofFloat(launcher.getLauncherPagedView(), View.ALPHA, 0f))
             .with(ObjectAnimator.ofFloat(launcher.hotseat, View.ALPHA, 0f))
@@ -518,6 +505,7 @@ class Folder @JvmOverloads constructor(
                 launcher.getLauncherPagedView().alpha = 0f
                 launcher.hotseat.alpha = 0f
                 launcher.getLauncherPagedView().pageIndicator.alpha = 0f
+                mContent.setFocusOnFirstChild()
             }
 
             override fun onAnimationCancel(animation: Animator?) {
@@ -535,14 +523,18 @@ class Folder @JvmOverloads constructor(
     }
 
     fun completeDragExit() {
-        if (mIsOpen) {
-            close(true)
-            mRearrangeOnClose = true
-        } else if (mState == STATE_ANIMATING) {
-            mRearrangeOnClose = true
-        } else {
-            rearrangeChildren()
-            clearDragInfo()
+        when {
+            mIsOpen -> {
+                close(true)
+                mRearrangeOnClose = true
+            }
+            mState == STATE_ANIMATING -> {
+                mRearrangeOnClose = true
+            }
+            else -> {
+                rearrangeChildren()
+                clearDragInfo()
+            }
         }
     }
 
@@ -563,7 +555,7 @@ class Folder @JvmOverloads constructor(
      * @param itemCount if greater than the total children count, empty spaces are left at the end,
      * otherwise it is ignored.
      */
-    fun rearrangeChildren(itemCount: Int) {
+    private fun rearrangeChildren(itemCount: Int) {
         mContent.adapter?.notifyDataSetChanged()
         mItemsInvalidated = true
     }
@@ -648,7 +640,12 @@ class Folder @JvmOverloads constructor(
             }
         } else {
             // The drag failed, we need to return the item to the folder
-            mContent.adapter?.notifyDataSetChanged()
+            mContent.adapter =
+                FolderPagerAdapter(context, mInfo.items, launcher.deviceProfile)
+            launcher.dragLayer.removeView(d?.dragView)
+            d?.dragView = null
+            invalidate()
+            launcher.getLauncherPagedView().wobbleLayouts()
         }
 
         mDeleteFolderOnDropCompleted = false
@@ -656,7 +653,7 @@ class Folder @JvmOverloads constructor(
         mItemAddedBackToSelfViaIcon = false
         mCurrentDragView = null
 
-        // Reordering may have occured, and we need to save the new item locations. We do this once
+        // Reordering may have occurred, and we need to save the new item locations. We do this once
         // at the end to prevent unnecessary database operations.
         launcher.getLauncherPagedView().updateDatabase()
     }
@@ -696,6 +693,8 @@ class Folder @JvmOverloads constructor(
         const val STATE_NONE = -1
         const val STATE_ANIMATING = 1
         const val STATE_OPEN = 2
+
+        private const val ON_EXIT_CLOSE_DELAY = 400L
 
         const val TAG = "Folder"
 
@@ -739,5 +738,52 @@ class Folder @JvmOverloads constructor(
         init {
             mInfo.removeListener(this@Folder)
         }
+    }
+
+    override fun isDropEnabled(): Boolean = mState != STATE_ANIMATING
+
+    override fun onDrop(dragObject: DropTarget.DragObject?, options: DragOptions?) {
+        // Do nothing here as we don't allow to drop icon in folder.
+    }
+
+    override fun onDragEnter(d: DropTarget.DragObject) {
+        mPrevTargetRank = -1
+        mOnExitAlarm.cancelAlarm()
+        // Get the area offset such that the folder only closes if half the drag icon width
+        // is outside the folder area
+        // Get the area offset such that the folder only closes if half the drag icon width
+        // is outside the folder area
+        mScrollAreaOffset = d.dragView.dragRegionWidth / 2 - d.xOffset
+    }
+
+    override fun onDragOver(dragObject: DropTarget.DragObject?) {
+        // Do Nothing here, we don't allow drop.
+        Log.d(TAG, "onDragOver() called with: dragObject = $dragObject")
+    }
+
+    override fun onDragExit(d: DropTarget.DragObject) {
+        // We only close the folder if this is a true drag exit, ie. not because
+        // a drop has occurred above the folder.
+        if (!d.dragComplete) {
+            mOnExitAlarm.setOnAlarmListener(mOnExitAlarmListener)
+            mOnExitAlarm.setAlarm(ON_EXIT_CLOSE_DELAY)
+        }
+    }
+
+    override fun acceptDrop(dragObject: DropTarget.DragObject?): Boolean = false
+
+    override fun prepareAccessibilityDrop() {
+    }
+
+    override fun getHitRectRelativeToDragLayer(outRect: Rect?) {
+        launcher.dragLayer.getDescendantRectRelativeToSelf(mContent, outRect)
+        // mContent.getHitRect(outRect)
+        /*outRect!!.left -= mScrollAreaOffset
+        outRect!!.right += mScrollAreaOffset*/
+        Log.i(TAG, "getHitRectRelativeToDragLayer: " + outRect)
+    }
+
+    fun getContent(): ViewGroup {
+        return mContent
     }
 }
