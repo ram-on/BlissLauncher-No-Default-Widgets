@@ -368,7 +368,6 @@ class Folder @JvmOverloads constructor(
         mInfo.addListener(this)
 
         mFolderTitleInput.setText(mInfo.title)
-        mFolderTitleInput.isCursorVisible = false
 
         val mDeviceProfile: VariantDeviceProfile = launcher.deviceProfile
         mContent.adapter =
