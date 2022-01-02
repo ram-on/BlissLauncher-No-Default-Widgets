@@ -1,6 +1,5 @@
 package foundation.e.blisslauncher.features.launcher;
 
-
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -18,6 +17,9 @@ import android.os.UserManager;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.LongSparseArray;
+
+import androidx.core.content.ContextCompat;
+
 import foundation.e.blisslauncher.BlissLauncher;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
@@ -37,6 +39,7 @@ import foundation.e.blisslauncher.features.launcher.tasks.LoadDatabaseTask;
 import foundation.e.blisslauncher.features.launcher.tasks.LoadShortcutTask;
 import foundation.e.blisslauncher.features.shortcuts.DeepShortcutManager;
 import foundation.e.blisslauncher.features.shortcuts.ShortcutInfoCompat;
+
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +47,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
 
 // TODO: Find better solution instead of excessively using volatile and synchronized.
 //  - and use RxJava instead of bad async tasks.
@@ -79,6 +81,7 @@ public class AppProvider {
     private static final String MICROG_PACKAGE = "com.google.android.gms";
     private static final String MUPDF_PACKAGE = "com.artifex.mupdf.mini.app";
     private static final String PDF_VIEWER_PACKAGE = "com.gsnathan.pdfviewer";
+    private static final String PDF_VIEWER_E_PACKAGE = "foundation.e.pdfviewer";
     private static final String OPENKEYCHAIN_PACKAGE = "org.sufficientlysecure.keychain";
     private static final String LIBREOFFICE_PACKAGE = "org.documentfoundation.libreoffice";
 
@@ -90,6 +93,7 @@ public class AppProvider {
         DISABLED_PACKAGES.add(MICROG_PACKAGE);
         DISABLED_PACKAGES.add(MUPDF_PACKAGE);
         DISABLED_PACKAGES.add(PDF_VIEWER_PACKAGE);
+        DISABLED_PACKAGES.add(PDF_VIEWER_E_PACKAGE);
         DISABLED_PACKAGES.add(OPENKEYCHAIN_PACKAGE);
         DISABLED_PACKAGES.add(LIBREOFFICE_PACKAGE);
     }
@@ -115,7 +119,7 @@ public class AppProvider {
         assert manager != null;
 
         final LauncherApps launcher = (LauncherApps) mContext.getSystemService(
-                Context.LAUNCHER_APPS_SERVICE);
+            Context.LAUNCHER_APPS_SERVICE);
         assert launcher != null;
         mAppsRepository = AppsRepository.getAppsRepository();
     }
@@ -190,7 +194,11 @@ public class AppProvider {
     }
 
     public synchronized void loadDatabaseOver(List<LauncherItem> databaseItems) {
-        Log.d(TAG, "loadDatabaseOver() called with: databaseItems = [" + Thread.currentThread().getName() + "]" + mStopped);
+        Log.d(
+            TAG,
+            "loadDatabaseOver() called with: databaseItems = [" + Thread.currentThread()
+                .getName() + "]" + mStopped
+        );
         this.mDatabaseItems = databaseItems;
         databaseLoaded = true;
         handleAllProviderLoaded();
@@ -210,8 +218,8 @@ public class AppProvider {
     private List<LauncherItem> prepareLauncherItems() {
         Log.d(TAG, "prepareLauncherItems() called");
 
-        /**
-         * Indices of folder in {@link #mLauncherItems}.
+        /*
+          Indices of folder in {@link #mLauncherItems}.
          */
         LongSparseArray<Integer> foldersIndex = new LongSparseArray<>();
         List<LauncherItem> mLauncherItems = new ArrayList<>();
@@ -227,7 +235,13 @@ public class AppProvider {
                     if ((isAppOnSdcard(databaseItem.packageName, userHandle) || !isSdCardReady
                     ) && !DISABLED_PACKAGES.contains(databaseItem.packageName)) {
                         Log.d(TAG, "Missing package: " + databaseItem.packageName);
-                        Log.d(TAG, "Is App on Sdcard " + isAppOnSdcard(databaseItem.packageName, userHandle));
+                        Log.d(
+                            TAG,
+                            "Is App on Sdcard " + isAppOnSdcard(
+                                databaseItem.packageName,
+                                userHandle
+                            )
+                        );
                         Log.d(TAG, "Is Sdcard ready " + isSdCardReady);
 
                         pendingPackages.addToList(userHandle, databaseItem.packageName);
@@ -237,7 +251,8 @@ public class AppProvider {
                         applicationItem.user = userHandle;
                         applicationItem.componentName = databaseItem.getTargetComponent();
                         applicationItem.packageName = databaseItem.packageName;
-                        applicationItem.icon = getContext().getDrawable(R.drawable.default_icon);
+                        applicationItem.icon =
+                            ContextCompat.getDrawable(getContext(), R.drawable.default_icon);
                         applicationItem.isDisabled = true;
                     } else {
                         DatabaseManager.getManager(mContext).removeLauncherItem(databaseItem.id);
@@ -250,7 +265,7 @@ public class AppProvider {
                 applicationItem.cell = databaseItem.cell;
                 applicationItem.keyId = databaseItem.keyId;
                 if (applicationItem.container == Constants.CONTAINER_DESKTOP
-                        || applicationItem.container == Constants.CONTAINER_HOTSEAT) {
+                    || applicationItem.container == Constants.CONTAINER_HOTSEAT) {
                     mLauncherItems.add(applicationItem);
                 } else {
                     Integer index = foldersIndex.get(applicationItem.container);
@@ -273,12 +288,12 @@ public class AppProvider {
                 }
 
                 if (shortcutItem.container == Constants.CONTAINER_DESKTOP
-                        || shortcutItem.container == Constants.CONTAINER_HOTSEAT) {
+                    || shortcutItem.container == Constants.CONTAINER_HOTSEAT) {
                     mLauncherItems.add(shortcutItem);
                 } else {
                     FolderItem folderItem =
-                            (FolderItem) mLauncherItems.get(
-                                    foldersIndex.get(shortcutItem.container));
+                        (FolderItem) mLauncherItems.get(
+                            foldersIndex.get(shortcutItem.container));
                     if (folderItem.items == null) {
                         folderItem.items = new ArrayList<>();
                     }
@@ -300,24 +315,26 @@ public class AppProvider {
         if (foldersIndex.size() > 0) {
             for (int i = 0; i < foldersIndex.size(); i++) {
                 FolderItem folderItem =
-                        (FolderItem) mLauncherItems.get(foldersIndex.get(foldersIndex.keyAt(i)));
+                    (FolderItem) mLauncherItems.get(foldersIndex.get(foldersIndex.keyAt(i)));
                 if (folderItem.items == null || folderItem.items.size() == 0) {
                     DatabaseManager.getManager(mContext).removeLauncherItem(folderItem.id);
                     mLauncherItems.remove((int) foldersIndex.get(foldersIndex.keyAt(i)));
                 } else {
-                    folderItem.icon = new GraphicsUtil(mContext).generateFolderIcon(mContext,
-                            folderItem);
+                    folderItem.icon = new GraphicsUtil(mContext).generateFolderIcon(
+                        mContext,
+                        folderItem
+                    );
                 }
             }
         }
 
         for (LauncherItem mLauncherItem : mLauncherItems) {
-            Log.i(TAG, "prepareLauncherItems: "+mLauncherItem);
+            Log.i(TAG, "prepareLauncherItems: " + mLauncherItem);
         }
 
         applicationItems.removeAll(mDatabaseItems);
         List<ApplicationItem> mutableList = new ArrayList<>(applicationItems);
-        Collections.sort(mutableList, (app1, app2) -> {
+        mutableList.sort((app1, app2) -> {
             Collator collator = Collator.getInstance();
             return collator.compare(app1.title.toString(), app2.title.toString());
         });
@@ -326,17 +343,20 @@ public class AppProvider {
     }
 
     private boolean isAppOnSdcard(String packageName, UserHandle userHandle) {
-        ApplicationInfo info = null;
+        ApplicationInfo info;
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 info = ((LauncherApps) mContext.getSystemService(
-                        Context.LAUNCHER_APPS_SERVICE)).getApplicationInfo(
-                        packageName, PackageManager.MATCH_UNINSTALLED_PACKAGES, userHandle.getRealHandle());
+                    Context.LAUNCHER_APPS_SERVICE)).getApplicationInfo(
+                    packageName,
+                    PackageManager.MATCH_UNINSTALLED_PACKAGES,
+                    userHandle.getRealHandle()
+                );
                 return info != null && (info.flags & ApplicationInfo.FLAG_EXTERNAL_STORAGE) != 0;
             } else {
                 info = getContext().getPackageManager()
-                        .getApplicationInfo(packageName, PackageManager.MATCH_UNINSTALLED_PACKAGES);
-                return info != null && info.enabled;
+                    .getApplicationInfo(packageName, PackageManager.MATCH_UNINSTALLED_PACKAGES);
+                return info.enabled;
             }
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
@@ -351,7 +371,8 @@ public class AppProvider {
         shortcutItem.title = databaseItem.title.toString();
         shortcutItem.icon_blob = databaseItem.icon_blob;
         Bitmap bitmap = BitmapFactory.decodeByteArray(databaseItem.icon_blob, 0,
-                databaseItem.icon_blob.length);
+            databaseItem.icon_blob.length
+        );
         shortcutItem.icon = new BitmapDrawable(mContext.getResources(), bitmap);
         shortcutItem.launchIntent = databaseItem.getIntent();
         shortcutItem.launchIntentUri = databaseItem.launchIntentUri;
@@ -365,8 +386,10 @@ public class AppProvider {
     private ShortcutItem prepareShortcutForOreo(LauncherItem databaseItem) {
         ShortcutInfoCompat info = mShortcutInfoCompats.get(databaseItem.id);
         if (info == null) {
-            Log.d(TAG,
-                    "prepareShortcutForOreo() called with: databaseItem = [" + databaseItem + "]");
+            Log.d(
+                TAG,
+                "prepareShortcutForOreo() called with: databaseItem = [" + databaseItem + "]"
+            );
             return null;
         }
 
@@ -374,10 +397,12 @@ public class AppProvider {
         shortcutItem.id = info.getId();
         shortcutItem.packageName = info.getPackage();
         shortcutItem.title = info.getShortLabel().toString();
-        Drawable icon = DeepShortcutManager.getInstance(mContext).getShortcutIconDrawable(info,
-                mContext.getResources().getDisplayMetrics().densityDpi);
+        Drawable icon = DeepShortcutManager.getInstance(mContext).getShortcutIconDrawable(
+            info,
+            mContext.getResources().getDisplayMetrics().densityDpi
+        );
         shortcutItem.icon = BlissLauncher.getApplication(
-                mContext).getIconsHandler().convertIcon(icon);
+            mContext).getIconsHandler().convertIcon(icon);
         shortcutItem.launchIntent = info.makeIntent();
         shortcutItem.container = databaseItem.container;
         shortcutItem.screenId = databaseItem.screenId;
@@ -391,20 +416,22 @@ public class AppProvider {
         List<LauncherItem> pinnedItems = new ArrayList<>();
         PackageManager pm = mContext.getPackageManager();
         Intent[] intents = {
-                new Intent(Intent.ACTION_DIAL),
-                new Intent(Intent.ACTION_VIEW, Uri.parse("sms:")),
-                new Intent(Intent.ACTION_VIEW, Uri.parse("http:")),
-                new Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            new Intent(Intent.ACTION_DIAL),
+            new Intent(Intent.ACTION_VIEW, Uri.parse("sms:")),
+            new Intent(Intent.ACTION_VIEW, Uri.parse("http:")),
+            new Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         };
         for (int i = 0; i < intents.length; i++) {
             String packageName = AppUtils.getPackageNameForIntent(intents[i], pm);
             LauncherApps launcherApps = (LauncherApps) mContext.getSystemService(
-                    Context.LAUNCHER_APPS_SERVICE);
-            List<LauncherActivityInfo> list = launcherApps.getActivityList(packageName,
-                    Process.myUserHandle());
+                Context.LAUNCHER_APPS_SERVICE);
+            List<LauncherActivityInfo> list = launcherApps.getActivityList(
+                packageName,
+                Process.myUserHandle()
+            );
             for (LauncherActivityInfo launcherActivityInfo : list) {
                 ApplicationItem applicationItem = mApplicationItems.get(
-                        launcherActivityInfo.getComponentName().flattenToString());
+                    launcherActivityInfo.getComponentName().flattenToString());
                 if (applicationItem != null) {
                     applicationItem.container = Constants.CONTAINER_HOTSEAT;
                     applicationItem.cell = i;
@@ -415,13 +442,13 @@ public class AppProvider {
         }
 
         for (Map.Entry<String, ApplicationItem> stringApplicationItemEntry : mApplicationItems
-                .entrySet()) {
+            .entrySet()) {
             if (!pinnedItems.contains(stringApplicationItemEntry.getValue())) {
                 mLauncherItems.add(stringApplicationItemEntry.getValue());
             }
         }
 
-        Collections.sort(mLauncherItems, (app1, app2) -> {
+        mLauncherItems.sort((app1, app2) -> {
             Collator collator = Collator.getInstance();
             return collator.compare(app1.title.toString(), app2.title.toString());
         });
@@ -435,7 +462,7 @@ public class AppProvider {
     }
 
     public void clear() {
-        this.sInstance = null;
+        sInstance = null;
         mLauncherItems = new ArrayList<>();
         mAppsRepository.updateAppsRelay(Collections.emptyList());
     }

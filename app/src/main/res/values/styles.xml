@@ -8,6 +8,7 @@
     </style>
 
     <style name="HomeScreenTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorAccent">@color/colorAccent</item>
         <item name="android:windowActivityTransitions">true</item>
         <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
         <item name="android:windowBackground">@android:color/transparent</item>
