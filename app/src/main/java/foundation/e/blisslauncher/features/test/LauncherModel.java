@@ -19,6 +19,8 @@ package foundation.e.blisslauncher.features.test;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.LauncherActivityInfo;
+import android.content.pm.LauncherApps;
 import android.content.pm.ShortcutInfo;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -30,12 +32,20 @@ import android.util.Pair;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
+import foundation.e.blisslauncher.core.UserManagerCompat;
+import foundation.e.blisslauncher.core.Utilities;
+import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
+import foundation.e.blisslauncher.core.utils.AppUtils;
+import foundation.e.blisslauncher.core.utils.Constants;
+import foundation.e.blisslauncher.core.utils.FlagOp;
+import foundation.e.blisslauncher.core.utils.ItemInfoMatcher;
 import foundation.e.blisslauncher.core.utils.Preconditions;
 import foundation.e.blisslauncher.features.shortcuts.InstallShortcutReceiver;
 
@@ -91,7 +101,18 @@ public class LauncherModel extends BroadcastReceiver implements
 
     @Override
     public void onPackageAdded(String packageName, UserHandle user) {
+        final Context context = mApp.getContext();
+        FlagOp flagOp = FlagOp.NO_OP;
+        final HashSet<String> packageSet = new HashSet<>(Arrays.asList(packageName));
+        ItemInfoMatcher matcher = ItemInfoMatcher.ofPackages(packageSet, user);
 
+        final List<LauncherItem> added = new ArrayList<>();
+        added.addAll(AppUtils.createAppItems(context,
+            packageName,
+            new foundation.e.blisslauncher.core.utils.UserHandle(UserManagerCompat
+                .getInstance(context).getSerialNumberForUser(user), user)
+        ));
+        mUiExecutor.execute(() -> mCallbacks.get().bindAppsAdded(added));
     }
 
     @Override

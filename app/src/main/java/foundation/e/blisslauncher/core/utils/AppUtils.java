@@ -32,6 +32,9 @@ import foundation.e.blisslauncher.BlissLauncher;
 import foundation.e.blisslauncher.core.IconsHandler;
 import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.features.launcher.AppProvider;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -137,5 +140,49 @@ public class AppUtils {
         }
 
         return null;
+    }
+
+    public static List<ApplicationItem> createAppItems(Context context, String packageName, UserHandle userHandle) {
+        List<ApplicationItem> items = new ArrayList<>();
+        if (AppProvider.DISABLED_PACKAGES.contains(packageName)) {
+            return items;
+        }
+        if (sLauncherApps == null) {
+            sLauncherApps = (LauncherApps) context.getSystemService(
+                Context.LAUNCHER_APPS_SERVICE);
+        }
+
+        IconsHandler iconsHandler = BlissLauncher.getApplication(context).getIconsHandler();
+
+        List<LauncherActivityInfo> matches = sLauncherApps.getActivityList(
+            packageName,
+            userHandle.getRealHandle());
+        if (matches == null || matches.size() == 0) {
+            return items;
+        }
+
+        for (LauncherActivityInfo info : matches) {
+            if (info != null) {
+                ApplicationItem applicationItem = new ApplicationItem(info,
+                    userHandle);
+                ApplicationInfo appInfo = info.getApplicationInfo();
+                applicationItem.icon = iconsHandler.getDrawableIconForPackage(
+                    info, userHandle);
+                String componentName = info.getComponentName().toString();
+                applicationItem.appType = iconsHandler.isClock(componentName)
+                    ? ApplicationItem.TYPE_CLOCK : (iconsHandler.isCalendar(
+                    componentName)
+                    ? ApplicationItem.TYPE_CALENDAR : ApplicationItem.TYPE_DEFAULT);
+                applicationItem.title = info.getLabel().toString();
+                applicationItem.container = Constants.CONTAINER_DESKTOP;
+                if (appInfo.packageName.equalsIgnoreCase("com.generalmagic.magicearth")) {
+                    applicationItem.title = "Maps";
+                }
+                applicationItem.packageName = appInfo.packageName;
+                items.add(applicationItem);
+            }
+        }
+
+        return items;
     }
 }
