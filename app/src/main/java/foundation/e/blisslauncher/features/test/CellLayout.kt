@@ -174,10 +174,6 @@ open class CellLayout @JvmOverloads constructor(
             })
             mDragOutlineAnims[i] = anim
         }
-
-        setOnClickListener {
-            launcher.getLauncherPagedView().setWobbleExpirationAlarm(0) // Stop wobbling immediately if empty space is touched.
-        }
     }
 
     override fun onMeasure(widthSpec: Int, heightSpec: Int) {

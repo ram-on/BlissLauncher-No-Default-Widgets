@@ -49,6 +49,7 @@ import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.core.database.model.ShortcutItem;
 import foundation.e.blisslauncher.core.touch.ItemClickHandler;
 import foundation.e.blisslauncher.core.touch.ItemLongClickListener;
+import foundation.e.blisslauncher.core.touch.WorkspaceTouchListener;
 import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.GraphicsUtil;
 import foundation.e.blisslauncher.core.utils.IntSparseArrayMap;
@@ -220,7 +221,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         initWorkspace();
 
         setMotionEventSplittingEnabled(true);
-        setOnTouchListener((v, event) -> false);
+        setOnTouchListener(new WorkspaceTouchListener(mLauncher, this));
 
         wobbleExpireAlarm.setOnAlarmListener(this);
     }
@@ -1324,6 +1325,21 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 layout.setLayerType(enableLayer ? LAYER_TYPE_HARDWARE : LAYER_TYPE_NONE, sPaint);
             }
         }
+    }
+
+    public void onWallpaperTap(MotionEvent ev) {
+        setWobbleExpirationAlarm(0); // Dismiss any animation if running.
+        final int[] position = mTempXY;
+        getLocationOnScreen(position);
+
+        int pointerIndex = ev.getActionIndex();
+        position[0] += (int) ev.getX(pointerIndex);
+        position[1] += (int) ev.getY(pointerIndex);
+
+        mWallpaperManager.sendWallpaperCommand(getWindowToken(),
+            ev.getAction() == MotionEvent.ACTION_UP
+                ? WallpaperManager.COMMAND_TAP : WallpaperManager.COMMAND_SECONDARY_TAP,
+            position[0], position[1], 0, null);
     }
 
     public void setup(@NotNull DragController dragController) {

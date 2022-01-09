@@ -46,7 +46,6 @@ class VariantDeviceProfile(
     @JvmField
     var isMultiWindowMode: Boolean
 ) {
-
     val mDotRenderer: DotRenderer
     val uninstallRenderer: UninstallButtonRenderer
 
