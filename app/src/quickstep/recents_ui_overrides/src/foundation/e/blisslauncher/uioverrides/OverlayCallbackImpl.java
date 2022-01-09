@@ -15,6 +15,9 @@ public class OverlayCallbackImpl implements TestActivity.LauncherOverlay {
 
     private TestActivity.LauncherOverlayCallbacks mLauncherOverlayCallbacks;
 
+    // The page is moved more than halfway, automatically move to the next page on touch up.
+    private static final float SIGNIFICANT_MOVE_THRESHOLD = 0.4f;
+
     public OverlayCallbackImpl(TestActivity launcher) {
         this.mLauncher = launcher;
     }
@@ -27,10 +30,10 @@ public class OverlayCallbackImpl implements TestActivity.LauncherOverlay {
     @Override
     public void onScrollInteractionEnd() {
         if(scrollFromWorkspace) {
-            if(mProgress >= 0.5f) mLauncherOverlayCallbacks.onScrollEnd(1f, true);
+            if(mProgress >= SIGNIFICANT_MOVE_THRESHOLD) mLauncherOverlayCallbacks.onScrollEnd(1f, true);
             else mLauncherOverlayCallbacks.onScrollEnd(0f, true);
         } else {
-            if(mProgress < 0.5f) mLauncherOverlayCallbacks.onScrollEnd(0f, false);
+            if(mProgress < SIGNIFICANT_MOVE_THRESHOLD) mLauncherOverlayCallbacks.onScrollEnd(0f, false);
             else mLauncherOverlayCallbacks.onScrollEnd(1f, false);
         }
     }

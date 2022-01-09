@@ -285,7 +285,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     public void bindAndInitFirstScreen(View view) {
-        // Do nothing here.
+
     }
 
     public void removeAllWorkspaceScreens() {

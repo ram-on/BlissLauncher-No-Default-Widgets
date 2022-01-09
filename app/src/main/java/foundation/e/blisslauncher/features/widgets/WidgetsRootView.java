@@ -19,6 +19,10 @@ public class WidgetsRootView extends HorizontalScrollView {
 
     private boolean shouldScrollWorkspace = true;
 
+    // The following constants need to be scaled based on density. The scaled versions will be
+    // assigned to the corresponding member variables below.
+    private static final int FLING_THRESHOLD_VELOCITY = 500;
+
     public WidgetsRootView(Context context) {
         super(context);
         init();
@@ -52,6 +56,16 @@ public class WidgetsRootView extends HorizontalScrollView {
                 false,
                 false
             );
+        }
+    }
+
+    @Override
+    public void fling(int velocityX) {
+        super.fling(velocityX);
+        float density = getResources().getDisplayMetrics().density;
+        if (Math.abs(velocityX) > FLING_THRESHOLD_VELOCITY * density) {
+            shouldScrollWorkspace = !shouldScrollWorkspace;
+            overlay.onScrollInteractionEnd();
         }
     }
 
