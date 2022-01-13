@@ -58,6 +58,11 @@ public class AppProvider {
     List<LauncherItem> mLauncherItems;
 
     /**
+     * Represents all items including the ones which are added when launcher is not running.
+     */
+    AppsRepository.AllItems allItems;
+
+    /**
      * Represents networkItems stored in database.
      */
     private List<LauncherItem> mDatabaseItems;
@@ -207,15 +212,15 @@ public class AppProvider {
     private synchronized void handleAllProviderLoaded() {
         if (appsLoaded && shortcutsLoaded && databaseLoaded) {
             if (mDatabaseItems == null || mDatabaseItems.size() <= 0) {
-                mLauncherItems = prepareDefaultLauncherItems();
+                allItems = prepareDefaultLauncherItems();
             } else {
-                mLauncherItems = prepareLauncherItems();
+                allItems = prepareLauncherItems();
             }
-            mAppsRepository.updateAppsRelay(mLauncherItems);
+            mAppsRepository.updateAllAppsRelay(allItems);
         }
     }
 
-    private List<LauncherItem> prepareLauncherItems() {
+    private AppsRepository.AllItems prepareLauncherItems() {
         Log.d(TAG, "prepareLauncherItems() called");
 
         /*
@@ -332,14 +337,15 @@ public class AppProvider {
             Log.i(TAG, "prepareLauncherItems: " + mLauncherItem);
         }
 
+
         applicationItems.removeAll(mDatabaseItems);
-        List<ApplicationItem> mutableList = new ArrayList<>(applicationItems);
+        List<LauncherItem> mutableList = new ArrayList<>(applicationItems);
         mutableList.sort((app1, app2) -> {
             Collator collator = Collator.getInstance();
             return collator.compare(app1.title.toString(), app2.title.toString());
         });
-        mLauncherItems.addAll(mutableList);
-        return mLauncherItems;
+
+        return new AppsRepository.AllItems(mLauncherItems, mutableList);
     }
 
     private boolean isAppOnSdcard(String packageName, UserHandle userHandle) {
@@ -411,7 +417,7 @@ public class AppProvider {
         return shortcutItem;
     }
 
-    private List<LauncherItem> prepareDefaultLauncherItems() {
+    private AppsRepository.AllItems prepareDefaultLauncherItems() {
         List<LauncherItem> mLauncherItems = new ArrayList<>();
         List<LauncherItem> pinnedItems = new ArrayList<>();
         PackageManager pm = mContext.getPackageManager();
@@ -454,7 +460,7 @@ public class AppProvider {
         });
 
         mLauncherItems.addAll(pinnedItems);
-        return mLauncherItems;
+        return new AppsRepository.AllItems(mLauncherItems, Collections.emptyList());
     }
 
     public AppsRepository getAppsRepository() {

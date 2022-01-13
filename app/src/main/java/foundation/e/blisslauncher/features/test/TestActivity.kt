@@ -87,6 +87,7 @@ import foundation.e.blisslauncher.core.utils.IntegerArray
 import foundation.e.blisslauncher.core.utils.ListUtil
 import foundation.e.blisslauncher.core.utils.PackageUserKey
 import foundation.e.blisslauncher.core.utils.UserHandle
+import foundation.e.blisslauncher.features.launcher.AppsRepository
 import foundation.e.blisslauncher.features.launcher.Hotseat
 import foundation.e.blisslauncher.features.launcher.SearchInputDisposableObserver
 import foundation.e.blisslauncher.features.notification.DotInfo
@@ -1109,12 +1110,12 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
             BlissLauncher.getApplication(this)
                 .appProvider
                 .appsRepository
-                .appsRelay
+                .allItemsRelay
                 .distinctUntilChanged()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribeWith(object : DisposableObserver<List<LauncherItem>>() {
-                    override fun onNext(launcherItems: List<LauncherItem>) {
-                        mainHandler.post { showApps(launcherItems) }
+                .subscribeWith(object : DisposableObserver<AppsRepository.AllItems>() {
+                    override fun onNext(items: AppsRepository.AllItems) {
+                        mainHandler.post { showApps(items) }
                     }
 
                     override fun onError(e: Throwable) {
@@ -1126,14 +1127,15 @@ class TestActivity : BaseDraggingActivity(), AutoCompleteAdapter.OnSuggestionCli
         )
     }
 
-    private fun showApps(launcherItems: List<LauncherItem>) {
+    private fun showApps(allItems: AppsRepository.AllItems) {
         hotseat.resetLayout(false)
-        val populatedItems = populateItemPositions(launcherItems)
+        val populatedItems = populateItemPositions(allItems.items)
         val orderedScreenIds = IntegerArray()
         orderedScreenIds.addAll(collectWorkspaceScreens(populatedItems))
         workspace.removeAllWorkspaceScreens()
         workspace.bindScreens(orderedScreenIds)
         workspace.bindItems(populatedItems, false)
+        workspace.bindItemsAdded(allItems.newAddedItems)
     }
 
     private fun populateItemPositions(launcherItems: List<LauncherItem>): List<LauncherItem> {
