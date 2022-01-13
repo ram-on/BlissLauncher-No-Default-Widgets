@@ -38,6 +38,7 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.OvershootInterpolator;
 import android.widget.GridLayout;
 import android.widget.Toast;
+
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Utilities;
@@ -82,7 +83,9 @@ import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -91,6 +94,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
@@ -203,8 +207,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
      */
     public final Map<ShortcutKey, MutableInt> pinnedShortcutCounts = new HashMap<>();
 
-    /** The value that {@link #mTransitionProgress} must be greater than for
-     * {@link #transitionStateShouldAllowDrop()} to return true. */
+    /**
+     * The value that {@link #mTransitionProgress} must be greater than for
+     * {@link #transitionStateShouldAllowDrop()} to return true.
+     */
     private static final float ALLOW_DROP_TRANSITION_PROGRESS = 0.25f;
 
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
@@ -334,6 +340,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     ) {
         final Collection<Animator> bounceAnims = new ArrayList<>();
         int newItemsScreenId = -1;
+        List<LauncherItem> unhandledItems = new ArrayList<>();
         for (int i = 0; i < launcherItems.size(); i++) {
             LauncherItem launcherItem = launcherItems.get(i);
             View appView;
@@ -355,8 +362,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             appView.setOnLongClickListener(ItemLongClickListener.INSTANCE_WORKSPACE);
             if (launcherItem.container == Constants.CONTAINER_DESKTOP) {
                 CellLayout cl = getScreenWithId(launcherItem.screenId);
-                if (cl != null && cl.isOccupied(launcherItem.cell)) {
-                    // TODO: Add item to the end of the list
+                if ((cl != null && cl.isOccupied(launcherItem.cell))) {
+                    // We add this item to unhandled and handle them later.
+                    unhandledItems.add(launcherItem);
+                    continue;
                 }
                 GridLayout.Spec rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
                 GridLayout.Spec colSpec = GridLayout.spec(GridLayout.UNDEFINED);
@@ -383,6 +392,13 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 bounceAnims.add(createNewAppBounceAnimation(appView, i));
                 newItemsScreenId = launcherItem.screenId;
             }
+        }
+
+        // Handle unhandled items
+        if (!unhandledItems.isEmpty()) {
+            List<LauncherItem> tempItems = new ArrayList<>(unhandledItems);
+            bindItemsAdded(tempItems);
+            unhandledItems.clear();
         }
 
         // Animate to the correct page
@@ -1339,7 +1355,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         mWallpaperManager.sendWallpaperCommand(getWindowToken(),
             ev.getAction() == MotionEvent.ACTION_UP
                 ? WallpaperManager.COMMAND_TAP : WallpaperManager.COMMAND_SECONDARY_TAP,
-            position[0], position[1], 0, null);
+            position[0], position[1], 0, null
+        );
     }
 
     public void setup(@NotNull DragController dragController) {
@@ -1706,8 +1723,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             final int[] touchXY = new int[]{(int) mDragViewVisualCenter[0],
                 (int) mDragViewVisualCenter[1]};
             // onDropExternal(touchXY, dropTargetLayout, d);
-        }
-        else {
+        } else {
             final View cell = mDragInfo.getCell();
             boolean droppedOnOriginalCellDuringTransition = false;
             Runnable onCompleteRunnable = null;
@@ -2323,7 +2339,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     @Override
     public boolean acceptDrop(DragObject d) {
         CellLayout dropTargetLayout = mDropToLayout;
-        if(d.dragSource != this) {
+        if (d.dragSource != this) {
             if (dropTargetLayout == null) {
                 return false;
             }
@@ -2336,23 +2352,28 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
             mTargetCell = findNearestArea((int) mDragViewVisualCenter[0],
                 (int) mDragViewVisualCenter[1], dropTargetLayout,
-                mTargetCell);
+                mTargetCell
+            );
             float distance = dropTargetLayout.getDistanceFromCell(mDragViewVisualCenter[0],
-                mDragViewVisualCenter[1], mTargetCell);
+                mDragViewVisualCenter[1], mTargetCell
+            );
             if (mCreateUserFolderOnDrop && willCreateUserFolder(d.dragInfo,
-                dropTargetLayout, mTargetCell, distance, true)) {
+                dropTargetLayout, mTargetCell, distance, true
+            )) {
                 return true;
             }
 
             if (mAddToExistingFolderOnDrop && willAddToExistingUserFolder(d.dragInfo,
-                dropTargetLayout, mTargetCell, distance)) {
+                dropTargetLayout, mTargetCell, distance
+            )) {
                 return true;
             }
 
             int[] resultSpan = new int[2];
             mTargetCell = dropTargetLayout.performReorder((int) mDragViewVisualCenter[0],
                 (int) mDragViewVisualCenter[1], 1, 1, 1, 1,
-                null, mTargetCell, resultSpan, CellLayout.MODE_ACCEPT_DROP);
+                null, mTargetCell, resultSpan, CellLayout.MODE_ACCEPT_DROP
+            );
             boolean foundCell = mTargetCell[0] >= 0 && mTargetCell[1] >= 0;
 
             // Don't accept the drop if there's no room for the item
@@ -2370,8 +2391,9 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     /**
      * Updates the point in {@param xy} to point to the co-ordinate space of {@param layout}
+     *
      * @param layout either hotseat of a page in workspace
-     * @param xy the point location in workspace co-ordinate space
+     * @param xy     the point location in workspace co-ordinate space
      */
     private void mapPointFromDropLayout(CellLayout layout, float[] xy) {
         if (mLauncher.isHotseatLayout(layout)) {

@@ -965,7 +965,7 @@ open class CellLayout @JvmOverloads constructor(
         return if (cellIdx < mOccupied.cells.size) {
             mOccupied.cells[cellIdx]
         } else {
-            throw RuntimeException("Position exceeds the bound of this CellLayout")
+            true
         }
     }
 }
