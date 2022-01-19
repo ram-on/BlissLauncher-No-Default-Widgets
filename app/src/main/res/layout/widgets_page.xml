@@ -5,52 +5,43 @@
     android:layout_height="match_parent"
     android:animateLayoutChanges="true">
 
-    <foundation.e.blisslauncher.features.widgets.WidgetsRootView
-        android:id="@+id/widgets_scroll_container"
+    <foundation.e.blisslauncher.core.customviews.InsettableScrollLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:animateLayoutChanges="true"
         android:fillViewport="true"
-        tools:ignore="ContentDescription">
+        android:id="@+id/widgets_scroll_container"
+        android:scrollbars="none">
 
-        <ScrollView
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:fillViewport="true"
-            android:scrollbars="none">
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <include layout="@layout/layout_search_suggestion" />
+
+            <include
+                android:id="@+id/weather_info_layout"
+                layout="@layout/layout_weather_info" />
 
             <LinearLayout
+                android:id="@+id/widget_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:orientation="vertical" />
 
-                <include layout="@layout/layout_search_suggestion" />
+            <Button
+                android:id="@+id/edit_widgets_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/btn_rounded_corner"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/edit" />
+        </LinearLayout>
 
-                <include
-                    android:id="@+id/weather_info_layout"
-                    layout="@layout/layout_weather_info" />
-
-                <LinearLayout
-                    android:id="@+id/widget_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical" />
-
-                <Button
-                    android:id="@+id/edit_widgets_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/btn_rounded_corner"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="@string/edit" />
-            </LinearLayout>
-
-        </ScrollView>
-
-    </foundation.e.blisslauncher.features.widgets.WidgetsRootView>
+    </foundation.e.blisslauncher.core.customviews.InsettableScrollLayout>
 
     <RelativeLayout
         android:id="@+id/widget_resizer_container"

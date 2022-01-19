@@ -16,6 +16,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.customviews.LauncherPagedView;
 import foundation.e.blisslauncher.features.launcher.LauncherActivity;
 import foundation.e.blisslauncher.features.test.TestActivity;
 
@@ -32,7 +33,13 @@ public class AutoCompleteAdapter extends
 
     public AutoCompleteAdapter(Context context) {
         super();
-        mOnSuggestionClickListener = (TestActivity) context;
+        mOnSuggestionClickListener = null;
+        mInflater = LayoutInflater.from(context);
+    }
+
+    public AutoCompleteAdapter(Context context, LauncherPagedView workspace) {
+        super();
+        mOnSuggestionClickListener = workspace;
         mInflater = LayoutInflater.from(context);
     }
 

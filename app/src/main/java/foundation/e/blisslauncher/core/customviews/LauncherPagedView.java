@@ -5,6 +5,7 @@ import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
 import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SPRING_LOADED_TRANSITION_MS;
 import static foundation.e.blisslauncher.features.test.dragndrop.DragLayer.ALPHA_INDEX_OVERLAY;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -13,16 +14,27 @@ import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.WallpaperManager;
+import android.app.usage.UsageStats;
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProviderInfo;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.location.LocationManager;
+import android.os.Bundle;
 import android.os.UserHandle;
+import android.provider.Settings;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.MutableInt;
@@ -35,12 +47,27 @@ import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
+import android.view.inputmethod.EditorInfo;
 import android.widget.GridLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.jakewharton.rxbinding3.widget.RxTextView;
 
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
+import foundation.e.blisslauncher.core.Preferences;
 import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.customviews.pageindicators.PageIndicatorDots;
 import foundation.e.blisslauncher.core.database.DatabaseManager;
@@ -48,20 +75,29 @@ import foundation.e.blisslauncher.core.database.model.ApplicationItem;
 import foundation.e.blisslauncher.core.database.model.FolderItem;
 import foundation.e.blisslauncher.core.database.model.LauncherItem;
 import foundation.e.blisslauncher.core.database.model.ShortcutItem;
+import foundation.e.blisslauncher.core.executors.AppExecutors;
 import foundation.e.blisslauncher.core.touch.ItemClickHandler;
 import foundation.e.blisslauncher.core.touch.ItemLongClickListener;
 import foundation.e.blisslauncher.core.touch.WorkspaceTouchListener;
+import foundation.e.blisslauncher.core.utils.AppUtils;
 import foundation.e.blisslauncher.core.utils.Constants;
 import foundation.e.blisslauncher.core.utils.GraphicsUtil;
 import foundation.e.blisslauncher.core.utils.IntSparseArrayMap;
 import foundation.e.blisslauncher.core.utils.IntegerArray;
+import foundation.e.blisslauncher.core.utils.ListUtil;
 import foundation.e.blisslauncher.core.utils.PackageUserKey;
 import foundation.e.blisslauncher.features.folder.FolderIcon;
 import foundation.e.blisslauncher.features.launcher.Hotseat;
+import foundation.e.blisslauncher.features.launcher.LauncherActivity;
+import foundation.e.blisslauncher.features.launcher.SearchInputDisposableObserver;
 import foundation.e.blisslauncher.features.notification.FolderDotInfo;
 import foundation.e.blisslauncher.features.shortcuts.DeepShortcutManager;
 import foundation.e.blisslauncher.features.shortcuts.InstallShortcutReceiver;
 import foundation.e.blisslauncher.features.shortcuts.ShortcutKey;
+import foundation.e.blisslauncher.features.suggestions.AutoCompleteAdapter;
+import foundation.e.blisslauncher.features.suggestions.SearchSuggestionUtil;
+import foundation.e.blisslauncher.features.suggestions.SuggestionProvider;
+import foundation.e.blisslauncher.features.suggestions.SuggestionsResult;
 import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.IconTextView;
@@ -83,23 +119,42 @@ import foundation.e.blisslauncher.features.test.dragndrop.DropTarget;
 import foundation.e.blisslauncher.features.test.dragndrop.SpringLoadedDragController;
 import foundation.e.blisslauncher.features.test.graphics.DragPreviewProvider;
 import foundation.e.blisslauncher.features.test.uninstall.UninstallHelper;
+import foundation.e.blisslauncher.features.usagestats.AppUsageStats;
+import foundation.e.blisslauncher.features.weather.DeviceStatusService;
+import foundation.e.blisslauncher.features.weather.ForecastBuilder;
+import foundation.e.blisslauncher.features.weather.WeatherPreferences;
+import foundation.e.blisslauncher.features.weather.WeatherSourceListenerService;
+import foundation.e.blisslauncher.features.weather.WeatherUpdateService;
+import foundation.e.blisslauncher.features.weather.WeatherUtils;
+import foundation.e.blisslauncher.features.widgets.WidgetManager;
+import foundation.e.blisslauncher.features.widgets.WidgetPageLayer;
+import foundation.e.blisslauncher.features.widgets.WidgetViewBuilder;
+import foundation.e.blisslauncher.features.widgets.WidgetsActivity;
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
     Insettable, DropTarget, DragSource, DragController.DragListener,
-    LauncherStateManager.StateHandler, OnAlarmListener {
+    LauncherStateManager.StateHandler, OnAlarmListener,
+    AutoCompleteAdapter.OnSuggestionClickListener {
 
     private static final String TAG = "LauncherPagedView";
     private static final int DEFAULT_PAGE = 0;
@@ -212,6 +267,14 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
      * {@link #transitionStateShouldAllowDrop()} to return true.
      */
     private static final float ALLOW_DROP_TRANSITION_PROGRESS = 0.25f;
+    private WidgetPageLayer widgetPage;
+    private LinearLayout widgetContainer;
+    private BlissInput mSearchInput;
+    private View mWeatherPanel;
+    private View mWeatherSetupTextView;
+    public RoundedWidgetView activeRoundedWidgetView;
+    private List<UsageStats> mUsageStats;
+    private AnimatorSet currentAnimator;
 
     public LauncherPagedView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -259,10 +322,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     @Override
     public void onViewAdded(View child) {
-        if (!(child instanceof GridLayout)) {
-            throw new IllegalArgumentException("A Workspace can only have GridLayout children.");
-        }
-        GridLayout grid = (GridLayout) child;
+        // GridLayout grid = (GridLayout) child;
         //grid.setOnInterceptOnTouchListener(this);
         super.onViewAdded(child);
     }
@@ -292,7 +352,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     public void bindAndInitFirstScreen(View view) {
-
+        setupWidgetPage();
     }
 
     public void removeAllWorkspaceScreens() {
@@ -302,7 +362,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         // Remove the pages and clear the screen models
         removeFolderListeners();
-        removeAllViews();
+        removeViews(1, getChildCount() - 1);
         mScreenOrder.clear();
         mWorkspaceScreens.clear();
 
@@ -320,7 +380,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (insertIndex < 0) {
             insertIndex = mScreenOrder.size();
         }
-        insertNewWorkspaceScreen(screenId, insertIndex);
+        insertNewWorkspaceScreen(screenId, insertIndex + 1);
     }
 
     public void bindScreens(@NotNull IntegerArray orderedScreenIds) {
@@ -412,7 +472,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             if (newItemsScreenId != currentScreenId) {
                 // We post the animation slightly delayed to prevent slowdowns
                 // when we are loading right after we return to launcher.
-                this.postDelayed((Runnable) () -> {
+                this.postDelayed(() -> {
                     AbstractFloatingView.closeAllOpenViews(mLauncher, false);
 
                     snapToPage(newScreenIndex);
@@ -520,6 +580,519 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         updateDatabase(getWorkspaceAndHotseatCellLayouts());
     }
 
+    private void setupWidgetPage() {
+        widgetPage =
+            (WidgetPageLayer) LayoutInflater.from(getContext())
+                .inflate(R.layout.widgets_page, this, false);
+        this.addView(widgetPage, 0);
+        InsettableScrollLayout scrollView = widgetPage.findViewById(R.id.widgets_scroll_container);
+        scrollView.setOnTouchListener((v, event) -> {
+            if (widgetPage.findViewById(R.id.widget_resizer_container).getVisibility()
+                == VISIBLE) {
+                hideWidgetResizeContainer();
+            }
+            return false;
+        });
+
+        widgetContainer = widgetPage.findViewById(R.id.widget_container);
+
+        widgetPage.setVisibility(View.VISIBLE);
+//        widgetPage.post {
+//            widgetPage.translationX = -(widgetPage.measuredWidth * 1.00f)
+//        }
+        widgetPage.findViewById(R.id.used_apps_layout).setClipToOutline(true);
+        widgetPage.setTag("Widget page");
+
+        // TODO: replace with app predictions
+        // Prepare app suggestions view
+        // [[BEGIN]]
+        widgetPage.findViewById(R.id.openUsageAccessSettings)
+            .setOnClickListener(v -> mLauncher.startActivity(
+                new Intent(
+                    Settings.ACTION_USAGE_ACCESS_SETTINGS
+                )
+            ));
+
+        // divided by 2 because of left and right padding.
+        final float emptySpace = mLauncher.getDeviceProfile().getAvailableWidthPx() - 2 * Utilities
+            .pxFromDp(16, getContext()) - 4 *
+            mLauncher.getDeviceProfile().getCellWidthPx();
+        int padding = (int) (emptySpace / 10);
+        widgetPage.findViewById(R.id.suggestedAppGrid)
+            .setPadding(padding, 0, padding, 0);
+        // [[END]]
+
+        // Prepare search suggestion view
+        // [[BEGIN]]
+        mSearchInput = widgetPage.findViewById(R.id.search_input);
+        ImageView clearSuggestions =
+            widgetPage.findViewById(R.id.clearSuggestionImageView);
+        clearSuggestions.setOnClickListener(v -> {
+            mSearchInput.setText("");
+            mSearchInput.clearFocus();
+        });
+
+        mSearchInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.toString().trim().length() == 0) {
+                    clearSuggestions.setVisibility(GONE);
+                } else {
+                    clearSuggestions.setVisibility(VISIBLE);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+        RecyclerView suggestionRecyclerView = widgetPage.findViewById(R.id.suggestionRecyclerView);
+        AutoCompleteAdapter suggestionAdapter = new AutoCompleteAdapter(getContext(), this);
+        suggestionRecyclerView.setHasFixedSize(true);
+        suggestionRecyclerView.setLayoutManager(
+            new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
+        suggestionRecyclerView.setAdapter(suggestionAdapter);
+        DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(
+            getContext(),
+            DividerItemDecoration.VERTICAL
+        );
+        suggestionRecyclerView.addItemDecoration(dividerItemDecoration);
+        mLauncher.getCompositeDisposable().add(
+            RxTextView.textChanges(mSearchInput)
+                .debounce(300, TimeUnit.MILLISECONDS)
+                .map(CharSequence::toString)
+                .distinctUntilChanged()
+                .switchMap(charSequence -> {
+                    if (charSequence != null && charSequence.length() > 0) {
+                        return searchForQuery(charSequence);
+                    } else {
+                        return Observable.just(
+                            new SuggestionsResult(charSequence));
+                    }
+                }).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeWith(
+                    new SearchInputDisposableObserver(mLauncher, suggestionAdapter, widgetPage)
+                )
+        );
+
+        mSearchInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                mLauncher.hideKeyboard(v);
+            }
+        });
+
+        mSearchInput.setOnEditorActionListener((textView, action, keyEvent) -> {
+            if (action == EditorInfo.IME_ACTION_SEARCH) {
+                mLauncher.hideKeyboard(mSearchInput);
+                mLauncher.runSearch(mSearchInput.getText().toString());
+                mSearchInput.setText("");
+                mSearchInput.clearFocus();
+                return true;
+            }
+            return false;
+        });
+        // [[END]]
+
+        // Prepare edit widgets button
+        findViewById(R.id.edit_widgets_button).setOnClickListener(v -> mLauncher.startActivity(
+            new Intent(
+                mLauncher,
+                WidgetsActivity.class
+            )
+        ));
+
+        // Prepare weather widget view
+        // [[BEGIN]]
+        findViewById(R.id.weather_setting_imageview)
+            .setOnClickListener(v -> mLauncher.startActivity(
+                new Intent(
+                    mLauncher,
+                    WeatherPreferences.class
+                )
+            ));
+
+        mWeatherSetupTextView = findViewById(R.id.weather_setup_textview);
+        mWeatherPanel = findViewById(R.id.weather_panel);
+        mWeatherPanel.setOnClickListener(v -> {
+            Intent launchIntent = mLauncher.getPackageManager().getLaunchIntentForPackage(
+                "foundation.e.weather");
+            if (launchIntent != null) {
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                mLauncher.startActivity(launchIntent);
+            }
+        });
+        updateWeatherPanel();
+
+        if (WeatherUtils.isWeatherServiceAvailable(mLauncher)) {
+            mLauncher.startService(new Intent(mLauncher, WeatherSourceListenerService.class));
+            mLauncher.startService(new Intent(mLauncher, DeviceStatusService.class));
+        }
+
+        LocalBroadcastManager.getInstance(mLauncher)
+            .registerReceiver(mWeatherReceiver, new IntentFilter(
+                WeatherUpdateService.ACTION_UPDATE_FINISHED));
+
+        if (!Preferences.useCustomWeatherLocation(mLauncher)) {
+            if (!WeatherPreferences.hasLocationPermission(mLauncher)) {
+                String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION};
+                mLauncher.requestPermissions(
+                    permissions,
+                    WeatherPreferences.LOCATION_PERMISSION_REQUEST_CODE
+                );
+            } else {
+                LocationManager lm =
+                    (LocationManager) mLauncher.getSystemService(Context.LOCATION_SERVICE);
+                if (!lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+                    && Preferences.getEnableLocation(mLauncher)) {
+                    showLocationEnableDialog();
+                    Preferences.setEnableLocation(mLauncher);
+                } else {
+                    mLauncher.startService(new Intent(mLauncher, WeatherUpdateService.class)
+                        .setAction(WeatherUpdateService.ACTION_FORCE_UPDATE));
+                }
+            }
+        } else {
+            mLauncher.startService(new Intent(mLauncher, WeatherUpdateService.class)
+                .setAction(WeatherUpdateService.ACTION_FORCE_UPDATE));
+        }
+        // [[END]]
+
+        int[] widgetIds = mLauncher.mAppWidgetHost.getAppWidgetIds();
+        Arrays.sort(widgetIds);
+        for (int id : widgetIds) {
+            AppWidgetProviderInfo appWidgetInfo = mLauncher.mAppWidgetManager.getAppWidgetInfo(id);
+            if (appWidgetInfo != null) {
+                RoundedWidgetView hostView =
+                    (RoundedWidgetView) mLauncher.getMAppWidgetHost().createView(
+                        mLauncher.getApplicationContext(), id,
+                        appWidgetInfo
+                    );
+                hostView.setAppWidget(id, appWidgetInfo);
+                mLauncher.getCompositeDisposable()
+                    .add(DatabaseManager.getManager(mLauncher).getHeightOfWidget(id)
+                        .subscribeOn(Schedulers.from(AppExecutors.getInstance().diskIO()))
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(height -> {
+                            if (height != 0) {
+                                int minHeight = hostView.getAppWidgetInfo().minResizeHeight;
+                                int maxHeight =
+                                    mLauncher.getDeviceProfile().getAvailableHeightPx() * 3 / 4;
+                                int normalisedDifference = (maxHeight - minHeight) / 100;
+                                hostView.getLayoutParams().height =
+                                    minHeight + (normalisedDifference * height);
+                            }
+                            addWidgetToContainer(hostView);
+                        }, Throwable::printStackTrace));
+            }
+        }
+    }
+
+    private void addWidgetToContainer(RoundedWidgetView widgetView) {
+        widgetView.setPadding(0, 0, 0, 0);
+        widgetContainer.addView(widgetView);
+    }
+
+    private ObservableSource<SuggestionsResult> searchForQuery(
+        CharSequence charSequence
+    ) {
+        Observable<SuggestionsResult> launcherItems = searchForLauncherItems(
+            charSequence.toString()
+        ).subscribeOn(Schedulers.io());
+        Observable<SuggestionsResult> networkItems = searchForNetworkItems(
+            charSequence
+        ).subscribeOn(Schedulers.io());
+        return launcherItems.mergeWith(networkItems);
+    }
+
+    private Observable<SuggestionsResult> searchForLauncherItems(
+        CharSequence charSequence
+    ) {
+        String query = charSequence.toString().toLowerCase();
+        SuggestionsResult suggestionsResult = new SuggestionsResult(
+            query
+        );
+        List<LauncherItem> launcherItems = new ArrayList();
+        mapOverItems(true, new ItemOperator() {
+            @Override
+            public boolean evaluate(LauncherItem item, View view, int index) {
+                Log.i(TAG, "searchForLauncherItems: ${item.title}");
+                if (item.title.toString().toLowerCase(Locale.getDefault()).contains(query)) {
+                    launcherItems.add(item);
+                }
+                return false;
+            }
+        });
+        launcherItems.sort(Comparator.comparing(launcherItem ->
+            launcherItem.title.toString().toLowerCase().indexOf(query)
+        ));
+
+        if (launcherItems.size() > 4) {
+            suggestionsResult.setLauncherItems(launcherItems.subList(0, 4));
+        } else {
+            suggestionsResult.setLauncherItems(launcherItems);
+        }
+        return Observable.just(suggestionsResult)
+            .onErrorReturn(throwable -> {
+                suggestionsResult.setLauncherItems(new ArrayList<>());
+                return suggestionsResult;
+            });
+    }
+
+    private Observable<SuggestionsResult> searchForNetworkItems(CharSequence charSequence) {
+        String query = charSequence.toString().toLowerCase(Locale.getDefault()).trim();
+        SuggestionProvider suggestionProvider = new SearchSuggestionUtil().getSuggestionProvider(
+            mLauncher
+        );
+        return suggestionProvider.query(query).toObservable();
+    }
+
+    @Override
+    public void onClick(String suggestion) {
+        mSearchInput.setText(suggestion);
+        mLauncher.runSearch(suggestion);
+        mSearchInput.clearFocus();
+        mSearchInput.setText("");
+    }
+
+    private BroadcastReceiver mWeatherReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!intent.getBooleanExtra(WeatherUpdateService.EXTRA_UPDATE_CANCELLED, false)) {
+                updateWeatherPanel();
+            }
+        }
+    };
+
+    private static final int REQUEST_LOCATION_SOURCE_SETTING = 267;
+    private AlertDialog enableLocationDialog;
+
+    public void updateWeatherPanel() {
+        if (mWeatherPanel != null) {
+            if (Preferences.getCachedWeatherInfo(mLauncher) == null) {
+                mWeatherSetupTextView.setVisibility(VISIBLE);
+                mWeatherPanel.setVisibility(GONE);
+                mWeatherSetupTextView.setOnClickListener(
+                    v -> mLauncher.startActivity(
+                        new Intent(mLauncher, WeatherPreferences.class)));
+                return;
+            }
+            mWeatherSetupTextView.setVisibility(GONE);
+            mWeatherPanel.setVisibility(VISIBLE);
+            ForecastBuilder.buildLargePanel(mLauncher, mWeatherPanel,
+                Preferences.getCachedWeatherInfo(mLauncher)
+            );
+        }
+    }
+
+    public void showLocationEnableDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(mLauncher);
+        // Build and show the dialog
+        builder.setTitle(R.string.weather_retrieve_location_dialog_title);
+        builder.setMessage(R.string.weather_retrieve_location_dialog_message);
+        builder.setCancelable(false);
+        builder.setPositiveButton(
+            R.string.weather_retrieve_location_dialog_enable_button,
+            (dialog1, whichButton) -> {
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                intent.setFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                mLauncher.startActivityForResult(intent, REQUEST_LOCATION_SOURCE_SETTING);
+            }
+        );
+        builder.setNegativeButton(R.string.cancel, null);
+        enableLocationDialog = builder.create();
+        enableLocationDialog.show();
+    }
+
+    public void refreshSuggestedApps(boolean forceRefresh) {
+        if (widgetPage != null) {
+            refreshSuggestedApps(widgetPage, forceRefresh);
+        }
+    }
+
+    public void refreshSuggestedApps(ViewGroup viewGroup, boolean forceRefresh) {
+        TextView openUsageAccessSettingsTv = viewGroup.findViewById(R.id.openUsageAccessSettings);
+        GridLayout suggestedAppsGridLayout = viewGroup.findViewById(R.id.suggestedAppGrid);
+        AppUsageStats appUsageStats = new AppUsageStats(getContext());
+        List<UsageStats> usageStats = appUsageStats.getUsageStats();
+        if (usageStats.size() > 0) {
+            openUsageAccessSettingsTv.setVisibility(GONE);
+            suggestedAppsGridLayout.setVisibility(VISIBLE);
+
+            // Check if usage stats have been changed or not to avoid unnecessary flickering
+            if (forceRefresh || mUsageStats == null || mUsageStats.size() != usageStats.size()
+                || !ListUtil.areEqualLists(mUsageStats, usageStats)) {
+                mUsageStats = usageStats;
+                if (suggestedAppsGridLayout.getChildCount() > 0) {
+                    suggestedAppsGridLayout.removeAllViews();
+                }
+                int i = 0;
+                while (suggestedAppsGridLayout.getChildCount() < 4 && i < mUsageStats.size()) {
+                    ApplicationItem appItem = AppUtils.createAppItem(getContext(),
+                        mUsageStats.get(i).getPackageName(),
+                        new foundation.e.blisslauncher.core.utils.UserHandle()
+                    );
+                    if (appItem != null) {
+                        BlissFrameLayout view = mLauncher.prepareSuggestedApp(appItem);
+                        mLauncher.addAppToGrid(suggestedAppsGridLayout, view);
+                    }
+                    i++;
+                }
+            }
+        } else {
+            openUsageAccessSettingsTv.setVisibility(VISIBLE);
+            suggestedAppsGridLayout.setVisibility(GONE);
+        }
+    }
+
+    public void showWidgetResizeContainer(RoundedWidgetView roundedWidgetView) {
+        RelativeLayout widgetResizeContainer = widgetPage.findViewById(
+            R.id.widget_resizer_container);
+        if (widgetResizeContainer.getVisibility() != VISIBLE) {
+            activeRoundedWidgetView = roundedWidgetView;
+
+            SeekBar seekBar = widgetResizeContainer.findViewById(R.id.widget_resizer_seekbar);
+            if (currentAnimator != null) {
+                currentAnimator.cancel();
+            }
+
+            seekBar.setOnTouchListener((v, event) -> {
+                seekBar.getParent().requestDisallowInterceptTouchEvent(true);
+                return false;
+            });
+
+            AnimatorSet set = new AnimatorSet();
+            set.play(ObjectAnimator.ofFloat(widgetResizeContainer, View.Y,
+                mLauncher.getDeviceProfile().getAvailableHeightPx(),
+                mLauncher.getDeviceProfile().getAvailableHeightPx() - Utilities
+                    .pxFromDp(48, getContext())
+            ));
+            set.setDuration(200);
+            set.setInterpolator(new LinearInterpolator());
+            set.addListener(new AnimatorListenerAdapter() {
+                                @Override
+                                public void onAnimationStart(Animator animation) {
+                                    super.onAnimationStart(animation);
+                                    widgetResizeContainer.setVisibility(VISIBLE);
+                                }
+
+                                @Override
+                                public void onAnimationCancel(Animator animation) {
+                                    super.onAnimationCancel(animation);
+                                    currentAnimator = null;
+                                    widgetResizeContainer.setVisibility(GONE);
+                                    roundedWidgetView.removeBorder();
+                                }
+
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    super.onAnimationEnd(animation);
+                                    currentAnimator = null;
+                                    prepareWidgetResizeSeekBar(seekBar);
+                                    roundedWidgetView.addBorder();
+                                }
+                            }
+            );
+            set.start();
+            currentAnimator = set;
+        }
+    }
+
+    private void prepareWidgetResizeSeekBar(SeekBar seekBar) {
+        int minHeight = activeRoundedWidgetView.getAppWidgetInfo().minResizeHeight;
+        int maxHeight = mLauncher.getDeviceProfile().getAvailableHeightPx() * 3 / 4;
+        int normalisedDifference = (maxHeight - minHeight) / 100;
+        int defaultHeight = activeRoundedWidgetView.getHeight();
+        int currentProgress = (defaultHeight - minHeight) * 100 / (maxHeight - minHeight);
+
+        seekBar.setMax(100);
+        seekBar.setProgress(currentProgress);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int newHeight = minHeight + (normalisedDifference * progress);
+                LinearLayout.LayoutParams layoutParams =
+                    (LinearLayout.LayoutParams) activeRoundedWidgetView.getLayoutParams();
+                layoutParams.height = newHeight;
+                activeRoundedWidgetView.setLayoutParams(layoutParams);
+
+                Bundle newOps = new Bundle();
+                newOps.putInt(
+                    AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,
+                    mLauncher.getDeviceProfile().getMaxWidgetWidth()
+                );
+                newOps.putInt(
+                    AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,
+                    mLauncher.getDeviceProfile().getMaxWidgetWidth()
+                );
+                newOps.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, newHeight);
+                newOps.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, newHeight);
+                activeRoundedWidgetView.updateAppWidgetOptions(newOps);
+                activeRoundedWidgetView.requestLayout();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                DatabaseManager.getManager(getContext()).saveWidget(
+                    activeRoundedWidgetView.getAppWidgetId(), seekBar.getProgress());
+            }
+        });
+    }
+
+    public void hideWidgetResizeContainer() {
+        RelativeLayout widgetResizeContainer = widgetPage.findViewById(
+            R.id.widget_resizer_container);
+        if (widgetResizeContainer.getVisibility() == VISIBLE) {
+            if (currentAnimator != null) {
+                currentAnimator.cancel();
+            }
+            AnimatorSet set = new AnimatorSet();
+            set.play(ObjectAnimator.ofFloat(widgetResizeContainer, View.Y,
+                mLauncher.getDeviceProfile().getAvailableHeightPx()
+            ));
+            set.setDuration(200);
+            set.setInterpolator(new LinearInterpolator());
+            set.addListener(new AnimatorListenerAdapter() {
+                                @Override
+                                public void onAnimationStart(Animator animation) {
+                                    super.onAnimationStart(animation);
+                                    ((SeekBar) widgetPage.findViewById(
+                                        R.id.widget_resizer_seekbar)).setOnSeekBarChangeListener(null);
+                                }
+
+                                @Override
+                                public void onAnimationCancel(Animator animation) {
+                                    super.onAnimationCancel(animation);
+                                    currentAnimator = null;
+                                    widgetResizeContainer.setVisibility(VISIBLE);
+                                }
+
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    super.onAnimationEnd(animation);
+                                    currentAnimator = null;
+                                    widgetResizeContainer.setVisibility(GONE);
+                                    activeRoundedWidgetView.removeBorder();
+                                }
+                            }
+            );
+            set.start();
+            currentAnimator = set;
+        }
+    }
+
     private int[] findSpaceForItem(IntegerArray addedWorkspaceScreensFinal) {
         // Find appropriate space for the item.
         int screenId = 0;
@@ -527,7 +1100,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         boolean found = false;
 
         int screenCount = getChildCount();
-        for (int screen = 0; screen < screenCount; screen++) {
+        for (int screen = 1; screen < screenCount; screen++) {
             View child = getChildAt(screen);
             if (child instanceof CellLayout) {
                 CellLayout cellLayout = (CellLayout) child;
@@ -672,7 +1245,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         newScreen.setColumnCount(mLauncher.getDeviceProfile().getInv().getNumColumns());
 
         mWorkspaceScreens.put(screenId, newScreen);
-        mScreenOrder.add(insertIndex, screenId);
+        mScreenOrder.add(insertIndex - 1, screenId);
         addView(newScreen, insertIndex);
 
         return newScreen;
@@ -1020,6 +1593,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (!removeScreens.isEmpty()) {
             // Update the model if we have changed any screens
             //TODO: LauncherModel.updateWorkspaceScreenOrder(mLauncher, mScreenOrder);
+            updateDatabase();
         }
 
         if (pageShift >= 0) {
@@ -1302,7 +1876,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 enableHwLayersOnVisiblePages();
             } else {
                 for (int i = 0; i < getPageCount(); i++) {
-                    final GridLayout grid = (GridLayout) getChildAt(i);
+                    final View grid = getChildAt(i);
                     grid.setLayerType(LAYER_TYPE_NONE, sPaint);
                 }
             }
@@ -1335,7 +1909,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             }
 
             for (int i = 0; i < screenCount; i++) {
-                final GridLayout layout = (GridLayout) getPageAt(i);
+                final View layout = getPageAt(i);
                 // enable layers between left and right screen inclusive.
                 boolean enableLayer = leftScreen <= i && i <= rightScreen;
                 layout.setLayerType(enableLayer ? LAYER_TYPE_HARDWARE : LAYER_TYPE_NONE, sPaint);
@@ -1633,7 +2207,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     ArrayList<CellLayout> getWorkspaceAndHotseatCellLayouts() {
         ArrayList<CellLayout> layouts = new ArrayList<>();
         int screenCount = getChildCount();
-        for (int screen = 0; screen < screenCount; screen++) {
+        for (int screen = 1; screen < screenCount; screen++) {
             layouts.add(((CellLayout) getChildAt(screen)));
         }
         if (mLauncher.getHotseat() != null) {
@@ -2081,7 +2655,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         }
 
         // Always pick the current page.
-        if (layout == null && nextPage >= 0 && nextPage < getPageCount()) {
+        if (layout == null && nextPage >= 1 && nextPage < getPageCount()) {
             layout = (CellLayout) getChildAt(nextPage);
         }
         if (layout != mDragTargetLayout) {
@@ -2184,7 +2758,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
      * Returns the child CellLayout if the point is inside the page coordinates, null otherwise.
      */
     private CellLayout verifyInsidePage(int pageNo, float[] touchXy) {
-        if (pageNo >= 0 && pageNo < getPageCount()) {
+        if (pageNo >= 1 && pageNo < getPageCount()) {
             CellLayout cl = (CellLayout) getChildAt(pageNo);
             mapPointFromSelfToChild(cl, touchXy);
             if (touchXy[0] >= 0 && touchXy[0] <= cl.getWidth() &&
@@ -3012,6 +3586,44 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         // Strip all the empty screens
         stripEmptyScreens();
         updateDatabase(getWorkspaceAndHotseatCellLayouts());
+    }
+
+    public void clearWidgetState() {
+        if (activeRoundedWidgetView != null && activeRoundedWidgetView.isWidgetActivated()) {
+            hideWidgetResizeContainer();
+        }
+
+        if (mSearchInput != null) {
+            mSearchInput.setText("");
+        }
+    }
+
+    public void updateWidgets() {
+        if (widgetContainer != null) {
+            WidgetManager widgetManager = WidgetManager.getInstance();
+            Integer id = widgetManager.dequeRemoveId();
+            while (id != null) {
+                for (int i = 0; i < widgetContainer.getChildCount(); i++) {
+                    if (widgetContainer.getChildAt(i) instanceof RoundedWidgetView) {
+                        RoundedWidgetView appWidgetHostView =
+                            (RoundedWidgetView) widgetContainer.getChildAt(i);
+                        if (appWidgetHostView.getAppWidgetId() == id) {
+                            widgetContainer.removeViewAt(i);
+                            DatabaseManager.getManager(mLauncher).removeWidget(id);
+                            break;
+                        }
+                    }
+                }
+                id = widgetManager.dequeRemoveId();
+            }
+
+            RoundedWidgetView widgetView = widgetManager.dequeAddWidgetView();
+            while (widgetView != null) {
+                widgetView = WidgetViewBuilder.create(mLauncher, widgetView);
+                addWidgetToContainer(widgetView);
+                widgetView = widgetManager.dequeAddWidgetView();
+            }
+        }
     }
 
     public interface ItemOperator {

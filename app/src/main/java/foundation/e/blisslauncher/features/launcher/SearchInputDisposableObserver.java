@@ -43,7 +43,7 @@ public class SearchInputDisposableObserver extends DisposableObserver<Suggestion
                 launcherActivity.addAppToGrid(appSuggestionsViewGroup.findViewById(R.id.suggestedAppGrid), blissFrameLayout);
             }
         } else {
-            launcherActivity.refreshSuggestedApps(appSuggestionsViewGroup,true);
+            launcherActivity.getLauncherPagedView().refreshSuggestedApps(appSuggestionsViewGroup,true);
             networkSuggestionAdapter.updateSuggestions(new ArrayList<>(),
                     suggestionsResults.queryText);
         }

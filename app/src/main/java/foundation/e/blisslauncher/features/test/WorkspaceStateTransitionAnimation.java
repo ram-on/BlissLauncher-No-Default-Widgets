@@ -76,7 +76,7 @@ public class WorkspaceStateTransitionAnimation {
         LauncherState.PageAlphaProvider pageAlphaProvider = state.getWorkspacePageAlphaProvider(mLauncher);
         final int childCount = mWorkspace.getChildCount();
         for (int i = 0; i < childCount; i++) {
-            applyChildState(state, (CellLayout) mWorkspace.getChildAt(i), i, pageAlphaProvider,
+            applyChildState(state, mWorkspace.getChildAt(i), i, pageAlphaProvider,
                 propertySetter, builder, config);
         }
 
@@ -144,7 +144,7 @@ public class WorkspaceStateTransitionAnimation {
                 NO_ANIM_PROPERTY_SETTER, new AnimatorSetBuilder(), new LauncherStateManager.AnimationConfig());
     }
 
-    private void applyChildState(LauncherState state, CellLayout cl, int childIndex,
+    private void applyChildState(LauncherState state, View cl, int childIndex,
             LauncherState.PageAlphaProvider pageAlphaProvider, PropertySetter propertySetter,
             AnimatorSetBuilder builder, LauncherStateManager.AnimationConfig config) {
         float pageAlpha = pageAlphaProvider.getPageAlpha(childIndex);
