@@ -311,7 +311,7 @@ public class LauncherActivity extends AppCompatActivity implements
 
         // Start NotificationService to add count badge to Icons
         Intent notificationServiceIntent = new Intent(this, NotificationService.class);
-        startService(notificationServiceIntent);
+        startForegroundService(notificationServiceIntent);
 
         createOrUpdateIconGrid();
     }
