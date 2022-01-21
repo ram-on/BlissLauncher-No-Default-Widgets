@@ -3,7 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:animateLayoutChanges="true">
+    android:animateLayoutChanges="true"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp">
 
     <foundation.e.blisslauncher.core.customviews.InsettableScrollLayout
         android:layout_width="match_parent"
@@ -16,8 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="vertical">
 
             <include layout="@layout/layout_search_suggestion" />
 

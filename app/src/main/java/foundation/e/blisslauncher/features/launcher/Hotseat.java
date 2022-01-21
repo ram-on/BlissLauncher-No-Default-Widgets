@@ -40,6 +40,7 @@ import foundation.e.blisslauncher.core.blur.ShaderBlurDrawable;
 import foundation.e.blisslauncher.core.customviews.Insettable;
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
 import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
+import foundation.e.blisslauncher.core.utils.MultiValueAlpha;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
@@ -47,6 +48,7 @@ import foundation.e.blisslauncher.features.test.VariantDeviceProfile;
 public class Hotseat extends CellLayout implements Insettable, BlurWallpaperProvider.Listener {
 
     private final TestActivity mLauncher;
+    private final MultiValueAlpha mMultiValueAlpha;
     private CellLayout mContent;
 
     private static final String TAG = "Hotseat";
@@ -92,6 +94,7 @@ public class Hotseat extends CellLayout implements Insettable, BlurWallpaperProv
         setWillNotDraw(false);
         blurWallpaperProvider = BlurWallpaperProvider.Companion.getInstance(getContext());
         createBlurDrawable();
+        mMultiValueAlpha = new MultiValueAlpha(this, 1);
     }
 
     private void createBlurDrawable() {
@@ -123,6 +126,10 @@ public class Hotseat extends CellLayout implements Insettable, BlurWallpaperProv
         if (fullBlurDrawable != null) {
             fullBlurDrawable.startListening();
         }
+    }
+
+    public MultiValueAlpha.AlphaProperty getAlphaProperty(int index) {
+        return mMultiValueAlpha.getProperty(index);
     }
 
     @Override
@@ -186,5 +193,15 @@ public class Hotseat extends CellLayout implements Insettable, BlurWallpaperProv
     @Override
     public void onEnabledChanged() {
         createBlurDrawable();
+    }
+
+    /**
+     * We only need to change left bound for hotseat blur layer.
+     */
+    public void changeBlurBounds(float factor, boolean isLeftToRight) {
+        if(fullBlurDrawable != null) {
+            fullBlurDrawable.setBounds((int) ((getRight() - getLeft()) * factor), getTop(), getRight(), getBottom());
+            fullBlurDrawable.invalidateSelf();
+        }
     }
 }

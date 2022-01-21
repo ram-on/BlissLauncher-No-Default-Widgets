@@ -192,7 +192,7 @@ class PageIndicatorDots(context: Context, attrs: AttributeSet?, defStyleAttr: In
                 circleGap = -circleGap
             }
             for (i in mEntryAnimationRadiusFactors!!.indices) {
-                mCirclePaint.setColor(if (i == mActivePage) mActiveColor else mInActiveColor)
+                mCirclePaint.color = if (i == mActivePage) mActiveColor else mInActiveColor
                 canvas.drawCircle(
                     x,
                     y,
@@ -207,7 +207,7 @@ class PageIndicatorDots(context: Context, attrs: AttributeSet?, defStyleAttr: In
                 canvas.drawCircle(x, y, mDotRadius, mCirclePaint)
                 x += circleGap
             }
-            mCirclePaint.setColor(mActiveColor)
+            mCirclePaint.color = mActiveColor
             canvas.drawRoundRect(activeRect, mDotRadius, mDotRadius, mCirclePaint)
         }
     } // Dot is leaving the left circle.

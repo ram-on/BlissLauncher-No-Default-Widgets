@@ -27,7 +27,6 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.ViewConfiguration;
 import foundation.e.blisslauncher.core.customviews.LauncherPagedView;
-import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.TestActivity;
 
 /**
@@ -79,8 +78,7 @@ public class WorkspaceTouchListener extends GestureDetector.SimpleOnGestureListe
 
         if (action == ACTION_UP || action == ACTION_POINTER_UP) {
             if (!mWorkspace.isHandlingTouch()) {
-                final CellLayout currentPage =
-                        (CellLayout) mWorkspace.getChildAt(mWorkspace.getCurrentPage());
+                final View currentPage = mWorkspace.getChildAt(mWorkspace.getCurrentPage());
                 if (currentPage != null) {
                     mWorkspace.onWallpaperTap(ev);
                 }

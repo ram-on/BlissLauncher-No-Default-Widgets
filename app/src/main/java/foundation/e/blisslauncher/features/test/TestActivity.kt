@@ -352,7 +352,6 @@ class TestActivity : BaseDraggingActivity(), LauncherModel.Callbacks {
         dragLayer.setup(dragController, workspace)
         mCancelTouchController = UiFactory.enableLiveUIChanges(this)
         workspace.setup(dragController)
-        workspace.bindAndInitFirstScreen(null)
         dragController.addDragListener(workspace)
         dragController.addDropTarget(workspace)
 
@@ -488,7 +487,7 @@ class TestActivity : BaseDraggingActivity(), LauncherModel.Callbacks {
         }
 
         workspace.updateWeatherPanel()
-        workspace.refreshSuggestedApps(false) //TODO: Update with app remove event
+        workspace.refreshSuggestedApps(false) // TODO: Update with app remove event
         workspace.updateWidgets()
     }
 
@@ -588,11 +587,9 @@ class TestActivity : BaseDraggingActivity(), LauncherModel.Callbacks {
         orderedScreenIds.addAll(collectWorkspaceScreens(populatedItems))
         workspace.removeAllWorkspaceScreens()
         workspace.bindScreens(orderedScreenIds)
+        workspace.post(workspace::moveToDefaultScreen)
         workspace.bindItems(populatedItems, false)
         workspace.bindItemsAdded(allItems.newAddedItems)
-        if (workspace.childCount > 1) {
-            workspace.snapToPage(1)
-        }
     }
 
     private fun populateItemPositions(launcherItems: List<LauncherItem>): List<LauncherItem> {
@@ -713,8 +710,8 @@ class TestActivity : BaseDraggingActivity(), LauncherModel.Callbacks {
 
         // Check this condition before handling isActionMain, as this will get reset.
         val shouldMoveToDefaultScreen = (alreadyOnHome && isInState(NORMAL) &&
-            AbstractFloatingView.getTopOpenView(this) == null)
-            && ((workspace.activeRoundedWidgetView?.isWidgetActivated ?: false).not())
+            AbstractFloatingView.getTopOpenView(this) == null) &&
+            ((workspace.activeRoundedWidgetView?.isWidgetActivated ?: false).not())
         val isActionMain = Intent.ACTION_MAIN == intent!!.action
         val internalStateHandled = InternalStateHandler
             .handleNewIntent(this, intent, isStarted)

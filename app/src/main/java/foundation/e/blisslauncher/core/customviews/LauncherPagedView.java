@@ -3,7 +3,6 @@ package foundation.e.blisslauncher.core.customviews;
 import static foundation.e.blisslauncher.core.utils.Constants.ITEM_TYPE_APPLICATION;
 import static foundation.e.blisslauncher.features.test.LauncherState.NORMAL;
 import static foundation.e.blisslauncher.features.test.anim.LauncherAnimUtils.SPRING_LOADED_TRANSITION_MS;
-import static foundation.e.blisslauncher.features.test.dragndrop.DragLayer.ALPHA_INDEX_OVERLAY;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -57,14 +56,11 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.jakewharton.rxbinding3.widget.RxTextView;
-
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Preferences;
@@ -88,7 +84,6 @@ import foundation.e.blisslauncher.core.utils.ListUtil;
 import foundation.e.blisslauncher.core.utils.PackageUserKey;
 import foundation.e.blisslauncher.features.folder.FolderIcon;
 import foundation.e.blisslauncher.features.launcher.Hotseat;
-import foundation.e.blisslauncher.features.launcher.LauncherActivity;
 import foundation.e.blisslauncher.features.launcher.SearchInputDisposableObserver;
 import foundation.e.blisslauncher.features.notification.FolderDotInfo;
 import foundation.e.blisslauncher.features.shortcuts.DeepShortcutManager;
@@ -134,7 +129,6 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -148,7 +142,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
@@ -157,7 +150,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     AutoCompleteAdapter.OnSuggestionClickListener {
 
     private static final String TAG = "LauncherPagedView";
-    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_PAGE = 1;
     private static final int SNAP_OFF_EMPTY_SCREEN_DURATION = 400;
     private static final int FADE_EMPTY_SCREEN_DURATION = 150;
 
@@ -296,7 +289,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     private void initWorkspace() {
-        mCurrentPage = DEFAULT_PAGE;
+        mCurrentPage = 0;
         setClipToPadding(false);
         setupLayoutTransition();
         //setWallpaperDimension();
@@ -362,12 +355,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
         // Remove the pages and clear the screen models
         removeFolderListeners();
-        removeViews(1, getChildCount() - 1);
+        removeAllViews();
         mScreenOrder.clear();
         mWorkspaceScreens.clear();
 
         // Ensure that the first page is always present
-        //bindAndInitFirstScreen(qsb);
+        bindAndInitFirstScreen(null);
 
         // Re-enable the layout transitions
         enableLayoutTransitions();
@@ -614,8 +607,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
             ));
 
         // divided by 2 because of left and right padding.
-        final float emptySpace = mLauncher.getDeviceProfile().getAvailableWidthPx() - 2 * Utilities
-            .pxFromDp(16, getContext()) - 4 *
+        final float emptySpace = mLauncher.getDeviceProfile().getAvailableWidthPx() - 4 *
             mLauncher.getDeviceProfile().getCellWidthPx();
         int padding = (int) (emptySpace / 10);
         widgetPage.findViewById(R.id.suggestedAppGrid)
@@ -769,17 +761,18 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         for (int id : widgetIds) {
             AppWidgetProviderInfo appWidgetInfo = mLauncher.mAppWidgetManager.getAppWidgetInfo(id);
             if (appWidgetInfo != null) {
-                RoundedWidgetView hostView =
-                    (RoundedWidgetView) mLauncher.getMAppWidgetHost().createView(
-                        mLauncher.getApplicationContext(), id,
-                        appWidgetInfo
-                    );
-                hostView.setAppWidget(id, appWidgetInfo);
                 mLauncher.getCompositeDisposable()
                     .add(DatabaseManager.getManager(mLauncher).getHeightOfWidget(id)
                         .subscribeOn(Schedulers.from(AppExecutors.getInstance().diskIO()))
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(height -> {
+                            RoundedWidgetView hostView =
+                                (RoundedWidgetView) mLauncher.getMAppWidgetHost().createView(
+                                    mLauncher.getApplicationContext(), id,
+                                    appWidgetInfo
+                                );
+                            hostView.setAppWidget(id, appWidgetInfo);
+                            addWidgetToContainer(hostView);
                             if (height != 0) {
                                 int minHeight = hostView.getAppWidgetInfo().minResizeHeight;
                                 int maxHeight =
@@ -788,7 +781,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                                 hostView.getLayoutParams().height =
                                     minHeight + (normalisedDifference * height);
                             }
-                            addWidgetToContainer(hostView);
                         }, Throwable::printStackTrace));
             }
         }
@@ -935,7 +927,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 }
                 int i = 0;
                 while (suggestedAppsGridLayout.getChildCount() < 4 && i < mUsageStats.size()) {
-                    ApplicationItem appItem = AppUtils.createAppItem(getContext(),
+                    ApplicationItem appItem = AppUtils.createAppItem(
+                        getContext(),
                         mUsageStats.get(i).getPackageName(),
                         new foundation.e.blisslauncher.core.utils.UserHandle()
                     );
@@ -1379,6 +1372,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 }
                 // Update the page indicator to reflect the removed page.
                 showPageIndicatorAtCurrentScroll();
+                handleWidgetPageTransition();
             }
         };
 
@@ -1856,6 +1850,18 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     @Override
+    protected void notifyPageSwitchListener(int prevPage) {
+        super.notifyPageSwitchListener(prevPage);
+        handleWidgetPageTransition();
+        Rect padding = mLauncher.getDeviceProfile().getWorkspacePadding();
+        if(getCurrentPage() == 0) {
+            setPadding(padding.left, padding.top, padding.right, 0);
+        } else {
+            setPadding(padding.left, padding.top, padding.right, padding.bottom);
+        }
+    }
+
+    @Override
     public int getExpectedHeight() {
         return getMeasuredHeight() <= 0 || !mIsLayoutValid
             ? mLauncher.getDeviceProfile().getHeightPx() : getMeasuredHeight();
@@ -2014,17 +2020,54 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
-
         // Update the page indicator progress.
         boolean isTransitioning =
             mIsSwitchingState || (getLayoutTransition() != null && getLayoutTransition()
                 .isRunning());
         if (!isTransitioning) {
             showPageIndicatorAtCurrentScroll();
+            int currentScrollX = getScrollX();
+            int firstPageScroll = getScrollForPage(1);
+            if (currentScrollX <= firstPageScroll) {
+                handleWidgetPageTransition(currentScrollX, firstPageScroll);
+            }
         }
 
         //updatePageAlphaValues();
         enableHwLayersOnVisiblePages();
+    }
+
+    private void handleWidgetPageTransition() {
+        handleWidgetPageTransition(getScrollX(), getScrollForPage(1));
+    }
+
+    private void handleWidgetPageTransition(int currentScrollX, int firstPageScroll) {
+        if(currentScrollX > firstPageScroll) {
+            currentScrollX = firstPageScroll;
+        }
+        float scroll = 1 - (float) currentScrollX / firstPageScroll;
+        float offset = 0f;
+
+        scroll = Math.max(scroll - offset, 0);
+        scroll = Math.min(1, scroll / (1 - offset));
+
+        float transX = getHotseat().getMeasuredWidth() * scroll;
+
+        if (mIsRtl) {
+            transX = -transX;
+        }
+        //mOverlayTranslation = transX;
+
+        // TODO(adamcohen): figure out a final effect here. We may need to recommend
+        // different effects based on device performance. On at least one relatively high-end
+        // device I've tried, translating the launcher causes things to get quite laggy.
+        float finalTransX = transX;
+        float finalScroll = scroll;
+        post(() -> {
+            getHotseat().setTranslationX(finalTransX);
+            getHotseat().changeBlurBounds(finalScroll, true);
+            getPageIndicator().setTranslationX(finalTransX);
+        });
     }
 
     public void showPageIndicatorAtCurrentScroll() {
@@ -3402,7 +3445,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (Float.compare(scroll, 1f) == 0) {
             mOverlayShown = true;
             // Not announcing the overlay page for accessibility since it announces itself.
-        } else if (Float.compare(scroll, 0f) == 0) {
+        }
+        else if (Float.compare(scroll, 0f) == 0) {
             if (Float.compare(mOverlayTranslation, 0f) != 0) {
                 // When arriving to 0 overscroll from non-zero overscroll, announce page for
                 // accessibility since default announcements were disabled while in overscroll
@@ -3432,8 +3476,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         // TODO(adamcohen): figure out a final effect here. We may need to recommend
         // different effects based on device performance. On at least one relatively high-end
         // device I've tried, translating the launcher causes things to get quite laggy.
-        mLauncher.getDragLayer().setTranslationX(transX);
-        mLauncher.getDragLayer().getAlphaProperty(ALPHA_INDEX_OVERLAY).setValue(alpha);
+        getHotseat().setTranslationX(transX);
+        getHotseat().getAlphaProperty(0).setValue(alpha);
     }
 
     protected void announcePageForAccessibility() {

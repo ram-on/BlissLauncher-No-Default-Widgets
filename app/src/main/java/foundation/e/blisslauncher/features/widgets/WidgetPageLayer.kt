@@ -53,7 +53,7 @@ class WidgetPageLayer @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         fullBlurDrawable?.alpha = blurAlpha
-        fullBlurDrawable?.draw(canvas)
+        // fullBlurDrawable?.draw(canvas)
         super.onDraw(canvas)
     }
 
