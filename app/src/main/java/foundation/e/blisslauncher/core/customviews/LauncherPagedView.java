@@ -97,6 +97,7 @@ import foundation.e.blisslauncher.features.test.Alarm;
 import foundation.e.blisslauncher.features.test.CellLayout;
 import foundation.e.blisslauncher.features.test.IconTextView;
 import foundation.e.blisslauncher.features.test.LauncherItemMatcher;
+import foundation.e.blisslauncher.features.test.LauncherRootView;
 import foundation.e.blisslauncher.features.test.LauncherState;
 import foundation.e.blisslauncher.features.test.LauncherStateManager;
 import foundation.e.blisslauncher.features.test.OnAlarmListener;
@@ -290,7 +291,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     private void initWorkspace() {
         mCurrentPage = 0;
-        setClipChildren(true);
         setClipToPadding(false);
         setupLayoutTransition();
         //setWallpaperDimension();
@@ -788,7 +788,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     private void addWidgetToContainer(RoundedWidgetView widgetView) {
-        widgetView.setPadding(0, 0, 0, 0);
+        int padding = getResources().getDimensionPixelSize(R.dimen.dp_8);
+        widgetView.setPadding(0, padding, 0, padding);
         widgetContainer.addView(widgetView);
     }
 
@@ -2055,14 +2056,13 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (mIsRtl) {
             transX = -transX;
         }
-        //mOverlayTranslation = transX;
-
         // TODO(adamcohen): figure out a final effect here. We may need to recommend
         // different effects based on device performance. On at least one relatively high-end
         // device I've tried, translating the launcher causes things to get quite laggy.
         float finalTransX = transX;
         float finalScroll = scroll;
         post(() -> {
+            ((LauncherRootView)getParent().getParent()).changeBlurBounds(finalScroll, true);
             getHotseat().setTranslationX(finalTransX);
             getHotseat().changeBlurBounds(finalScroll, true);
             getPageIndicator().setTranslationX(finalTransX);

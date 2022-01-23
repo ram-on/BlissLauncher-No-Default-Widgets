@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
-import android.util.Log
 import foundation.e.blisslauncher.core.blur.BlurWallpaperProvider
 import foundation.e.blisslauncher.core.blur.ShaderBlurDrawable
 import foundation.e.blisslauncher.core.customviews.Insettable
@@ -56,21 +55,6 @@ class WidgetPageLayer @JvmOverloads constructor(
         fullBlurDrawable?.alpha = blurAlpha
         // fullBlurDrawable?.draw(canvas)
         super.onDraw(canvas)
-    }
-
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        val width = MeasureSpec.getSize(widthMeasureSpec)
-        val height = MeasureSpec.getSize(heightMeasureSpec)
-        setMeasuredDimension(width, height)
-        // measureChildren(widthMeasureSpec, heightMeasureSpec)
-        // Log.i("WidgetPageLayer", "onMeasure: "+MeasureSpec.getMode(widthMeasureSpec)+" "+MeasureSpec.getMode(heightMeasureSpec))
-        Log.i(
-            "WidgetPageLayer",
-            "onMeasure: " + MeasureSpec.getSize(widthMeasureSpec) + " " + MeasureSpec.getSize(
-                heightMeasureSpec
-            )
-        )
     }
 
     override fun onLayout(

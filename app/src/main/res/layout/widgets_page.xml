@@ -12,13 +12,15 @@
         android:layout_height="match_parent"
         android:fillViewport="true"
         android:id="@+id/widgets_scroll_container"
+        android:overScrollMode="never"
         android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="@dimen/dp_16">
 
             <include layout="@layout/layout_search_suggestion" />
 
