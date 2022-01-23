@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.ArrayMap
 import android.util.AttributeSet
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -193,6 +194,14 @@ open class CellLayout @JvmOverloads constructor(
                 measureChild(child)
             }
         }
+    }
+
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        Log.d(
+            TAG,
+            "onLayout() called with: changed = $changed, left = $left, top = $top, right = $right, bottom = $bottom, ${Utilities.dpiFromPx(60, context.resources.displayMetrics)}"
+        )
+        super.onLayout(changed, left, top, right, bottom)
     }
 
     fun getContainerType() = mContainerType

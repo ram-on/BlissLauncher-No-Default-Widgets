@@ -497,6 +497,7 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
         int myHeightSpec = MeasureSpec.makeMeasureSpec(
             heightSize - mInsets.top - mInsets.bottom, MeasureSpec.EXACTLY);
 
+        Log.i("WidgetPageLayer", "sending heigh:  "+(heightSize - mInsets.top - mInsets.bottom));
         // measureChildren takes accounts for content padding, we only need to care about extra
         // space due to insets.
         measureChildren(myWidthSpec, myHeightSpec);

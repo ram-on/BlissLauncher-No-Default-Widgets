@@ -290,6 +290,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
 
     private void initWorkspace() {
         mCurrentPage = 0;
+        setClipChildren(true);
         setClipToPadding(false);
         setupLayoutTransition();
         //setWallpaperDimension();
@@ -331,12 +332,12 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         VariantDeviceProfile grid = mLauncher.getDeviceProfile();
         mMaxDistanceForFolderCreation = (0.35f * grid.getIconSizePx());
         Rect padding = grid.getWorkspacePadding();
-        setPadding(padding.left, padding.top, padding.right, padding.bottom);
+        setPadding(padding.left, padding.top, padding.right, 0);
         int paddingLeftRight = grid.getCellLayoutPaddingLeftRightPx();
         int paddingBottom = grid.getCellLayoutBottomPaddingPx();
         for (int i = mWorkspaceScreens.size() - 1; i >= 0; i--) {
             mWorkspaceScreens.valueAt(i)
-                .setPadding(paddingLeftRight, 0, paddingLeftRight, paddingBottom);
+                .setPadding(paddingLeftRight, 0, paddingLeftRight, paddingBottom + padding.bottom);
         }
     }
 
@@ -1045,45 +1046,48 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     public void hideWidgetResizeContainer() {
-        RelativeLayout widgetResizeContainer = widgetPage.findViewById(
-            R.id.widget_resizer_container);
-        if (widgetResizeContainer.getVisibility() == VISIBLE) {
-            if (currentAnimator != null) {
-                currentAnimator.cancel();
+        if(widgetPage != null) {
+            RelativeLayout widgetResizeContainer = widgetPage.findViewById(
+                R.id.widget_resizer_container);
+            if (widgetResizeContainer.getVisibility() == VISIBLE) {
+                if (currentAnimator != null) {
+                    currentAnimator.cancel();
+                }
+                AnimatorSet set = new AnimatorSet();
+                set.play(ObjectAnimator.ofFloat(widgetResizeContainer, View.Y,
+                    mLauncher.getDeviceProfile().getAvailableHeightPx()
+                ));
+                set.setDuration(200);
+                set.setInterpolator(new LinearInterpolator());
+                set.addListener(new AnimatorListenerAdapter() {
+                                    @Override
+                                    public void onAnimationStart(Animator animation) {
+                                        super.onAnimationStart(animation);
+                                        ((SeekBar) widgetPage.findViewById(
+                                            R.id.widget_resizer_seekbar)).setOnSeekBarChangeListener(null);
+                                    }
+
+                                    @Override
+                                    public void onAnimationCancel(Animator animation) {
+                                        super.onAnimationCancel(animation);
+                                        currentAnimator = null;
+                                        widgetResizeContainer.setVisibility(VISIBLE);
+                                    }
+
+                                    @Override
+                                    public void onAnimationEnd(Animator animation) {
+                                        super.onAnimationEnd(animation);
+                                        currentAnimator = null;
+                                        widgetResizeContainer.setVisibility(GONE);
+                                        activeRoundedWidgetView.removeBorder();
+                                    }
+                                }
+                );
+                set.start();
+                currentAnimator = set;
             }
-            AnimatorSet set = new AnimatorSet();
-            set.play(ObjectAnimator.ofFloat(widgetResizeContainer, View.Y,
-                mLauncher.getDeviceProfile().getAvailableHeightPx()
-            ));
-            set.setDuration(200);
-            set.setInterpolator(new LinearInterpolator());
-            set.addListener(new AnimatorListenerAdapter() {
-                                @Override
-                                public void onAnimationStart(Animator animation) {
-                                    super.onAnimationStart(animation);
-                                    ((SeekBar) widgetPage.findViewById(
-                                        R.id.widget_resizer_seekbar)).setOnSeekBarChangeListener(null);
-                                }
-
-                                @Override
-                                public void onAnimationCancel(Animator animation) {
-                                    super.onAnimationCancel(animation);
-                                    currentAnimator = null;
-                                    widgetResizeContainer.setVisibility(VISIBLE);
-                                }
-
-                                @Override
-                                public void onAnimationEnd(Animator animation) {
-                                    super.onAnimationEnd(animation);
-                                    currentAnimator = null;
-                                    widgetResizeContainer.setVisibility(GONE);
-                                    activeRoundedWidgetView.removeBorder();
-                                }
-                            }
-            );
-            set.start();
-            currentAnimator = set;
         }
+
     }
 
     private int[] findSpaceForItem(IntegerArray addedWorkspaceScreensFinal) {
@@ -1232,7 +1236,8 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         CellLayout newScreen = (CellLayout) LayoutInflater.from(getContext()).inflate(
             R.layout.workspace_screen, this, false /* attachToRoot */);
         int paddingLeftRight = mLauncher.getDeviceProfile().getCellLayoutPaddingLeftRightPx();
-        int paddingBottom = mLauncher.getDeviceProfile().getCellLayoutBottomPaddingPx();
+        int paddingBottom = mLauncher.getDeviceProfile().getCellLayoutBottomPaddingPx() + mLauncher
+            .getDeviceProfile().getWorkspacePadding().bottom;
         newScreen.setPadding(paddingLeftRight, 0, paddingLeftRight, paddingBottom);
         newScreen.setRowCount(mLauncher.getDeviceProfile().getInv().getNumRows());
         newScreen.setColumnCount(mLauncher.getDeviceProfile().getInv().getNumColumns());
@@ -1853,12 +1858,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     protected void notifyPageSwitchListener(int prevPage) {
         super.notifyPageSwitchListener(prevPage);
         handleWidgetPageTransition();
-        Rect padding = mLauncher.getDeviceProfile().getWorkspacePadding();
-        if(getCurrentPage() == 0) {
-            setPadding(padding.left, padding.top, padding.right, 0);
-        } else {
-            setPadding(padding.left, padding.top, padding.right, padding.bottom);
-        }
     }
 
     @Override
@@ -2042,7 +2041,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     private void handleWidgetPageTransition(int currentScrollX, int firstPageScroll) {
-        if(currentScrollX > firstPageScroll) {
+        if (currentScrollX > firstPageScroll) {
             currentScrollX = firstPageScroll;
         }
         float scroll = 1 - (float) currentScrollX / firstPageScroll;
@@ -3445,8 +3444,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         if (Float.compare(scroll, 1f) == 0) {
             mOverlayShown = true;
             // Not announcing the overlay page for accessibility since it announces itself.
-        }
-        else if (Float.compare(scroll, 0f) == 0) {
+        } else if (Float.compare(scroll, 0f) == 0) {
             if (Float.compare(mOverlayTranslation, 0f) != 0) {
                 // When arriving to 0 overscroll from non-zero overscroll, announce page for
                 // accessibility since default announcements were disabled while in overscroll

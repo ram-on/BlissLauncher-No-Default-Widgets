@@ -34,6 +34,7 @@ import foundation.e.blisslauncher.features.notification.DotRenderer
 import foundation.e.blisslauncher.features.test.uninstall.UninstallButtonRenderer
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 class VariantDeviceProfile(
     val context: Context,
@@ -63,7 +64,7 @@ class VariantDeviceProfile(
     // Workspace
     val desiredWorkspaceLeftRightMarginPx: Int
     val cellLayoutPaddingLeftRightPx: Int
-    val cellLayoutBottomPaddingPx: Int
+    var cellLayoutBottomPaddingPx: Int
     val edgeMarginPx: Int
     val defaultWidgetPadding: Rect
     val defaultPageSpacingPx: Int
@@ -77,7 +78,7 @@ class VariantDeviceProfile(
     var cellWidthPx = 0
     var cellHeightPx = 0
     var workspaceCellPaddingXPx: Int
-    var workspacePageIndicatorHeight: Int
+    val workspacePageIndicatorHeight: Int
 
     // Folder
     var folderIconSizePx = 0
@@ -210,7 +211,10 @@ class VariantDeviceProfile(
             res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_bottom_padding)
         hotseatBarSidePaddingPx =
             res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_side_padding)
-        hotseatBarSizePx = ResourceUtils.pxFromDp(inv.iconSize, dm) + (res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_extra_vertical_size) +
+        hotseatBarSizePx = ResourceUtils.pxFromDp(
+            inv.iconSize,
+            dm
+        ) + (res.getDimensionPixelSize(R.dimen.dynamic_grid_hotseat_extra_vertical_size) +
             hotseatBarTopPaddingPx + hotseatBarBottomPaddingPx)
         workspacePageIndicatorHeight =
             res.getDimensionPixelSize(R.dimen.dotSize) * 2 + res.getDimensionPixelSize(R.dimen.dotPadding) * 2
@@ -408,7 +412,7 @@ class VariantDeviceProfile(
         }
 
     /**
-     * Updates [.workspacePadding] as a result of any internal value change to reflect the
+     * Updates [workspacePadding] as a result of any internal value change to reflect the
      * new workspace padding
      */
     private fun updateWorkspacePadding() {
@@ -447,11 +451,12 @@ class VariantDeviceProfile(
             val workspaceCellWidth = widthPx.toFloat() / inv.numColumns
             val hotseatCellWidth = widthPx.toFloat() / inv.numHotseatIcons
             val hotseatAdjustment =
-                Math.round((workspaceCellWidth - hotseatCellWidth) / 2)
+                ((workspaceCellWidth - hotseatCellWidth) / 2).roundToInt()
 
-            mHotseatPadding[hotseatAdjustment + workspacePadding.left + cellLayoutPaddingLeftRightPx, hotseatBarTopPaddingPx, hotseatAdjustment + workspacePadding.right + cellLayoutPaddingLeftRightPx] =
+            mHotseatPadding[hotseatAdjustment + workspacePadding.left + cellLayoutPaddingLeftRightPx,
+                hotseatBarTopPaddingPx,
+                hotseatAdjustment + workspacePadding.right + cellLayoutPaddingLeftRightPx] =
                 hotseatBarBottomPaddingPx + insets.bottom + cellLayoutBottomPaddingPx
-            Log.d(TAG, "Hotseat padding: $mHotseatPadding, insets: $insets")
             return mHotseatPadding
         } // Folders should only appear below the drop target bar and above the hotseat// Folders should only appear right of the drop target bar and left of the hotseat
 
