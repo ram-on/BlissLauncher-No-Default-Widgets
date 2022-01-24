@@ -2042,9 +2042,10 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     private void handleWidgetPageTransition(int currentScrollX, int firstPageScroll) {
-        if (currentScrollX > firstPageScroll) {
+        if (currentScrollX >= firstPageScroll) {
             currentScrollX = firstPageScroll;
         }
+        boolean reset = currentScrollX == firstPageScroll;
         float scroll = 1 - (float) currentScrollX / firstPageScroll;
         float offset = 0f;
 
@@ -2061,10 +2062,11 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         // device I've tried, translating the launcher causes things to get quite laggy.
         float finalTransX = transX;
         float finalScroll = scroll;
+        boolean finalReset = reset;
         post(() -> {
-            ((LauncherRootView)getParent().getParent()).changeBlurBounds(finalScroll, true);
+            ((LauncherRootView)getParent().getParent()).changeBlurBounds(finalScroll, finalReset);
             getHotseat().setTranslationX(finalTransX);
-            getHotseat().changeBlurBounds(finalScroll, true);
+            getHotseat().changeBlurBounds(finalScroll, finalReset);
             getPageIndicator().setTranslationX(finalTransX);
         });
     }

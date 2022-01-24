@@ -89,6 +89,7 @@ class ShaderBlurDrawable internal constructor(private val blurWallpaperProvider:
     override fun setAlpha(alpha: Int) {
         blurAlpha = alpha
         blurPaint.alpha = alpha
+        invalidateSelf()
     }
 
     override fun getAlpha(): Int {

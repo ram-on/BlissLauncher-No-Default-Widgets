@@ -12,9 +12,10 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.IntProperty;
+import android.util.Log;
+import android.util.Property;
 import android.view.View;
 import android.view.ViewDebug;
 import android.view.WindowInsets;
@@ -23,6 +24,7 @@ import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.blur.BlurWallpaperProvider;
 import foundation.e.blisslauncher.core.blur.ShaderBlurDrawable;
 import foundation.e.blisslauncher.core.customviews.InsettableFrameLayout;
+import foundation.e.blisslauncher.core.executors.MainThreadExecutor;
 import foundation.e.blisslauncher.features.test.anim.Interpolators;
 import java.util.Collections;
 import java.util.List;
@@ -49,13 +51,11 @@ public class LauncherRootView extends InsettableFrameLayout implements
 
     private BlurWallpaperProvider blurWallpaperProvider;
     private ShaderBlurDrawable fullBlurDrawable;
-    private int blurAlpha = 255;
+    MainThreadExecutor mainThreadExecutor = new MainThreadExecutor();
     private Drawable.Callback blurDrawableCallback = new Drawable.Callback() {
         @Override
         public void invalidateDrawable(@NonNull Drawable who) {
-            new Handler(Looper.getMainLooper()).post(
-                () -> invalidate()
-            );
+            mainThreadExecutor.execute(() -> invalidate());
         }
 
         @Override
@@ -72,6 +72,29 @@ public class LauncherRootView extends InsettableFrameLayout implements
 
         }
     };
+
+    /**
+     * A Property wrapper around the blur alpha functionality.
+     *
+     * Note: Blur alpha values varies between 0 to 255.
+     */
+    public static final Property<LauncherRootView, Integer> BLUR_ALPHA =
+        new IntProperty<LauncherRootView>("blur_alpha") {
+            @Override
+            public Integer get(LauncherRootView object) {
+                Log.d("LauncherRootView", "get() called with: object = [" + object + "]");
+                return object.getBlurAlpha();
+            }
+
+            @Override
+            public void setValue(LauncherRootView object, int value) {
+                Log.d(
+                    "LauncherRootView",
+                    "setValue() called with: object = [" + object + "], value = [" + value + "]"
+                );
+                object.setBlurAlpha(value);
+            }
+        };
 
     public LauncherRootView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -107,7 +130,6 @@ public class LauncherRootView extends InsettableFrameLayout implements
     @Override
     protected void onDraw(Canvas canvas) {
         if (fullBlurDrawable != null) {
-            fullBlurDrawable.setAlpha(blurAlpha);
             fullBlurDrawable.draw(canvas);
         }
         super.onDraw(canvas);
@@ -278,14 +300,28 @@ public class LauncherRootView extends InsettableFrameLayout implements
     /**
      * We only need to change left bound for hotseat blur layer.
      */
-    public void changeBlurBounds(float factor, boolean isLeftToRight) {
-        if(fullBlurDrawable != null) {
+    public void changeBlurBounds(float factor, boolean isReset) {
+        if (fullBlurDrawable != null) {
             float alpha = Interpolators.DEACCEL_1_5.getInterpolation(factor);
-            fullBlurDrawable.setBounds(getLeft(), getTop(), (int) ((getRight() - getLeft()) * factor), getBottom());
-            blurAlpha = (int) (255 * alpha);
-            // fullBlurDrawable.setAlpha();
-            fullBlurDrawable.invalidateSelf();
+            if(isReset) {
+                factor = 1;
+            }
+            fullBlurDrawable.setBounds(getLeft(),
+                getTop(),
+                (int) ((getRight() - getLeft()) * factor),
+                getBottom()
+            );
+            setBlurAlpha((int) (255 * alpha));
         }
+    }
+
+    public void setBlurAlpha(int alpha) {
+        Log.d("LauncherRootView", "setBlurAlpha() called with: alpha = [" + alpha + "]");
+        fullBlurDrawable.setAlpha(alpha);
+    }
+
+    public int getBlurAlpha() {
+        return fullBlurDrawable.getAlpha();
     }
 
     public interface WindowStateListener {

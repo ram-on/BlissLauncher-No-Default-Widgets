@@ -33,6 +33,7 @@ import foundation.e.blisslauncher.features.folder.FolderViewPager
 import foundation.e.blisslauncher.features.test.Alarm
 import foundation.e.blisslauncher.features.test.BaseDragLayer
 import foundation.e.blisslauncher.features.test.CellLayout
+import foundation.e.blisslauncher.features.test.LauncherRootView
 import foundation.e.blisslauncher.features.test.OnAlarmListener
 import foundation.e.blisslauncher.features.test.TestActivity
 import foundation.e.blisslauncher.features.test.VariantDeviceProfile
@@ -111,6 +112,7 @@ class Folder @JvmOverloads constructor(
             InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS.inv() or
             InputType.TYPE_TEXT_FLAG_CAP_WORDS
         mFolderTitleInput.forceDisableSuggestions(true)
+        mFolderTitleInput.clearFocus()
     }
 
     fun startDrag(v: View, options: DragOptions): Boolean {
@@ -177,6 +179,7 @@ class Folder @JvmOverloads constructor(
                     1f
                 )
             )
+            .with(ObjectAnimator.ofInt(launcher.rootView, LauncherRootView.BLUR_ALPHA, 0))
         a.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
                 closeComplete(true)
@@ -485,6 +488,7 @@ class Folder @JvmOverloads constructor(
         // dropping. One resulting issue is that replaceFolderWithFinalItem() can be called twice.
         mDeleteFolderOnDropCompleted = false
         // centerAboutIcon()
+
         val anim: AnimatorSet = FolderAnimationManager(this, true /* isOpening */).animator
         anim.play(ObjectAnimator.ofFloat(launcher.getLauncherPagedView(), View.ALPHA, 0f))
             .with(ObjectAnimator.ofFloat(launcher.hotseat, View.ALPHA, 0f))
@@ -495,6 +499,7 @@ class Folder @JvmOverloads constructor(
                     0f
                 )
             )
+            .with(ObjectAnimator.ofInt(launcher.rootView, LauncherRootView.BLUR_ALPHA, 0, 255))
         anim.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationStart(animation: Animator) {
             }
@@ -504,12 +509,14 @@ class Folder @JvmOverloads constructor(
                 launcher.getLauncherPagedView().alpha = 0f
                 launcher.hotseat.alpha = 0f
                 launcher.getLauncherPagedView().pageIndicator.alpha = 0f
+                launcher.rootView.blurAlpha = 255
                 mContent.setFocusOnFirstChild()
             }
 
             override fun onAnimationCancel(animation: Animator?) {
                 launcher.getLauncherPagedView().alpha = 1f
                 launcher.hotseat.alpha = 1f
+                launcher.rootView.blurAlpha = 0
                 launcher.getLauncherPagedView().pageIndicator.alpha = 1f
             }
         })

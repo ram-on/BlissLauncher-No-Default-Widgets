@@ -144,7 +144,6 @@ public class Hotseat extends CellLayout implements Insettable, BlurWallpaperProv
     @Override
     protected void onDraw(@Nullable Canvas canvas) {
         if (fullBlurDrawable != null) {
-            fullBlurDrawable.setAlpha(blurAlpha);
             fullBlurDrawable.draw(canvas);
         }
         super.onDraw(canvas);
@@ -198,8 +197,11 @@ public class Hotseat extends CellLayout implements Insettable, BlurWallpaperProv
     /**
      * We only need to change left bound for hotseat blur layer.
      */
-    public void changeBlurBounds(float factor, boolean isLeftToRight) {
+    public void changeBlurBounds(float factor, boolean reset) {
         if(fullBlurDrawable != null) {
+            if(reset) {
+                factor = 0f;
+            }
             fullBlurDrawable.setBounds((int) ((getRight() - getLeft()) * factor), getTop(), getRight(), getBottom());
             fullBlurDrawable.invalidateSelf();
         }
