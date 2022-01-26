@@ -194,7 +194,6 @@ public class LauncherActivity extends AppCompatActivity implements
     private CountDownTimer mWobblingCountDownTimer;
     private List<BlissFrameLayout> mCalendarIcons = new ArrayList<>();
     private TimeChangeBroadcastReceiver timeChangedReceiver;
-    private boolean isUiDone = false;
     private Set<String> mAppsWithNotifications = new HashSet<>();
 
     private View mLauncherView;
@@ -975,7 +974,6 @@ public class LauncherActivity extends AppCompatActivity implements
         if (isWobbling)
             handleWobbling(false);
         createUI(launcherItems);
-        isUiDone = true;
         createPageChangeListener();
         createFolderTitleListener();
         createDragListener();
