@@ -309,10 +309,6 @@ public class LauncherActivity extends AppCompatActivity implements
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, STORAGE_PERMISSION_REQUEST_CODE);
         }
 
-        // Start NotificationService to add count badge to Icons
-        Intent notificationServiceIntent = new Intent(this, NotificationService.class);
-        startService(notificationServiceIntent);
-
         createOrUpdateIconGrid();
     }
 
