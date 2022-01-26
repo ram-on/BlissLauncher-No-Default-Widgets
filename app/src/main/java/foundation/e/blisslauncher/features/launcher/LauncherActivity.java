@@ -421,6 +421,13 @@ public class LauncherActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
+
+        if (WeatherUtils.isWeatherServiceAvailable(
+                this)) {
+            startService(new Intent(this, WeatherSourceListenerService.class));
+            startService(new Intent(this, DeviceStatusService.class));
+        }
+
         if (mWeatherPanel != null) {
             updateWeatherPanel();
         }
@@ -1406,12 +1413,6 @@ public class LauncherActivity extends AppCompatActivity implements
             }
         });
         updateWeatherPanel();
-
-        if (WeatherUtils.isWeatherServiceAvailable(
-                this)) {
-            startService(new Intent(this, WeatherSourceListenerService.class));
-            startService(new Intent(this, DeviceStatusService.class));
-        }
 
         LocalBroadcastManager.getInstance(this).registerReceiver(mWeatherReceiver, new IntentFilter(
                 WeatherUpdateService.ACTION_UPDATE_FINISHED));
