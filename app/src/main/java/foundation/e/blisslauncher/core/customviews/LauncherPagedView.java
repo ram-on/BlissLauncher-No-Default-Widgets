@@ -56,11 +56,14 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.jakewharton.rxbinding3.widget.RxTextView;
+
 import foundation.e.blisslauncher.BuildConfig;
 import foundation.e.blisslauncher.R;
 import foundation.e.blisslauncher.core.Preferences;
@@ -130,6 +133,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -143,6 +147,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+
 import org.jetbrains.annotations.NotNull;
 
 public class LauncherPagedView extends PagedView<PageIndicatorDots> implements View.OnTouchListener,
@@ -1047,7 +1052,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
     }
 
     public void hideWidgetResizeContainer() {
-        if(widgetPage != null) {
+        if (widgetPage != null) {
             RelativeLayout widgetResizeContainer = widgetPage.findViewById(
                 R.id.widget_resizer_container);
             if (widgetResizeContainer.getVisibility() == VISIBLE) {
@@ -1088,7 +1093,6 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
                 currentAnimator = set;
             }
         }
-
     }
 
     private int[] findSpaceForItem(IntegerArray addedWorkspaceScreensFinal) {
@@ -2064,7 +2068,7 @@ public class LauncherPagedView extends PagedView<PageIndicatorDots> implements V
         float finalScroll = scroll;
         boolean finalReset = reset;
         post(() -> {
-            ((LauncherRootView)getParent().getParent()).changeBlurBounds(finalScroll, finalReset);
+            ((LauncherRootView) getParent().getParent()).setBlurAlpha((int) (finalScroll * 255));
             getHotseat().setTranslationX(finalTransX);
             getHotseat().changeBlurBounds(finalScroll, finalReset);
             getPageIndicator().setTranslationX(finalTransX);
