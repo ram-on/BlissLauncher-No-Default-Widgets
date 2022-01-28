@@ -22,7 +22,7 @@ android {
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
-        renderscriptTargetApi 28
+        renderscriptTargetApi 31
         renderscriptSupportModeEnabled true
     }
     buildTypes {

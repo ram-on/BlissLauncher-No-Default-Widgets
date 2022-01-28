@@ -7,13 +7,13 @@ import com.hoko.blur.task.AsyncBlurTask
 
 class BlurWallpaperFilter(private val context: Context) : WallpaperFilter {
 
-    private var blurRadius = 8
+    private var blurRadius = 4
 
     override fun apply(wallpaper: Bitmap): WallpaperFilter.ApplyTask {
         return WallpaperFilter.ApplyTask.create { emitter ->
             HokoBlur.with(context)
-                .scheme(HokoBlur.SCHEME_NATIVE)
-                .mode(HokoBlur.MODE_STACK)
+                .scheme(HokoBlur.SCHEME_RENDER_SCRIPT)
+                .mode(HokoBlur.MODE_BOX)
                 .radius(blurRadius)
                 .sampleFactor(8f)
                 .forceCopy(false)
