@@ -95,6 +95,7 @@ import foundation.e.blisslauncher.core.Utilities;
 import foundation.e.blisslauncher.core.blur.BlurWallpaperProvider;
 import foundation.e.blisslauncher.core.broadcast.ManagedProfileBroadcastReceiver;
 import foundation.e.blisslauncher.core.broadcast.TimeChangeBroadcastReceiver;
+import foundation.e.blisslauncher.core.broadcast.UnlockReceiver;
 import foundation.e.blisslauncher.core.broadcast.WallpaperChangeReceiver;
 import foundation.e.blisslauncher.core.customviews.BlissDragShadowBuilder;
 import foundation.e.blisslauncher.core.customviews.BlissFrameLayout;
@@ -135,12 +136,9 @@ import foundation.e.blisslauncher.features.suggestions.SearchSuggestionUtil;
 import foundation.e.blisslauncher.features.suggestions.SuggestionProvider;
 import foundation.e.blisslauncher.features.suggestions.SuggestionsResult;
 import foundation.e.blisslauncher.features.usagestats.AppUsageStats;
-import foundation.e.blisslauncher.features.weather.DeviceStatusService;
 import foundation.e.blisslauncher.features.weather.ForecastBuilder;
 import foundation.e.blisslauncher.features.weather.WeatherPreferences;
-import foundation.e.blisslauncher.features.weather.WeatherSourceListenerService;
 import foundation.e.blisslauncher.features.weather.WeatherUpdateService;
-import foundation.e.blisslauncher.features.weather.WeatherUtils;
 import foundation.e.blisslauncher.features.widgets.WidgetManager;
 import foundation.e.blisslauncher.features.widgets.WidgetViewBuilder;
 import foundation.e.blisslauncher.features.widgets.WidgetsActivity;
@@ -309,6 +307,10 @@ public class LauncherActivity extends AppCompatActivity implements
         }
 
         createOrUpdateIconGrid();
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_USER_PRESENT);
+        registerReceiver(new UnlockReceiver(), filter);
     }
 
     private void setupViews() {
@@ -421,12 +423,6 @@ public class LauncherActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-
-        if (WeatherUtils.isWeatherServiceAvailable(
-                this)) {
-            startService(new Intent(this, WeatherSourceListenerService.class));
-            startService(new Intent(this, DeviceStatusService.class));
-        }
 
         if (mWeatherPanel != null) {
             updateWeatherPanel();
@@ -1428,15 +1424,10 @@ public class LauncherActivity extends AppCompatActivity implements
                         && Preferences.getEnableLocation(this)) {
                     showLocationEnableDialog();
                     Preferences.setEnableLocation(this);
-                } else {
-                    startService(new Intent(this, WeatherUpdateService.class)
-                            .setAction(WeatherUpdateService.ACTION_FORCE_UPDATE));
                 }
             }
-        } else {
-            startService(new Intent(this, WeatherUpdateService.class)
-                    .setAction(WeatherUpdateService.ACTION_FORCE_UPDATE));
         }
+
         // [[END]]
 
         int[] widgetIds = mAppWidgetHost.getAppWidgetIds();
