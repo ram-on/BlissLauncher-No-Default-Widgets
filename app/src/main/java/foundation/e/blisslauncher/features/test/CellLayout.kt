@@ -794,7 +794,7 @@ open class CellLayout @JvmOverloads constructor(
         minSpanY: Int,
         spanX: Int,
         spanY: Int,
-        dragView: View,
+        dragView: View?,
         result: IntArray,
         resultSpan: IntArray?,
         mode: Int
@@ -817,7 +817,7 @@ open class CellLayout @JvmOverloads constructor(
         // committing anything or animating anything as we just want to determine if a solution
         // exists
         if (mode == MODE_DRAG_OVER || mode == MODE_ON_DROP || mode == MODE_ON_DROP_EXTERNAL) {
-            val parent = (dragView.parent as ViewGroup?)
+            val parent = (dragView?.parent as ViewGroup?)
             parent?.removeView(dragView)
 
             if (childCount == mCountX * mCountY) {
@@ -832,7 +832,7 @@ open class CellLayout @JvmOverloads constructor(
                 result[1] = index / mCountX
             }
 
-            val genericLp: ViewGroup.LayoutParams = dragView.layoutParams
+            val genericLp: ViewGroup.LayoutParams? = dragView?.layoutParams
             val rowSpec = spec(UNDEFINED)
             val colSpec = spec(UNDEFINED)
             val lp: LayoutParams
@@ -847,15 +847,15 @@ open class CellLayout @JvmOverloads constructor(
 
             // Get the canonical child id to uniquely represent this view in this screen
 
-            val childId: Int = launcher.getViewIdForItem(dragView.tag as LauncherItem)
+            val childId: Int = launcher.getViewIdForItem(dragView?.tag as LauncherItem)
             dragView.apply {
                 if (this is IconTextView) setTextVisibility(mContainerType != HOTSEAT)
             }
-            addViewToCellLayout(dragView, index, childId, lp, true)
+            addViewToCellLayout(dragView?, index, childId, lp, true)
 
             // Update item info after reordering so that we always save correct state in database.
             // TODO: May optimize this
-            val item: LauncherItem = dragView.tag as LauncherItem
+            val item: LauncherItem? = dragView?.tag as LauncherItem
             item.container =
                 if (mContainerType == HOTSEAT) Constants.CONTAINER_HOTSEAT else Constants.CONTAINER_DESKTOP
             item.cell = index
