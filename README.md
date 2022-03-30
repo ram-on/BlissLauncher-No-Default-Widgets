@@ -5,7 +5,24 @@
 This fork removes the Search & Suggested Apps widget and Weather Panel widgets.  Additionally this fork give you the freedom
 to enable or disable any of the above widgets.
 
-## Screenshots 
+
+## Screenshots
+
+Screenshot without the Search & Suggested Apps widget and Weather Panel widgets:
+
+<img src="https://i.imgur.com/Cbyf3WJ.png" alt="No Widgets" height="700px"/>
+
+Screenshot with some custom widgets (added via the "Edit" button):
+
+<img src="https://i.imgur.com/yFmY5Kg.png" alt="Custom Widgets" height="700px"/>
+
+Screenshot with the Search & Suggested Apps widget enabled (refer to [here](#enable--disable-default-widgets)):
+
+<img src="https://i.imgur.com/FTiAi0w.png" alt="Search & Suggested Apps Widget" height="700px"/>
+
+Screenshot with the Weather Panel widget enabled (refer to [here](#enable--disable-default-widgets)):
+
+<img src="https://i.imgur.com/TvPegT0.png" alt="Weather Panel Widget" height="700px"/>
 
 
 ## Enable / Disable Default Widgets
