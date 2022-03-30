@@ -5,6 +5,10 @@
 This fork removes the Search & Suggested Apps widget and Weather Panel widgets.  Additionally this fork give you the freedom
 to enable or disable any of the above widgets.
 
+## Download
+
+Download APK:  https://github.com/ram-on/BlissLauncher-No-Default-Widgets/releases/download/v1.3.1/BlissLauncher-No-Default-Widgets-AndroidR-v1.3.2.apk
+
 
 ## Screenshots
 
