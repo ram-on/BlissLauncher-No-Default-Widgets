@@ -161,6 +161,11 @@ public class LauncherActivity extends AppCompatActivity implements
         AutoCompleteAdapter.OnSuggestionClickListener,
         OnSwipeDownListener {
 
+    /** True to disable the search and app suggestion widgets. */
+    private static final boolean DISABLE_SEARCH_AND_APP_SUGGESTIONS = true;
+    /** True to disable the weather panel (widget). */
+    private static final boolean DISABLE_WEATHER_PANEL = true;
+
     public static final int REORDER_TIMEOUT = 350;
     private final static int EMPTY_LOCATION_DRAG = -999;
     private static final int REQUEST_PERMISSION_CALL_PHONE = 14;
@@ -216,7 +221,7 @@ public class LauncherActivity extends AppCompatActivity implements
     private BroadcastReceiver mWeatherReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (!intent.getBooleanExtra(WeatherUpdateService.EXTRA_UPDATE_CANCELLED, false)) {
+            if (!DISABLE_WEATHER_PANEL  &&  !intent.getBooleanExtra(WeatherUpdateService.EXTRA_UPDATE_CANCELLED, false)) {
                 updateWeatherPanel();
             }
         }
@@ -1168,7 +1173,7 @@ public class LauncherActivity extends AppCompatActivity implements
                         mIndicator.animate().alpha(0).setDuration(100).withEndAction(
                                 () -> mIndicator.setVisibility(GONE));
                         refreshSuggestedApps(widgetsPage, forceRefreshSuggestedApps);
-                        if (Preferences.weatherRefreshIntervalInMs(LauncherActivity.this) == 0) {
+                        if (!DISABLE_WEATHER_PANEL  &&  Preferences.weatherRefreshIntervalInMs(LauncherActivity.this) == 0) {
                             Intent intent = new Intent(LauncherActivity.this,
                                     WeatherUpdateService.class);
                             intent.setAction(WeatherUpdateService.ACTION_FORCE_UPDATE);
@@ -1189,6 +1194,10 @@ public class LauncherActivity extends AppCompatActivity implements
     }
 
     public void refreshSuggestedApps(ViewGroup viewGroup, boolean forceRefresh) {
+        if (DISABLE_SEARCH_AND_APP_SUGGESTIONS) {
+            return;
+        }
+
         TextView openUsageAccessSettingsTv = viewGroup.findViewById(R.id.openUsageAccessSettings);
         GridLayout suggestedAppsGridLayout = viewGroup.findViewById(R.id.suggestedAppGrid);
         AppUsageStats appUsageStats = new AppUsageStats(this);
@@ -1305,91 +1314,97 @@ public class LauncherActivity extends AppCompatActivity implements
         currentPageNumber = 1;
         mHorizontalPager.setCurrentPage(currentPageNumber);
 
-        widgetsPage.findViewById(R.id.used_apps_layout).setClipToOutline(true);
-
         // Prepare app suggestions view
         // [[BEGIN]]
-        widgetsPage.findViewById(R.id.openUsageAccessSettings).setOnClickListener(
-                view -> startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
+        if (DISABLE_SEARCH_AND_APP_SUGGESTIONS) {
+            widgetsPage.findViewById(R.id.search_and_app_suggestions_layout).setVisibility(GONE);
+        } else {
+            widgetsPage.findViewById(R.id.used_apps_layout).setClipToOutline(true);
 
-        // divided by 2 because of left and right padding.
-        int padding =
-                (int) (mDeviceProfile.availableWidthPx / 2 - Utilities.pxFromDp(8, this)
-                        - 2
-                        * mDeviceProfile.cellWidthPx);
-        widgetsPage.findViewById(R.id.suggestedAppGrid).setPadding(padding, 0, padding, 0);
-        // [[END]]
+            widgetsPage.findViewById(R.id.openUsageAccessSettings).setOnClickListener(
+                    view -> startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
 
-        // Prepare search suggestion view
-        // [[BEGIN]]
-        ImageView clearSuggestions = widgetsPage.findViewById(R.id.clearSuggestionImageView);
-        clearSuggestions.setOnClickListener(v -> {
-            mSearchInput.setText("");
-            mSearchInput.clearFocus();
-        });
+            // divided by 2 because of left and right padding.
+            int padding =
+                    (int) (mDeviceProfile.availableWidthPx / 2 - Utilities.pxFromDp(8, this)
+                            - 2
+                            * mDeviceProfile.cellWidthPx);
+            widgetsPage.findViewById(R.id.suggestedAppGrid).setPadding(padding, 0, padding, 0);
+            // [[END]]
 
-        mSearchInput = widgetsPage.findViewById(R.id.search_input);
-        mSearchInput.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
+            // Prepare search suggestion view
+            // [[BEGIN]]
+            mSearchInput = widgetsPage.findViewById(R.id.search_input);
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.toString().trim().length() == 0) {
-                    clearSuggestions.setVisibility(GONE);
-                } else {
-                    clearSuggestions.setVisibility(VISIBLE);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-
-            }
-        });
-        RecyclerView suggestionRecyclerView = widgetsPage.findViewById(R.id.suggestionRecyclerView);
-        AutoCompleteAdapter suggestionAdapter = new AutoCompleteAdapter(this);
-        suggestionRecyclerView.setHasFixedSize(true);
-        suggestionRecyclerView.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
-        suggestionRecyclerView.setAdapter(suggestionAdapter);
-        DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(this,
-                DividerItemDecoration.VERTICAL);
-        suggestionRecyclerView.addItemDecoration(dividerItemDecoration);
-        getCompositeDisposable().add(RxTextView.textChanges(mSearchInput)
-                .debounce(300, TimeUnit.MILLISECONDS)
-                .map(CharSequence::toString)
-                .distinctUntilChanged()
-                .switchMap(charSequence -> {
-                    if (charSequence != null && charSequence.length() > 0) {
-                        return searchForQuery(charSequence);
-                    } else {
-                        return Observable.just(
-                                new SuggestionsResult(charSequence));
-                    }
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeWith(
-                        new SearchInputDisposableObserver(this, suggestionAdapter, widgetsPage)));
-
-        mSearchInput.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) {
-                hideKeyboard(v);
-            }
-        });
-
-        mSearchInput.setOnEditorActionListener((textView, action, keyEvent) -> {
-            if (action == EditorInfo.IME_ACTION_SEARCH) {
-                hideKeyboard(mSearchInput);
-                runSearch(mSearchInput.getText().toString());
+            ImageView clearSuggestions = widgetsPage.findViewById(R.id.clearSuggestionImageView);
+            clearSuggestions.setOnClickListener(v -> {
                 mSearchInput.setText("");
                 mSearchInput.clearFocus();
-                return true;
-            }
-            return false;
-        });
+            });
+
+            mSearchInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    if (s.toString().trim().length() == 0) {
+                        clearSuggestions.setVisibility(GONE);
+                    } else {
+                        clearSuggestions.setVisibility(VISIBLE);
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+
+                }
+            });
+
+            RecyclerView suggestionRecyclerView = widgetsPage.findViewById(R.id.suggestionRecyclerView);
+            AutoCompleteAdapter suggestionAdapter = new AutoCompleteAdapter(this);
+            suggestionRecyclerView.setHasFixedSize(true);
+            suggestionRecyclerView.setLayoutManager(
+                    new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+            suggestionRecyclerView.setAdapter(suggestionAdapter);
+            DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(this,
+                    DividerItemDecoration.VERTICAL);
+            suggestionRecyclerView.addItemDecoration(dividerItemDecoration);
+            getCompositeDisposable().add(RxTextView.textChanges(mSearchInput)
+                    .debounce(300, TimeUnit.MILLISECONDS)
+                    .map(CharSequence::toString)
+                    .distinctUntilChanged()
+                    .switchMap(charSequence -> {
+                        if (charSequence != null && charSequence.length() > 0) {
+                            return searchForQuery(charSequence);
+                        } else {
+                            return Observable.just(
+                                    new SuggestionsResult(charSequence));
+                        }
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeWith(
+                            new SearchInputDisposableObserver(this, suggestionAdapter, widgetsPage)));
+
+            mSearchInput.setOnFocusChangeListener((v, hasFocus) -> {
+                if (!hasFocus) {
+                    hideKeyboard(v);
+                }
+            });
+
+            mSearchInput.setOnEditorActionListener((textView, action, keyEvent) -> {
+                if (action == EditorInfo.IME_ACTION_SEARCH) {
+                    hideKeyboard(mSearchInput);
+                    runSearch(mSearchInput.getText().toString());
+                    mSearchInput.setText("");
+                    mSearchInput.clearFocus();
+                    return true;
+                }
+                return false;
+            });
+        }
         // [[END]]
 
         // Prepare edit widgets button
@@ -1398,49 +1413,53 @@ public class LauncherActivity extends AppCompatActivity implements
 
         // Prepare weather widget view
         // [[BEGIN]]
-        findViewById(R.id.weather_setting_imageview).setOnClickListener(
-                v -> startActivity(new Intent(this, WeatherPreferences.class)));
-
-        mWeatherSetupTextView = findViewById(R.id.weather_setup_textview);
-        mWeatherPanel = findViewById(R.id.weather_panel);
-        mWeatherPanel.setOnClickListener(v -> {
-            Intent launchIntent = getPackageManager().getLaunchIntentForPackage(
-                    "foundation.e.weather");
-            if (launchIntent != null) {
-                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(launchIntent);
-            }
-        });
-        updateWeatherPanel();
-
-        if (WeatherUtils.isWeatherServiceAvailable(
-                this)) {
-            startService(new Intent(this, WeatherSourceListenerService.class));
-            startService(new Intent(this, DeviceStatusService.class));
-        }
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(mWeatherReceiver, new IntentFilter(
-                WeatherUpdateService.ACTION_UPDATE_FINISHED));
-
-        if (!Preferences.useCustomWeatherLocation(this)) {
-            if (!WeatherPreferences.hasLocationPermission(this)) {
-                String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION};
-                requestPermissions(permissions,
-                        WeatherPreferences.LOCATION_PERMISSION_REQUEST_CODE);
-            } else {
-                LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                if (!lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-                        && Preferences.getEnableLocation(this)) {
-                    showLocationEnableDialog();
-                    Preferences.setEnableLocation(this);
-                } else {
-                    startService(new Intent(this, WeatherUpdateService.class)
-                            .setAction(WeatherUpdateService.ACTION_FORCE_UPDATE));
-                }
-            }
+        if (DISABLE_WEATHER_PANEL) {
+            findViewById(R.id.weather_info_layout).setVisibility(GONE);
         } else {
-            startService(new Intent(this, WeatherUpdateService.class)
-                    .setAction(WeatherUpdateService.ACTION_FORCE_UPDATE));
+            findViewById(R.id.weather_setting_imageview).setOnClickListener(
+                    v -> startActivity(new Intent(this, WeatherPreferences.class)));
+
+            mWeatherSetupTextView = findViewById(R.id.weather_setup_textview);
+            mWeatherPanel = findViewById(R.id.weather_panel);
+            mWeatherPanel.setOnClickListener(v -> {
+                Intent launchIntent = getPackageManager().getLaunchIntentForPackage(
+                        "foundation.e.weather");
+                if (launchIntent != null) {
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(launchIntent);
+                }
+            });
+            updateWeatherPanel();
+
+            if (WeatherUtils.isWeatherServiceAvailable(
+                    this)) {
+                startService(new Intent(this, WeatherSourceListenerService.class));
+                startService(new Intent(this, DeviceStatusService.class));
+            }
+
+            LocalBroadcastManager.getInstance(this).registerReceiver(mWeatherReceiver, new IntentFilter(
+                    WeatherUpdateService.ACTION_UPDATE_FINISHED));
+
+            if (!Preferences.useCustomWeatherLocation(this)) {
+                if (!WeatherPreferences.hasLocationPermission(this)) {
+                    String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION};
+                    requestPermissions(permissions,
+                            WeatherPreferences.LOCATION_PERMISSION_REQUEST_CODE);
+                } else {
+                    LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                    if (!lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+                            && Preferences.getEnableLocation(this)) {
+                        showLocationEnableDialog();
+                        Preferences.setEnableLocation(this);
+                    } else {
+                        startService(new Intent(this, WeatherUpdateService.class)
+                                .setAction(WeatherUpdateService.ACTION_FORCE_UPDATE));
+                    }
+                }
+            } else {
+                startService(new Intent(this, WeatherUpdateService.class)
+                        .setAction(WeatherUpdateService.ACTION_FORCE_UPDATE));
+            }
         }
         // [[END]]
 
@@ -1474,7 +1493,7 @@ public class LauncherActivity extends AppCompatActivity implements
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
-        if (requestCode == WeatherPreferences.LOCATION_PERMISSION_REQUEST_CODE) {
+        if (requestCode == WeatherPreferences.LOCATION_PERMISSION_REQUEST_CODE  &&  !DISABLE_WEATHER_PANEL) {
             if (grantResults.length > 0
                     && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // We only get here if user tried to enable the preference,
@@ -1497,6 +1516,10 @@ public class LauncherActivity extends AppCompatActivity implements
     }
 
     private void updateWeatherPanel() {
+        if (DISABLE_WEATHER_PANEL) {
+            return;
+        }
+
         if (Preferences.getCachedWeatherInfo(this) == null) {
             mWeatherSetupTextView.setVisibility(VISIBLE);
             mWeatherPanel.setVisibility(GONE);
@@ -1512,6 +1535,10 @@ public class LauncherActivity extends AppCompatActivity implements
     }
 
     private void showLocationEnableDialog() {
+        if (DISABLE_WEATHER_PANEL) {
+            return;
+        }
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         // Build and show the dialog
         builder.setTitle(R.string.weather_retrieve_location_dialog_title);
@@ -1531,7 +1558,7 @@ public class LauncherActivity extends AppCompatActivity implements
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_LOCATION_SOURCE_SETTING) {
+        if (requestCode == REQUEST_LOCATION_SOURCE_SETTING  &&  !DISABLE_WEATHER_PANEL) {
             LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             if (!lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 Toast.makeText(this, "Set custom location in weather settings.",
@@ -1617,6 +1644,10 @@ public class LauncherActivity extends AppCompatActivity implements
 
     @Override
     public void onClick(String suggestion) {
+        if (DISABLE_SEARCH_AND_APP_SUGGESTIONS) {
+            return;
+        }
+
         mSearchInput.setText(suggestion);
         runSearch(suggestion);
         mSearchInput.clearFocus();

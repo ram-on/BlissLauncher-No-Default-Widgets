@@ -21,7 +21,9 @@
             android:orientation="vertical"
             android:padding="8dp">
 
-            <include layout="@layout/layout_search_suggestion" />
+            <include
+                android:id="@+id/search_and_app_suggestions_layout"
+                layout="@layout/layout_search_suggestion" />
 
             <include
                 android:id="@+id/weather_info_layout"
